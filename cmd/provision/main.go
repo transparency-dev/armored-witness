@@ -125,6 +125,10 @@ func waitAndProvision(fw *firmware) error {
 		klog.Info("Witness device booting recovering image ✅")
 		return nil
 	})
+	if err != nil {
+		return fmt.Errorf("failed to detect block device: %v", err)
+
+	}
 	klog.Infof("Detected blockdevice %v ✅", bDev)
 
 	// TODO: which block device?
