@@ -20,10 +20,10 @@ import (
 	"crypto/rand"
 	"crypto/rsa"
 	"crypto/sha256"
-	"errors"
 	"flag"
 	"fmt"
 	"os"
+	"time"
 
 	"k8s.io/klog"
 )
@@ -93,11 +93,14 @@ func fetchLatestArtefacts() (*firmware, error) {
 }
 
 func waitAndProvision(fw *firmware) error {
-	if err := waitForDevice(); err != nil {
+	// The device will initially be in HID mode (showing as "RecoveryMode" in the output to lsusb).
+	// So we'll detect it as such:
+	target, err := waitForHIDDevice()
+	if err != nil {
 		return err
 	}
 
-	_, err := rsa.GenerateKey(rand.Reader, 4096)
+	_, err = rsa.GenerateKey(rand.Reader, 4096)
 	if err != nil {
 		return fmt.Errorf("failed to generate ephemeral key: %v", err)
 	}
@@ -107,6 +110,9 @@ func waitAndProvision(fw *firmware) error {
 	// TODO: store signed bootloader and recovery images somewhere durable.
 
 	// TODO: SDP boot recovery image on device.
+	if err := target.BootIMX(fw.Recovery); err != nil {
+		klog.Errorf("Failed to SDP boot recovery image on %v: %v", target.DeviceInfo.Path, err)
+	}
 	// TODO: figure out corresponding block device once it boots.
 	// TODO: Write bootloader.
 	// TODO: Write TrustedOS.
@@ -124,6 +130,20 @@ func waitAndProvision(fw *firmware) error {
 
 }
 
-func waitForDevice() error {
-	return errors.New("unimplemented")
+// waitForHIDDevice waits for an unprovisioned armored witness device
+// to appear on the USB bus.
+func waitForHIDDevice() (*Target, error) {
+	klog.Info("Waiting for device to be detected...")
+	for {
+		<-time.After(time.Second)
+		targets, err := DetectHID()
+		if err != nil {
+			klog.Warningf("Failed to detect devices: %v", err)
+			continue
+		}
+		if len(targets) == 0 {
+			continue
+		}
+		return targets[0], nil
+	}
 }
