@@ -19,9 +19,11 @@ package main
 import (
 	"crypto/rand"
 	"crypto/rsa"
+	"crypto/sha256"
 	"errors"
 	"flag"
 	"fmt"
+	"os"
 
 	"k8s.io/klog"
 )
@@ -59,15 +61,31 @@ type firmware struct {
 	// TODO: add proof bundles, etc.
 }
 
-func fetchLatestArtefacts() (firmware, error) {
+func fetchLatestArtefacts() (*firmware, error) {
 	// TODO: Use the armored witness transparency logs as the source of firmware images.
-	// Place holders for various images:
-	fw := firmware{
-		BootLoader:    make([]byte, 0),
-		Recovery:      make([]byte, 0),
-		TrustedOS:     make([]byte, 0),
-		TrustedApplet: make([]byte, 0),
+	// For now, we'll just expect that repos are checked-out in adjacent directories,
+	// and images have been built there.
+	fw := &firmware{}
+
+	var err error
+	if fw.Recovery, err = os.ReadFile(*recoveryImagePath); err != nil {
+		return nil, fmt.Errorf("failed to read recovery image from %q: %v", *recoveryImagePath, err)
 	}
+	if fw.BootLoader, err = os.ReadFile(*bootloaderPath); err != nil {
+		return nil, fmt.Errorf("failed to read bootloader from %q: %v", *bootloaderPath, err)
+	}
+	if fw.TrustedApplet, err = os.ReadFile(*trustedAppletPath); err != nil {
+		return nil, fmt.Errorf("failed to read trusted applet from %q: %v", *trustedAppletPath, err)
+	}
+	if fw.TrustedOS, err = os.ReadFile(*trustedOSPath); err != nil {
+		return nil, fmt.Errorf("failed to read trusted OS from %q: %v", *trustedOSPath, err)
+	}
+
+	klog.Info("Loaded firmware artefacts:")
+	klog.Infof("Recovery:      SHA256:%032x (%s)", sha256.Sum256(fw.Recovery), *recoveryImagePath)
+	klog.Infof("Bootloader:    SHA256:%032x (%s)", sha256.Sum256(fw.BootLoader), *bootloaderPath)
+	klog.Infof("TrustedApplet: SHA256:%032x (%s)", sha256.Sum256(fw.TrustedApplet), *trustedAppletPath)
+	klog.Infof("TrustedOS:     SHA256:%032x (%s)", sha256.Sum256(fw.TrustedOS), *trustedOSPath)
 
 	return fw, nil
 }
