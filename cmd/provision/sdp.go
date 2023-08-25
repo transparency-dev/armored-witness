@@ -127,7 +127,7 @@ func (t *Target) BootIMX(imx []byte) error {
 		return fmt.Errorf("failed to set jump address: %v", err)
 	}
 
-	klog.Infof("✅ Serial download on %s complete", t.DeviceInfo.Path)
+	klog.Infof("Serial download on %s complete", t.DeviceInfo.Path)
 	return nil
 }
 
