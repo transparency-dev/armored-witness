@@ -36,7 +36,9 @@ var (
 )
 
 func main() {
-	flag.Set("logtostderr", "true")
+	if err := flag.Set("logtostderr", "true"); err != nil {
+		klog.Exitf("Unable to set flag logtostderr to true: %v", err)
+	}
 	flag.Parse()
 
 	fw, err := fetchLatestArtefacts()
