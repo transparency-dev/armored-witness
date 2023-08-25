@@ -45,7 +45,7 @@ func main() {
 	}
 
 	if err := waitAndProvision(fw); err != nil {
-		klog.Exitf("Failed to provision deviceo: %v", err)
+		klog.Exitf("Failed to provision device: %v", err)
 	}
 }
 
