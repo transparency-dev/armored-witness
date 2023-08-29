@@ -40,9 +40,7 @@ var (
 )
 
 func main() {
-	if err := flag.Set("logtostderr", "true"); err != nil {
-		klog.Exitf("Unable to set flag logtostderr to true: %v", err)
-	}
+	klog.InitFlags(nil)
 	flag.Parse()
 
 	fw, err := fetchLatestArtefacts()
