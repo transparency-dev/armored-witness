@@ -24,7 +24,7 @@ import (
 	"time"
 
 	"github.com/usbarmory/armory-boot/sdp"
-	"k8s.io/klog"
+	"k8s.io/klog/v2"
 
 	"github.com/usbarmory/hid"
 )
