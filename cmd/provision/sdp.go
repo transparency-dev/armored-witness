@@ -36,6 +36,13 @@ const (
 
 	// On-Chip RAM (OCRAM/iRAM) address for payload staging
 	iramOffset = 0x00910000
+
+	// SDP HID report IDs
+	// (p327, 8.9.3.1 SDP commands, IMX6ULLRM).
+	H2D_COMMAND       = 1 // Command  - Host to Device
+	H2D_DATA          = 2 // Data     - Host to Device
+	D2H_RESPONSE      = 3 // Response - Device to Host
+	D2H_RESPONSE_LAST = 4 // Response - Device to Host
 )
 
 var (
@@ -132,11 +139,11 @@ func (t *Target) BootIMX(imx []byte) error {
 	return nil
 }
 
-func (t *Target) sendHIDReport(n int, buf []byte, wait int) ([]byte, error) {
-	if err := t.dev.Write(append([]byte{byte(n)}, buf...)); err != nil {
+func (t *Target) sendHIDReport(reqID int, buf []byte, resID int) (res []byte, err error) {
+	if err := t.dev.Write(append([]byte{byte(reqID)}, buf...)); err != nil {
 		return nil, fmt.Errorf("failed to send HID report to device (%v): %v", t.DeviceInfo.Path, err)
 	}
-	if wait < 0 {
+	if resID < 0 {
 		return nil, nil
 	}
 
@@ -147,7 +154,7 @@ func (t *Target) sendHIDReport(n int, buf []byte, wait int) ([]byte, error) {
 				return nil, errors.New("error reading response")
 			}
 
-			if len(res) > 0 && res[0] == byte(wait) {
+			if len(res) > 0 && res[0] == byte(resID) {
 				return res, nil
 			}
 		case <-time.After(Timeout):
@@ -159,11 +166,11 @@ func (t *Target) sendHIDReport(n int, buf []byte, wait int) ([]byte, error) {
 func (t *Target) dcdWrite(dcd []byte, addr uint32) error {
 	r1, r2 := sdp.BuildDCDWriteReport(dcd, addr)
 
-	if _, err := t.sendHIDReport(1, r1, -1); err != nil {
+	if _, err := t.sendHIDReport(H2D_COMMAND, r1, -1); err != nil {
 		return fmt.Errorf("failed to send first DCD write report: %v", err)
 	}
 
-	if _, err := t.sendHIDReport(2, r2, 4); err != nil {
+	if _, err := t.sendHIDReport(H2D_DATA, r2, D2H_RESPONSE_LAST); err != nil {
 		return fmt.Errorf("failed to send second DCD write report: %v", err)
 	}
 
@@ -173,22 +180,22 @@ func (t *Target) dcdWrite(dcd []byte, addr uint32) error {
 func (t *Target) fileWrite(imx []byte, addr uint32) error {
 	r1, r2 := sdp.BuildFileWriteReport(imx, addr)
 
-	if _, err := t.sendHIDReport(1, r1, -1); err != nil {
+	if _, err := t.sendHIDReport(H2D_COMMAND, r1, -1); err != nil {
 		return fmt.Errorf("failed to send FileWriteReport r1: %v", err)
 	}
 
 	// Don't wait for report responses until we've sent the final block.
-	wait := -1
+	resID := -1
 
 	for i, r := range r2 {
 		if i == len(r2)-1 {
 			// We're now sending the final chunk of the imx, so wait for
 			// report ID 4 - this report indicates completion of the
 			// FileWrite request.
-			wait = 4
+			resID = D2H_RESPONSE_LAST
 		}
 	send:
-		_, err := t.sendHIDReport(2, r, wait)
+		_, err := t.sendHIDReport(H2D_DATA, r, resID)
 		if err != nil && runtime.GOOS == "darwin" && err.Error() == "hid: general error" {
 			// On macOS access contention with the OS causes
 			// errors, as a workaround we retry from the transfer
@@ -204,7 +211,7 @@ func (t *Target) fileWrite(imx []byte, addr uint32) error {
 					DataCount:   uint32(len(imx)) - off,
 				}
 
-				if _, err = t.sendHIDReport(1, r1.Bytes(), -1); err != nil {
+				if _, err = t.sendHIDReport(H2D_COMMAND, r1.Bytes(), -1); err != nil {
 					return fmt.Errorf("(retry) failed to send FileWriteReport r1 file bytes at 0x%x: %v", r1.Address, err)
 				}
 
@@ -222,7 +229,7 @@ func (t *Target) fileWrite(imx []byte, addr uint32) error {
 
 func (t *Target) jumpAddress(addr uint32) error {
 	r1 := sdp.BuildJumpAddressReport(addr)
-	if _, err := t.sendHIDReport(1, r1, -1); err != nil {
+	if _, err := t.sendHIDReport(H2D_COMMAND, r1, -1); err != nil {
 		return fmt.Errorf("failed to send JumpAddressReport: %v", err)
 	}
 
