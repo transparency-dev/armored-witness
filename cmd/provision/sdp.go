@@ -12,7 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Large portions of this file come from github.com/armory-boot/cmd/armory-boot-usb.
+// Large portions of this file come from
+// https://github.com/usbarmory/armory-boot/blob/master/cmd/armory-boot-usb/armory-boot-usb.go
 
 package main
 
