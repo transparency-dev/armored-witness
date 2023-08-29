@@ -177,10 +177,14 @@ func (t *Target) fileWrite(imx []byte, addr uint32) error {
 		return fmt.Errorf("failed to send FileWriteReport r1: %v", err)
 	}
 
+	// Don't wait for report responses until we've sent the final block.
 	wait := -1
 
 	for i, r := range r2 {
 		if i == len(r2)-1 {
+			// We're now sending the final chunk of the imx, so wait for
+			// report ID 4 - this report indicates completion of the
+			// FileWrite request.
 			wait = 4
 		}
 	send:
