@@ -18,6 +18,7 @@ package main
 
 import (
 	"bytes"
+	"context"
 	"crypto/rand"
 	"crypto/rsa"
 	"crypto/sha256"
@@ -29,6 +30,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/flynn/u2f/u2fhid"
 	"github.com/fsnotify/fsnotify"
 	"k8s.io/klog/v2"
 
@@ -59,15 +61,17 @@ var (
 func main() {
 	klog.InitFlags(nil)
 	flag.Parse()
+	ctx := context.Background()
 
 	fw, err := fetchLatestArtefacts()
 	if err != nil {
 		klog.Exitf("Failed to fetch latest firmware artefacts: %v", err)
 	}
 
-	if err := waitAndProvision(fw); err != nil {
-		klog.Exitf("Failed to provision device: %v", err)
+	if err := waitAndProvision(ctx, fw); err != nil {
+		klog.Exitf("❌ Failed to provision device: %v", err)
 	}
+	klog.Info("✅ Device provisioned!")
 }
 
 // firmware respresents the collection of firmware and related artefacts which must be
@@ -147,14 +151,15 @@ func fetchLatestArtefacts() (*firmware, error) {
 }
 
 // waitAndProvision waits for a fresh armored witness device to be detected, and then provisions it.
-func waitAndProvision(fw *firmware) error {
+func waitAndProvision(ctx context.Context, fw *firmware) error {
+	klog.Info("Operator, please ensure boot switch is set to USB, and then connect unprovisioned device 🙏")
 	// The device will initially be in HID mode (showing as "RecoveryMode" in the output to lsusb).
 	// So we'll detect it as such:
-	target, err := waitForHIDDevice()
+	target, err := waitForHIDDevice(ctx)
 	if err != nil {
 		return err
 	}
-	klog.Infof("Detected device %q ✅", target.DeviceInfo.Path)
+	klog.Infof("✅ Detected device %q", target.DeviceInfo.Path)
 
 	_, err = rsa.GenerateKey(rand.Reader, 4096)
 	if err != nil {
@@ -168,18 +173,18 @@ func waitAndProvision(fw *firmware) error {
 	// SDP boot recovery image on device.
 	// Booting the recovery image causes the device re-appear as a USB Mass Storage device.
 	// So we'll wait for that to happen, and figure out which /dev/ entry corresponds to it.
-	bDev, err := waitForBlockDevice(*blockDeviceGlob, func() error {
+	bDev, err := waitForBlockDevice(ctx, *blockDeviceGlob, func() error {
 		if err := target.BootIMX(fw.Recovery); err != nil {
-			klog.Errorf("Failed to SDP boot recovery image on %v: %v", target.DeviceInfo.Path, err)
+			return fmt.Errorf("failed to SDP boot recovery image on %v: %v", target.DeviceInfo.Path, err)
 		}
-		klog.Info("Witness device booting recovering image ✅")
+		klog.Info("✅ Witness device booting recovering image")
 		return nil
 	})
 	if err != nil {
 		return fmt.Errorf("failed to detect block device: %v", err)
 
 	}
-	klog.Infof("Detected blockdevice %v ✅", bDev)
+	klog.Infof("✅ Detected blockdevice %v", bDev)
 
 	for i := 5; i > 0; i-- {
 		klog.Infof("  Flashing in %d", i)
@@ -190,16 +195,38 @@ func waitAndProvision(fw *firmware) error {
 	if err := flashImages(bDev, fw); err != nil {
 		return fmt.Errorf("error while flashing images: %v", err)
 	}
-	klog.Info("Flashed all images ✅")
+	klog.Info("✅ Flashed all images")
 
 	// TODO: Write proof bundle.
 
-	// TODO: Verify fuses are unset.
+	klog.Info("Operator, please change boot switch to MMC, and then reboot device 🙏")
+	klog.Info("Waiting for device to boot...")
+
+	p, dev, err := waitForU2FDevice(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to fins armored witness device: %v", err)
+	}
+	defer dev.Close()
+
+	klog.Infof("✅ Detected device %q", p)
+	s, err := witnessStatus(dev)
+	if err != nil {
+		return fmt.Errorf("failed to fetch witness status: %v", err)
+	}
+
+	klog.Infof("✅ Witness serial number %s found", s.Serial)
+	if s.HAB {
+		return fmt.Errorf("witness serial number %s has HAB fuse set!", s.Serial)
+	}
+	klog.Infof("✅ Witness serial number %s is not HAB fused", s.Serial)
+
 	// TODO: Set fuses.
 
 	// TODO: Reboot device.
 
 	// TODO: Use HID to access witness public keys from device and store somewhere durable.
+
+	klog.Infof("✅ Witness ID %s provisioned", s.Witness.Identity)
 
 	return nil
 
@@ -207,24 +234,51 @@ func waitAndProvision(fw *firmware) error {
 
 // waitForHIDDevice waits for an unprovisioned armored witness device
 // to appear on the USB bus.
-func waitForHIDDevice() (*Target, error) {
+func waitForHIDDevice(ctx context.Context) (*Target, error) {
 	klog.Info("Waiting for device to be detected...")
 	for {
-		<-time.After(time.Second)
-		targets, err := DetectHID()
-		if err != nil {
-			klog.Warningf("Failed to detect devices: %v", err)
-			continue
+		select {
+		case <-ctx.Done():
+			return nil, ctx.Err()
+		case <-time.After(time.Second):
+			targets, err := DetectHID()
+			if err != nil {
+				klog.Warningf("Failed to detect devices: %v", err)
+				continue
+			}
+			if len(targets) == 0 {
+				continue
+			}
+			return targets[0], nil
 		}
-		if len(targets) == 0 {
-			continue
+	}
+}
+
+// waitForU2FDevice waits for a device running armored witness firmware
+// to appear on the USB bus.
+// Returns the device path & opened device.
+func waitForU2FDevice(ctx context.Context) (string, *u2fhid.Device, error) {
+	klog.Info("Waiting for armored witness device to be detected...")
+	for {
+		select {
+		case <-ctx.Done():
+			return "", nil, ctx.Err()
+		case <-time.After(time.Second):
+			p, target, err := detectU2F()
+			if err != nil {
+				klog.Warningf("Failed to detect devices: %v", err)
+				continue
+			}
+			if target == nil {
+				continue
+			}
+			return p, target, nil
 		}
-		return targets[0], nil
 	}
 }
 
 // waitForBlockDevice runs f, and waits for a block device matching glob to appear.
-func waitForBlockDevice(glob string, f func() error) (string, error) {
+func waitForBlockDevice(ctx context.Context, glob string, f func() error) (string, error) {
 	watcher, err := fsnotify.NewWatcher()
 	if err != nil {
 		return "", fmt.Errorf("failed to create fs watcher: %v", err)
@@ -247,19 +301,20 @@ func waitForBlockDevice(glob string, f func() error) (string, error) {
 
 	// Finally, monitor fsnotify events for any which match the glob.
 	klog.Info("Waiting for block device to appear")
-	ret := ""
 	for {
-		e := <-watcher.Events
-		matched, err := filepath.Match(*blockDeviceGlob, e.Name)
-		if err != nil {
-			klog.Exitf("error testing filename %q against glob %q: %v", e.Name, *blockDeviceGlob, err)
-		}
-		if matched && e.Has(fsnotify.Create) {
-			ret = e.Name
-			break
+		select {
+		case <-ctx.Done():
+			return "", ctx.Err()
+		case e := <-watcher.Events:
+			matched, err := filepath.Match(*blockDeviceGlob, e.Name)
+			if err != nil {
+				klog.Exitf("error testing filename %q against glob %q: %v", e.Name, *blockDeviceGlob, err)
+			}
+			if matched && e.Has(fsnotify.Create) {
+				return e.Name, nil
+			}
 		}
 	}
-	return ret, nil
 }
 
 // flashImages writes all the images in fw to the specified block device.
@@ -284,10 +339,10 @@ func flashImages(dev string, fw *firmware) error {
 		{name: "TrustedApplet", img: fw.TrustedApplet, block: fw.TrustedAppletBlock},
 	} {
 		if err := flashImage(p.img, f, p.block); err != nil {
-			klog.Infof("  %s ❌", p.name)
+			klog.Infof("  ❌ %s", p.name)
 			return fmt.Errorf("failed to flash %s: %v", p.name, err)
 		}
-		klog.Infof("  %s @ 0x%0x ✅", p.name, p.block)
+		klog.Infof("  ✅ %s @ 0x%0x", p.name, p.block)
 	}
 	return nil
 }
