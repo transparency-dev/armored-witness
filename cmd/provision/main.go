@@ -20,12 +20,14 @@ import (
 	"crypto/rand"
 	"crypto/rsa"
 	"crypto/sha256"
-	"errors"
 	"flag"
 	"fmt"
 	"os"
+	"path/filepath"
+	"time"
 
-	"k8s.io/klog"
+	"github.com/fsnotify/fsnotify"
+	"k8s.io/klog/v2"
 )
 
 var (
@@ -33,6 +35,8 @@ var (
 	bootloaderPath    = flag.String("bootloader", "../armored-witness-boot/armored-witness-boot.imx", "Location of the bootloader imx file.")
 	trustedAppletPath = flag.String("trusted_applet", "../armored-witness-applet/bin/trusted_applet.elf", "Location of the trusted applet ELF file.")
 	trustedOSPath     = flag.String("trusted_os", "../armored-witness-os/bin/trusted_os.elf", "Location of the trusted OS ELF file.")
+
+	blockDeviceGlob = flag.String("blockdevs", "/dev/sd*", "Glob for plausible block devices where the armored witness could appear")
 )
 
 func main() {
@@ -92,12 +96,17 @@ func fetchLatestArtefacts() (*firmware, error) {
 	return fw, nil
 }
 
+// waitAndProvision waits for a fresh armored witness device to be detected, and then provisions it.
 func waitAndProvision(fw *firmware) error {
-	if err := waitForDevice(); err != nil {
+	// The device will initially be in HID mode (showing as "RecoveryMode" in the output to lsusb).
+	// So we'll detect it as such:
+	target, err := waitForHIDDevice()
+	if err != nil {
 		return err
 	}
+	klog.Infof("Detected device %q ✅", target.DeviceInfo.Path)
 
-	_, err := rsa.GenerateKey(rand.Reader, 4096)
+	_, err = rsa.GenerateKey(rand.Reader, 4096)
 	if err != nil {
 		return fmt.Errorf("failed to generate ephemeral key: %v", err)
 	}
@@ -106,7 +115,24 @@ func waitAndProvision(fw *firmware) error {
 	// TODO: sign bootloader and recovery images.
 	// TODO: store signed bootloader and recovery images somewhere durable.
 
-	// TODO: SDP boot recovery image on device.
+	// SDP boot recovery image on device.
+	// Booting the recovery image causes the device re-appear as a USB Mass Storage device.
+	// So we'll wait for that to happen, and figure out which /dev/ entry corresponds to it.
+	bDev, err := waitForBlockDevice(*blockDeviceGlob, func() error {
+		if err := target.BootIMX(fw.Recovery); err != nil {
+			klog.Errorf("Failed to SDP boot recovery image on %v: %v", target.DeviceInfo.Path, err)
+		}
+		klog.Info("Witness device booting recovering image ✅")
+		return nil
+	})
+	if err != nil {
+		return fmt.Errorf("failed to detect block device: %v", err)
+
+	}
+	klog.Infof("Detected blockdevice %v ✅", bDev)
+
+	// TODO: which block device?
+
 	// TODO: figure out corresponding block device once it boots.
 	// TODO: Write bootloader.
 	// TODO: Write TrustedOS.
@@ -124,6 +150,59 @@ func waitAndProvision(fw *firmware) error {
 
 }
 
-func waitForDevice() error {
-	return errors.New("unimplemented")
+// waitForHIDDevice waits for an unprovisioned armored witness device
+// to appear on the USB bus.
+func waitForHIDDevice() (*Target, error) {
+	klog.Info("Waiting for device to be detected...")
+	for {
+		<-time.After(time.Second)
+		targets, err := DetectHID()
+		if err != nil {
+			klog.Warningf("Failed to detect devices: %v", err)
+			continue
+		}
+		if len(targets) == 0 {
+			continue
+		}
+		return targets[0], nil
+	}
+}
+
+// waitForBlockDevice runs f, and waits for a block device matching glob to appear.
+func waitForBlockDevice(glob string, f func() error) (string, error) {
+	watcher, err := fsnotify.NewWatcher()
+	if err != nil {
+		return "", fmt.Errorf("failed to create fs watcher: %v", err)
+	}
+	defer func() {
+		if err := watcher.Close(); err != nil {
+			klog.Errorf("Error closing fs watcher: %v", err)
+		}
+	}()
+
+	// Set up the watcher to look for events in /dev only.
+	if err := watcher.Add("/dev"); err != nil {
+		return "", fmt.Errorf("failed to add /dev to fs watcher: %v", err)
+	}
+
+	// Run the passed-in function
+	if err := f(); err != nil {
+		return "", err
+	}
+
+	// Finally, monitor fsnotify events for any which match the glob.
+	klog.Info("Waiting for block device to appear")
+	ret := ""
+	for {
+		e := <-watcher.Events
+		matched, err := filepath.Match(*blockDeviceGlob, e.Name)
+		if err != nil {
+			klog.Exitf("error testing filename %q against glob %q: %v", e.Name, *blockDeviceGlob, err)
+		}
+		if matched && e.Has(fsnotify.Create) {
+			ret = e.Name
+			break
+		}
+	}
+	return ret, nil
 }
