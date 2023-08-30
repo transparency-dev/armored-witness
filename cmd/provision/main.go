@@ -17,17 +17,34 @@
 package main
 
 import (
+	"bytes"
 	"crypto/rand"
 	"crypto/rsa"
 	"crypto/sha256"
+	"encoding/gob"
 	"flag"
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/fsnotify/fsnotify"
 	"k8s.io/klog/v2"
+
+	"github.com/transparency-dev/armored-witness-boot/config"
+)
+
+const (
+	// Block size in bytes of the MMC device on the armored witness.
+	mmcBlockSize = 512
+
+	// bootloaderBlock defines the location of the first block of the bootloader on MMC.
+	bootloaderBlock = 2
+	// osBlock defines the location of the first block of the TrustedOS on MMC.
+	osBlock = 20480
+	// appletBlock defines the location of the first block of the TrustedAoolet on MMC.
+	appletBlock = 2097152
 )
 
 var (
@@ -55,15 +72,26 @@ func main() {
 	}
 }
 
+// firmware respresents the collection of firmware and related artefacts which must be
+// flashed onto the device.
 type firmware struct {
-	// BootLoader holds the regular bootloader as an unsigned IMX.
-	BootLoader []byte
+	// Bootloader holds the regular bootloader as an unsigned IMX.
+	Bootloader []byte
+	// BootloaderBlock is the location on MMC where the bootloader should be written.
+	BootloaderBlock int64
 	// Recovery holds the recovery-boot image as an unsigned IMX.
 	Recovery []byte
 	// TrustedOS holds the trusted OS firmware as a signed ELF.
-	TrustedOS []byte
+	TrustedOS     []byte
+	TrustedOSSig1 []byte
+	TrustedOSSig2 []byte
+	// TrustedOSBlock is the location on MMC where the TrustedOS should be written.
+	TrustedOSBlock int64
 	// TrustedApplet holds the witness applet firmware as a signed ELF.
-	TrustedApplet []byte
+	TrustedApplet    []byte
+	TrustedAppletSig []byte
+	// TrustedAppletBlock is the location on MMC where the TrustedApplet should be written.
+	TrustedAppletBlock int64
 	// TODO: add proof bundles, etc.
 }
 
@@ -71,27 +99,51 @@ func fetchLatestArtefacts() (*firmware, error) {
 	// TODO: Use the armored witness transparency logs as the source of firmware images.
 	// For now, we'll just expect that repos are checked-out in adjacent directories,
 	// and images have been built there.
-	fw := &firmware{}
+	fw := &firmware{
+		BootloaderBlock:    bootloaderBlock,
+		TrustedOSBlock:     osBlock,
+		TrustedAppletBlock: appletBlock,
+	}
 
 	var err error
 	if fw.Recovery, err = os.ReadFile(*recoveryImagePath); err != nil {
 		return nil, fmt.Errorf("failed to read recovery image from %q: %v", *recoveryImagePath, err)
 	}
-	if fw.BootLoader, err = os.ReadFile(*bootloaderPath); err != nil {
+	if fw.Bootloader, err = os.ReadFile(*bootloaderPath); err != nil {
 		return nil, fmt.Errorf("failed to read bootloader from %q: %v", *bootloaderPath, err)
 	}
 	if fw.TrustedApplet, err = os.ReadFile(*trustedAppletPath); err != nil {
 		return nil, fmt.Errorf("failed to read trusted applet from %q: %v", *trustedAppletPath, err)
 	}
+	appletSigPath := strings.ReplaceAll(*trustedAppletPath, ".elf", ".sig")
+	if fw.TrustedAppletSig, err = os.ReadFile(appletSigPath); err != nil {
+		return nil, fmt.Errorf("failed to read trusted applet signature from %q: %v", appletSigPath, err)
+	}
 	if fw.TrustedOS, err = os.ReadFile(*trustedOSPath); err != nil {
 		return nil, fmt.Errorf("failed to read trusted OS from %q: %v", *trustedOSPath, err)
+	}
+	osSig1Path := strings.ReplaceAll(*trustedOSPath, ".elf", ".sig1")
+	if fw.TrustedOSSig1, err = os.ReadFile(osSig1Path); err != nil {
+		return nil, fmt.Errorf("failed to read trusted OS sig from %q: %v", osSig1Path, err)
+	}
+	osSig2Path := strings.ReplaceAll(*trustedOSPath, ".elf", ".sig2")
+	if fw.TrustedOSSig2, err = os.ReadFile(osSig2Path); err != nil {
+		return nil, fmt.Errorf("failed to read trusted OS sig from %q: %v", osSig2Path, err)
 	}
 
 	klog.Info("Loaded firmware artefacts:")
 	klog.Infof("Recovery:      SHA256:%032x (%s)", sha256.Sum256(fw.Recovery), *recoveryImagePath)
-	klog.Infof("Bootloader:    SHA256:%032x (%s)", sha256.Sum256(fw.BootLoader), *bootloaderPath)
+	klog.Infof("Bootloader:    SHA256:%032x (%s)", sha256.Sum256(fw.Bootloader), *bootloaderPath)
 	klog.Infof("TrustedApplet: SHA256:%032x (%s)", sha256.Sum256(fw.TrustedApplet), *trustedAppletPath)
 	klog.Infof("TrustedOS:     SHA256:%032x (%s)", sha256.Sum256(fw.TrustedOS), *trustedOSPath)
+
+	// OS and Applet need prepending with config structures.
+	if fw.TrustedApplet, err = prepareELF(fw.TrustedApplet, [][]byte{fw.TrustedAppletSig}, appletBlock); err != nil {
+		return nil, fmt.Errorf("failed to prepare TrustedApplet: %v", err)
+	}
+	if fw.TrustedOS, err = prepareELF(fw.TrustedOS, [][]byte{fw.TrustedOSSig1, fw.TrustedOSSig2}, osBlock); err != nil {
+		return nil, fmt.Errorf("failed to prepare TrustedOS: %v", err)
+	}
 
 	return fw, nil
 }
@@ -131,12 +183,17 @@ func waitAndProvision(fw *firmware) error {
 	}
 	klog.Infof("Detected blockdevice %v ✅", bDev)
 
-	// TODO: which block device?
+	for i := 5; i > 0; i-- {
+		klog.Infof("  Flashing in %d", i)
+		<-time.After(time.Second)
+	}
 
-	// TODO: figure out corresponding block device once it boots.
-	// TODO: Write bootloader.
-	// TODO: Write TrustedOS.
-	// TODO: Write TrustedApplet.
+	klog.Infof("Flashing images...")
+	if err := flashImages(bDev, fw); err != nil {
+		return fmt.Errorf("error while flashing images: %v", err)
+	}
+	klog.Info("Flashed all images ✅")
+
 	// TODO: Write proof bundle.
 
 	// TODO: Verify fuses are unset.
@@ -205,4 +262,66 @@ func waitForBlockDevice(glob string, f func() error) (string, error) {
 		}
 	}
 	return ret, nil
+}
+
+// flashImages writes all the images in fw to the specified block device.
+func flashImages(dev string, fw *firmware) error {
+	f, err := os.OpenFile(dev, os.O_RDWR, 0o600)
+	if err != nil {
+		return fmt.Errorf("error opening %v: %v", dev, err)
+	}
+	defer func() {
+		if err := f.Close(); err != nil {
+			klog.Errorf("Errorf closing %v: %v", dev, err)
+		}
+	}()
+
+	for _, p := range []struct {
+		name  string
+		img   []byte
+		block int64
+	}{
+		{name: "Bootloader", img: fw.Bootloader, block: fw.BootloaderBlock},
+		{name: "TrustedOS", img: fw.TrustedOS, block: fw.TrustedOSBlock},
+		{name: "TrustedApplet", img: fw.TrustedApplet, block: fw.TrustedAppletBlock},
+	} {
+		if err := flashImage(p.img, f, p.block); err != nil {
+			klog.Infof("  %s ❌", p.name)
+			return fmt.Errorf("failed to flash %s: %v", p.name, err)
+		}
+		klog.Infof("  %s @ 0x%0x ✅", p.name, p.block)
+	}
+	return nil
+}
+
+// flashImage writes the image to the file starting at the specified block.
+func flashImage(image []byte, to *os.File, atBlock int64) error {
+	offset := atBlock * mmcBlockSize
+	if n, err := to.WriteAt(image, offset); err != nil {
+		return err
+	} else if l := len(image); n != l {
+		return fmt.Errorf("short write (%d < %d)", n, l)
+	}
+	return to.Sync()
+}
+
+// prepareELF returns a slice with a GOB-encoded configuration structure followed by the ELF image.
+func prepareELF(elf []byte, sigs [][]byte, block int64) ([]byte, error) {
+	conf := &config.Config{
+		Offset:     block*mmcBlockSize + config.MaxLength,
+		Size:       int64(len(elf)),
+		Signatures: sigs,
+	}
+
+	buf := new(bytes.Buffer)
+
+	if err := gob.NewEncoder(buf).Encode(conf); err != nil {
+		return nil, fmt.Errorf("failed to encode config: %v", err)
+	}
+
+	pad := config.MaxLength - int64(buf.Len())
+	buf.Write(make([]byte, pad))
+	buf.Write(elf)
+
+	return buf.Bytes(), nil
 }
