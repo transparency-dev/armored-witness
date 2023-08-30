@@ -42,11 +42,11 @@ const (
 	mmcBlockSize = 512
 
 	// bootloaderBlock defines the location of the first block of the bootloader on MMC.
-	bootloaderBlock = 2
+	bootloaderBlock = 0x2
 	// osBlock defines the location of the first block of the TrustedOS on MMC.
-	osBlock = 20480
-	// appletBlock defines the location of the first block of the TrustedAoolet on MMC.
-	appletBlock = 2097152
+	osBlock = 0x5000
+	// appletBlock defines the location of the first block of the TrustedApplet on MMC.
+	appletBlock = 0x200000
 )
 
 var (
