@@ -204,7 +204,7 @@ func waitAndProvision(ctx context.Context, fw *firmware) error {
 
 	p, dev, err := waitForU2FDevice(ctx)
 	if err != nil {
-		return fmt.Errorf("failed to fins armored witness device: %v", err)
+		return fmt.Errorf("failed to find armored witness device: %v", err)
 	}
 	defer dev.Close()
 
