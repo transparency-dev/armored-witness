@@ -26,6 +26,7 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"os/user"
 	"path/filepath"
 	"strings"
 	"time"
@@ -56,12 +57,23 @@ var (
 	trustedOSPath     = flag.String("trusted_os", "../armored-witness-os/bin/trusted_os.elf", "Location of the trusted OS ELF file.")
 
 	blockDeviceGlob = flag.String("blockdevs", "/dev/sd*", "Glob for plausible block devices where the armored witness could appear")
+
+	runAnyway = flag.Bool("run_anyway", false, "Let the user override bailing on any potential problems we've detected.")
 )
 
 func main() {
 	klog.InitFlags(nil)
 	flag.Parse()
 	ctx := context.Background()
+
+	if u, err := user.Current(); err != nil {
+		klog.Exitf("Failed to determine who I'm running as: %v", err)
+	} else if u.Uid != "0" {
+		klog.Warningf("⚠️ This tool probably needs to be run as root (e.g. via sudo), it's running as %q (UID %q); re-run with the --run_anyway flag if you know better.", u.Username, u.Uid)
+		if !*runAnyway {
+			klog.Exit("Bailing.")
+		}
+	}
 
 	fw, err := fetchLatestArtefacts()
 	if err != nil {
