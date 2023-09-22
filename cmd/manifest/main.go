@@ -37,6 +37,8 @@ func main() {
 		"Path of the firmware ELF file. ")
 	tamagoVersion := flag.String("tamago_version", "",
 		"The version of the Tamago (https://github.com/usbarmory/tamago) used to compile the Trusted Applet.")
+	outputFile := flag.String("output_file", "",
+		"The file to write the manifest to. If this is not set, then only print the manifest to stdout.")
 
 	flag.Parse()
 
@@ -72,4 +74,12 @@ func main() {
 	}
 
 	fmt.Println(string(b))
+
+	if *outputFile == "" {
+		return
+	}
+	err = os.WriteFile(*outputFile, b, 0664)
+	if err != nil {
+		log.Fatal(err)
+	}
 }
