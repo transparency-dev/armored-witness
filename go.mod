@@ -13,6 +13,7 @@ require (
 	github.com/transparency-dev/armored-witness-boot v0.0.0-20230829113042-42b20b0330ff
 	github.com/transparency-dev/armored-witness-common v0.0.0-20230925155235-8cf0518467f7
 	github.com/transparency-dev/armored-witness-os v0.0.0-20230829111838-c85319fa2674
+	github.com/transparency-dev/serverless-log v0.0.0-20230922115421-a56a93b5681e
 	github.com/usbarmory/armory-boot v0.0.0-20230808204644-0ff24f2da486
 	github.com/usbarmory/hid v0.0.0-20210318233634-85ced88a1ffe
 	golang.org/x/exp v0.0.0-20230905200255-921286631fa9
@@ -37,6 +38,8 @@ require (
 	github.com/googleapis/gax-go/v2 v2.12.0 // indirect
 	github.com/gsora/fidati v0.0.0-20220824075547-eeb0a5f7d6c3 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
+	github.com/transparency-dev/formats v0.0.0-20230920083814-0f75b1d4e813 // indirect
+	github.com/transparency-dev/merkle v0.0.2 // indirect
 	github.com/usbarmory/tamago v0.0.0-20230814171810-6cd63c1accf5 // indirect
 	go.opencensus.io v0.24.0 // indirect
 	golang.org/x/crypto v0.14.0 // indirect

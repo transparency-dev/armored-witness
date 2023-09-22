@@ -23,8 +23,10 @@ import (
 	"crypto/rsa"
 	"crypto/sha256"
 	"encoding/gob"
+	"errors"
 	"flag"
 	"fmt"
+	"net/url"
 	"os"
 	"os/user"
 	"path/filepath"
@@ -36,6 +38,9 @@ import (
 	"k8s.io/klog/v2"
 
 	"github.com/transparency-dev/armored-witness-boot/config"
+	"github.com/transparency-dev/armored-witness-common/release/firmware/ftlog"
+	"github.com/transparency-dev/armored-witness-common/release/firmware/update"
+	"golang.org/x/mod/sumdb/note"
 )
 
 const (
@@ -56,6 +61,10 @@ var (
 	trustedAppletPath = flag.String("trusted_applet", "../armored-witness-applet/bin/trusted_applet.elf", "Location of the trusted applet ELF file.")
 	trustedOSPath     = flag.String("trusted_os", "../armored-witness-os/bin/trusted_os.elf", "Location of the trusted OS ELF file.")
 
+	firmwareLogURL      = flag.String("firmware_log_url", "", "URL of the firmware transparency log to scan for firmware artefacts.")
+	firmwareLogOrigin   = flag.String("firmware_log_origin", "", "Origin string for the firmware transparency log.")
+	firmwareLogVerifier = flag.String("firmware_log_verifier", "", "Checkpoint verifier key for the firmware transparency log.")
+
 	blockDeviceGlob = flag.String("blockdevs", "/dev/sd*", "Glob for plausible block devices where the armored witness could appear")
 
 	runAnyway = flag.Bool("run_anyway", false, "Let the user override bailing on any potential problems we've detected.")
@@ -75,7 +84,7 @@ func main() {
 		}
 	}
 
-	fw, err := fetchLatestArtefacts()
+	fw, err := fetchLatestArtefacts(ctx)
 	if err != nil {
 		klog.Exitf("Failed to fetch latest firmware artefacts: %v", err)
 	}
@@ -109,7 +118,55 @@ type firmware struct {
 	// TODO: add proof bundles, etc.
 }
 
-func fetchLatestArtefacts() (*firmware, error) {
+func fetchLatestArtefacts(ctx context.Context) (*firmware, error) {
+	logBaseURL, err := url.Parse(*firmwareLogURL)
+	if err != nil {
+		return nil, fmt.Errorf("firmware log URL invalid: %v", err)
+	}
+
+	logVerifier, err := note.NewVerifier(*firmwareLogVerifier)
+	if err != nil {
+		return nil, fmt.Errorf("invalid firmware log verifier: %v", err)
+	}
+	binFetcher := func(_ context.Context, r ftlog.FirmwareRelease) ([]byte, error) {
+		klog.Infof("Asked to get bin for %v", r)
+		return nil, errors.New("not implemented")
+	}
+
+	updateFetcher, err := update.NewFetcher(ctx,
+		update.FetcherOpts{
+			LogFetcher:    newLogFetcher(logBaseURL),
+			LogOrigin:     *firmwareLogOrigin,
+			LogVerifier:   logVerifier,
+			BinaryFetcher: binFetcher,
+		})
+	if err != nil {
+		return nil, fmt.Errorf("NewFetcher: %v", err)
+	}
+
+	if err := updateFetcher.Scan(ctx); err != nil {
+		return nil, fmt.Errorf("Scan: %v", err)
+	}
+
+	latestOsVer, latestAppletVer, err := updateFetcher.GetLatestVersions(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("GetLatestVersions: %v", err)
+	}
+
+	klog.Infof("Found latest versions: OS %v, Applet %v", latestOsVer, latestAppletVer)
+
+	osMeta, err := updateFetcher.GetOS(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("GetOS: %v", err)
+	}
+	klog.Infof("OS bundle:\n%v", osMeta)
+
+	appletMeta, err := updateFetcher.GetApplet(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("GetOS: %v", err)
+	}
+	klog.Infof("Applet bundle:\n%v", appletMeta)
+
 	// TODO: Use the armored witness transparency logs as the source of firmware images.
 	// For now, we'll just expect that repos are checked-out in adjacent directories,
 	// and images have been built there.
@@ -119,7 +176,6 @@ func fetchLatestArtefacts() (*firmware, error) {
 		TrustedAppletBlock: appletBlock,
 	}
 
-	var err error
 	if fw.Recovery, err = os.ReadFile(*recoveryImagePath); err != nil {
 		return nil, fmt.Errorf("failed to read recovery image from %q: %v", *recoveryImagePath, err)
 	}
