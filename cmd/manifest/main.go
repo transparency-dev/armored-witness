@@ -78,8 +78,7 @@ func main() {
 	if *outputFile == "" {
 		return
 	}
-	err = os.WriteFile(*outputFile, b, 0664)
-	if err != nil {
+	if err := os.WriteFile(*outputFile, b, 0664); err != nil {
 		log.Fatal(err)
 	}
 }
