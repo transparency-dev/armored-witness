@@ -15,11 +15,13 @@ require (
 )
 
 require (
+	github.com/coreos/go-semver v0.3.1 // indirect
 	github.com/dsoprea/go-ext4 v0.0.0-20190528173430-c13b09fc0ff8 // indirect
 	github.com/dsoprea/go-logging v0.0.0-20200710184922-b02d349568dd // indirect
 	github.com/go-errors/errors v1.4.2 // indirect
 	github.com/go-logr/logr v1.2.0 // indirect
 	github.com/gsora/fidati v0.0.0-20220824075547-eeb0a5f7d6c3 // indirect
+	github.com/transparency-dev/armored-witness-common v0.0.0-20230920132520-7e9169165fc4 // indirect
 	github.com/usbarmory/tamago v0.0.0-20230814171810-6cd63c1accf5 // indirect
 	golang.org/x/crypto v0.12.0 // indirect
 	golang.org/x/net v0.10.0 // indirect
