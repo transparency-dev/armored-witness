@@ -26,7 +26,14 @@ import (
 
 	"github.com/coreos/go-semver/semver"
 	"github.com/transparency-dev/armored-witness-common/release/firmware/ftlog"
+	"golang.org/x/exp/maps"
 )
+
+// knownFirmwareTypes is the set of possible values for the firmware_type flag.
+var knownFirmwareTypes = map[string]struct{}{
+	ftlog.ComponentApplet: {},
+	ftlog.ComponentOS:     {},
+}
 
 func main() {
 	gitTag := flag.String("git_tag", "",
@@ -39,6 +46,7 @@ func main() {
 		"The version of the Tamago (https://github.com/usbarmory/tamago) used to compile the Trusted Applet.")
 	outputFile := flag.String("output_file", "",
 		"The file to write the manifest to. If this is not set, then only print the manifest to stdout.")
+	firmwareType := flag.String("firmware_type", "", fmt.Sprintf("One of %v ", maps.Keys(knownFirmwareTypes)))
 
 	flag.Parse()
 
@@ -54,6 +62,9 @@ func main() {
 	if *tamagoVersion == "" {
 		log.Fatal("tamago_version is required.")
 	}
+	if _, ok := knownFirmwareTypes[*firmwareType]; !ok {
+		log.Fatalf("firmware_type must be one of %v", maps.Keys(knownFirmwareTypes))
+	}
 
 	firmwareBytes, err := os.ReadFile(*firmwareFile)
 	if err != nil {
@@ -62,7 +73,7 @@ func main() {
 	digestBytes := sha256.Sum256(firmwareBytes)
 
 	r := ftlog.FirmwareRelease{
-		Component:            ftlog.ComponentApplet,
+		Component:            *firmwareType,
 		GitTagName:           *semver.New(*gitTag),
 		GitCommitFingerprint: *gitCommitFingerprint,
 		FirmwareDigestSha256: digestBytes[:],
