@@ -8,7 +8,7 @@ require (
 	github.com/flynn/u2f v0.0.0-20180613185708-15554eb68e5d
 	github.com/fsnotify/fsnotify v1.6.0
 	github.com/transparency-dev/armored-witness-boot v0.0.0-20230829113042-42b20b0330ff
-	github.com/transparency-dev/armored-witness-common v0.0.0-20230920132520-7e9169165fc4
+	github.com/transparency-dev/armored-witness-common v0.0.0-20230925155235-8cf0518467f7
 	github.com/transparency-dev/armored-witness-os v0.0.0-20230829111838-c85319fa2674
 	github.com/transparency-dev/serverless-log v0.0.0-20230922115421-a56a93b5681e
 	github.com/usbarmory/armory-boot v0.0.0-20230808204644-0ff24f2da486
