@@ -38,6 +38,9 @@ import (
 )
 
 type signer struct {
+	// ctx must be stored because signer is used as an implementation of the
+	// note.Signer interface, which does not allow for a context in the Sign
+	// method. However, the KMS AsymmetricSign API requires a context.
 	ctx     context.Context
 	client  *kms.KeyManagementClient
 	keyHash uint32
@@ -46,7 +49,7 @@ type signer struct {
 
 // google.cloud.kms.v1.CryptoKeyVersion.name
 // https://cloud.google.com/php/docs/reference/cloud-kms/latest/V1.CryptoKeyVersion
-var kmsKeyResourceNameFormat = "projects/%s/locations/%s/keyRings/%s/cryptoKeys/%s/cryptoKeyVersions/%d"
+const kmsKeyResourceNameFormat = "projects/%s/locations/%s/keyRings/%s/cryptoKeys/%s/cryptoKeyVersions/%d"
 
 func newSigner(ctx context.Context, c *kms.KeyManagementClient, keyName string) (*signer, error) {
 	s := &signer{}
@@ -64,12 +67,9 @@ func newSigner(ctx context.Context, c *kms.KeyManagementClient, keyName string) 
 		return nil, err
 	}
 	decoded, _ := pem.Decode([]byte(resp.Pem))
-
-	// Convert pem into first 4 bytes of SHA256 hash.
-	h := sha256.New()
-	h.Write(decoded.Bytes)
-	firstFourBytes := h.Sum(nil)[:5]
-	s.keyHash = binary.BigEndian.Uint32(firstFourBytes)
+	// Convert pem into first 4 bytes of SHA256 checksum.
+	checksum := sha256.Sum256(decoded.Bytes)
+	s.keyHash = binary.BigEndian.Uint32(checksum[:])
 
 	return s, nil
 }
