@@ -31,8 +31,10 @@ import (
 
 // knownFirmwareTypes is the set of possible values for the firmware_type flag.
 var knownFirmwareTypes = map[string]struct{}{
-	ftlog.ComponentApplet: {},
-	ftlog.ComponentOS:     {},
+	ftlog.ComponentApplet:   {},
+	ftlog.ComponentBoot:     {},
+	ftlog.ComponentOS:       {},
+	ftlog.ComponentRecovery: {},
 }
 
 func main() {
