@@ -58,7 +58,7 @@ func init() {
 	createCmd.Flags().String("output_file", "", "The file to write the manifest to. If this is not set, then only print the manifest to stdout.")
 	createCmd.Flags().String("firmware_type", "", fmt.Sprintf("One of %v ", maps.Keys(knownFirmwareTypes)))
 	createCmd.Flags().Bool("raw", false, "If set, the command only emits the raw manifest JSON, it will not sign and encapsulate into a note")
-	createCmd.Flags().String("private_key", "", "Note-formatted signer string, used to sign the manifest")
+	createCmd.Flags().String("private_key_file", "", "The file containing a Note-formatted signer string, used to sign the manifest")
 }
 
 func create(cmd *cobra.Command, args []string) {
@@ -71,10 +71,6 @@ func create(cmd *cobra.Command, args []string) {
 		log.Fatalf("firmware_type must be one of %v", maps.Keys(knownFirmwareTypes))
 	}
 	raw, err := cmd.Flags().GetBool("raw")
-	if err != nil {
-		log.Fatal(err)
-	}
-	_, err = cmd.Flags().GetString("private_key")
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -108,8 +104,12 @@ func create(cmd *cobra.Command, args []string) {
 	b = append(b, byte('\n'))
 
 	if !raw {
-		signer := requireFlagString(cmd.Flags(), "private_key")
-		b, err = sign(signer, b)
+		keyFile := requireFlagString(cmd.Flags(), "private_key_file")
+		signer, err := os.ReadFile(keyFile)
+		if err != nil {
+			log.Fatalf("Failed to read private key file: %v", err)
+		}
+		b, err = sign(string(signer), b)
 		if err != nil {
 			log.Fatalf("Failed to sign manifest: %v", err)
 		}

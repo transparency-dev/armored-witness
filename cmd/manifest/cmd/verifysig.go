@@ -36,17 +36,21 @@ func init() {
 	rootCmd.AddCommand(verifysigCmd)
 
 	verifysigCmd.Flags().String("input_file", "", "The file to read the signed manifest from. If this is not set, then read the manifest from stdin.")
-	verifysigCmd.Flags().String("public_key", "", "Note-formatted verifier string, used to verify the signature on the manifest")
+	verifysigCmd.Flags().String("public_key_file", "", "Note-formatted verifier string, used to verify the signature on the manifest")
 }
 
 func verify(cmd *cobra.Command, args []string) {
-	pubK := requireFlagString(cmd.Flags(), "public_key")
-	verifier, err := note.NewVerifier(pubK)
+	pubKFile := requireFlagString(cmd.Flags(), "public_key_file")
+	pubK, err := os.ReadFile(pubKFile)
+	if err != nil {
+		log.Fatalf("Failed to read public key file: %v", err)
+	}
+	verifier, err := note.NewVerifier(string(pubK))
 	if err != nil {
 		log.Fatalf("Invalid public key: %v", err)
 	}
 
-	msg := []byte{}
+	var msg []byte
 	input, _ := cmd.Flags().GetString("input_file")
 	if input == "" {
 		msg, err = io.ReadAll(os.Stdin)
