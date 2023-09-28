@@ -21,7 +21,6 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"strings"
 
 	"github.com/coreos/go-semver/semver"
 	"github.com/spf13/cobra"
@@ -105,6 +104,8 @@ func create(cmd *cobra.Command, args []string) {
 	if err != nil {
 		log.Fatal(err)
 	}
+	// Note requires the msg ends in a newline.
+	b = append(b, byte('\n'))
 
 	if !raw {
 		signer := requireFlagString(cmd.Flags(), "private_key")
@@ -114,7 +115,7 @@ func create(cmd *cobra.Command, args []string) {
 		}
 	}
 
-	fmt.Println(string(b))
+	fmt.Print(string(b))
 
 	outputFile, _ := cmd.Flags().GetString("output_file")
 	if outputFile == "" {
@@ -142,9 +143,5 @@ func sign(sec string, b []byte) ([]byte, error) {
 		return nil, err
 	}
 	t := string(b)
-	// Note requires that the text ends in a final newline.
-	if !strings.HasSuffix(t, "\n") {
-		t += "\n"
-	}
 	return note.Sign(&note.Note{Text: t}, signer)
 }
