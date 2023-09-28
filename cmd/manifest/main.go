@@ -17,81 +17,9 @@
 package main
 
 import (
-	"crypto/sha256"
-	"encoding/json"
-	"flag"
-	"fmt"
-	"log"
-	"os"
-
-	"github.com/coreos/go-semver/semver"
-	"github.com/transparency-dev/armored-witness-common/release/firmware/ftlog"
-	"golang.org/x/exp/maps"
+	"github.com/transparency-dev/armored-witness/cmd/manifest/cmd"
 )
 
-// knownFirmwareTypes is the set of possible values for the firmware_type flag.
-var knownFirmwareTypes = map[string]struct{}{
-	ftlog.ComponentApplet:   {},
-	ftlog.ComponentBoot:     {},
-	ftlog.ComponentOS:       {},
-	ftlog.ComponentRecovery: {},
-}
-
 func main() {
-	gitTag := flag.String("git_tag", "",
-		"The semantic version of the Trusted Applet release.")
-	gitCommitFingerprint := flag.String("git_commit_fingerprint", "",
-		"Hex-encoded SHA-1 commit hash of the git repository when checked out at the specified git_tag.")
-	firmwareFile := flag.String("firmware_file", "",
-		"Path of the firmware ELF file. ")
-	tamagoVersion := flag.String("tamago_version", "",
-		"The version of the Tamago (https://github.com/usbarmory/tamago) used to compile the Trusted Applet.")
-	outputFile := flag.String("output_file", "",
-		"The file to write the manifest to. If this is not set, then only print the manifest to stdout.")
-	firmwareType := flag.String("firmware_type", "", fmt.Sprintf("One of %v ", maps.Keys(knownFirmwareTypes)))
-
-	flag.Parse()
-
-	if *gitTag == "" {
-		log.Fatal("git_tag is required.")
-	}
-	if *gitCommitFingerprint == "" {
-		log.Fatal("git_commit_fingerprint is required.")
-	}
-	if *firmwareFile == "" {
-		log.Fatal("firmware_file is required.")
-	}
-	if *tamagoVersion == "" {
-		log.Fatal("tamago_version is required.")
-	}
-	if _, ok := knownFirmwareTypes[*firmwareType]; !ok {
-		log.Fatalf("firmware_type must be one of %v", maps.Keys(knownFirmwareTypes))
-	}
-
-	firmwareBytes, err := os.ReadFile(*firmwareFile)
-	if err != nil {
-		log.Fatalf("Failed to read firmware_file %q: %v", *firmwareFile, err)
-	}
-	digestBytes := sha256.Sum256(firmwareBytes)
-
-	r := ftlog.FirmwareRelease{
-		Component:            *firmwareType,
-		GitTagName:           *semver.New(*gitTag),
-		GitCommitFingerprint: *gitCommitFingerprint,
-		FirmwareDigestSha256: digestBytes[:],
-		TamagoVersion:        *semver.New(*tamagoVersion),
-	}
-	b, err := json.MarshalIndent(r, "", "  ")
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	fmt.Println(string(b))
-
-	if *outputFile == "" {
-		return
-	}
-	if err := os.WriteFile(*outputFile, b, 0664); err != nil {
-		log.Fatal(err)
-	}
+	cmd.Execute()
 }
