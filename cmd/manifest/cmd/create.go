@@ -27,6 +27,7 @@ import (
 	"github.com/spf13/pflag"
 	"github.com/transparency-dev/armored-witness-common/release/firmware/ftlog"
 	"golang.org/x/exp/maps"
+	"golang.org/x/mod/sumdb/note"
 )
 
 // createCmd represents the create command
@@ -56,6 +57,8 @@ func init() {
 	createCmd.Flags().String("tamago_version", "", "The version of the Tamago (https://github.com/usbarmory/tamago) used to compile the Trusted Applet.")
 	createCmd.Flags().String("output_file", "", "The file to write the manifest to. If this is not set, then only print the manifest to stdout.")
 	createCmd.Flags().String("firmware_type", "", fmt.Sprintf("One of %v ", maps.Keys(knownFirmwareTypes)))
+	createCmd.Flags().Bool("raw", false, "If set, the command only emits the raw manifest JSON, it will not sign and encapsulate into a note")
+	createCmd.Flags().String("private_key_file", "", "The file containing a Note-formatted signer string, used to sign the manifest")
 }
 
 func create(cmd *cobra.Command, args []string) {
@@ -66,6 +69,10 @@ func create(cmd *cobra.Command, args []string) {
 	firmwareType := requireFlagString(cmd.Flags(), "firmware_type")
 	if _, ok := knownFirmwareTypes[firmwareType]; !ok {
 		log.Fatalf("firmware_type must be one of %v", maps.Keys(knownFirmwareTypes))
+	}
+	raw, err := cmd.Flags().GetBool("raw")
+	if err != nil {
+		log.Fatal(err)
 	}
 
 	firmwareBytes, err := os.ReadFile(firmwareFile)
@@ -93,8 +100,22 @@ func create(cmd *cobra.Command, args []string) {
 	if err != nil {
 		log.Fatal(err)
 	}
+	// Note requires the msg ends in a newline.
+	b = append(b, byte('\n'))
 
-	fmt.Println(string(b))
+	if !raw {
+		keyFile := requireFlagString(cmd.Flags(), "private_key_file")
+		signer, err := os.ReadFile(keyFile)
+		if err != nil {
+			log.Fatalf("Failed to read private key file: %v", err)
+		}
+		b, err = sign(string(signer), b)
+		if err != nil {
+			log.Fatalf("Failed to sign manifest: %v", err)
+		}
+	}
+
+	fmt.Print(string(b))
 
 	outputFile, _ := cmd.Flags().GetString("output_file")
 	if outputFile == "" {
@@ -114,4 +135,13 @@ func requireFlagString(f *pflag.FlagSet, name string) string {
 		log.Fatalf("Flag %v must be speficied", name)
 	}
 	return v
+}
+
+func sign(sec string, b []byte) ([]byte, error) {
+	signer, err := note.NewSigner(sec)
+	if err != nil {
+		return nil, err
+	}
+	t := string(b)
+	return note.Sign(&note.Note{Text: t}, signer)
 }
