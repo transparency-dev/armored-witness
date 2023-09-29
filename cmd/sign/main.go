@@ -67,7 +67,7 @@ func newSigner(ctx context.Context, c *kms.KeyManagementClient, keyName string) 
 		return nil, err
 	}
 	decoded, _ := pem.Decode([]byte(resp.Pem))
-	// Convert pem into first 4 bytes of SHA256 checksum.
+	// Calculate key hash from the checksum of the public key DER.
 	checksum := sha256.Sum256(decoded.Bytes)
 	s.keyHash = binary.BigEndian.Uint32(checksum[:])
 
