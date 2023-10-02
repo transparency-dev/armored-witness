@@ -51,6 +51,10 @@ type signer struct {
 // https://cloud.google.com/php/docs/reference/cloud-kms/latest/V1.CryptoKeyVersion
 const kmsKeyResourceNameFormat = "projects/%s/locations/%s/keyRings/%s/cryptoKeys/%s/cryptoKeyVersions/%d"
 
+// newSigner creates a signer which uses keys in GCP KMS. The signing algorithm
+// is expected to be
+// [ECDSA](https://cloud.google.com/certificate-authority-service/docs/choosing-key-algorithm#ecdsa).
+// To open a note signed by this signer, the verifier must also be ECDSA.
 func newSigner(ctx context.Context, c *kms.KeyManagementClient, keyName string) (*signer, error) {
 	s := &signer{}
 
