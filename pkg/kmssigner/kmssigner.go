@@ -11,10 +11,14 @@ import (
 	"cloud.google.com/go/kms/apiv1/kmspb"
 )
 
-// KeyVersionNameFormat is the GCP resource identifier for a key version.
-// google.cloud.kms.v1.CryptoKeyVersion.name
-// https://cloud.google.com/php/docs/reference/cloud-kms/latest/V1.CryptoKeyVersion
-const KeyVersionNameFormat = "projects/%s/locations/%s/keyRings/%s/cryptoKeys/%s/cryptoKeyVersions/%d"
+const (
+	// KeyVersionNameFormat is the GCP resource identifier for a key version.
+	// google.cloud.kms.v1.CryptoKeyVersion.name
+	// https://cloud.google.com/php/docs/reference/cloud-kms/latest/V1.CryptoKeyVersion
+	KeyVersionNameFormat = "projects/%s/locations/%s/keyRings/%s/cryptoKeys/%s/cryptoKeyVersions/%d"
+	// From https://cs.opensource.google/go/x/mod/+/refs/tags/v0.12.0:sumdb/note/note.go;l=232;drc=baa5c2d058db25484c20d76985ba394e73176132
+	algEd25519 = 1
+)
 
 // Signer is an implementation of a
 // [note signer](https://pkg.go.dev/golang.org/x/mod/sumdb/note#Signer) which
@@ -31,8 +35,8 @@ type Signer struct {
 
 // New creates a signer which uses keys in GCP KMS. The signing algorithm is
 // expected to be
-// [ECDSA](https://cloud.google.com/certificate-authority-service/docs/choosing-key-algorithm#ecdsa).
-// To open a note signed by this Signer, the verifier must also be ECDSA.
+// [Ed25519](https://pkg.go.dev/golang.org/x/mod/sumdb/note#hdr-Generating_Keys).
+// To open a note signed by this Signer, the verifier must also be Ed25519.
 func New(ctx context.Context, c *kms.KeyManagementClient, keyName string) (*Signer, error) {
 	s := &Signer{}
 
@@ -48,11 +52,16 @@ func New(ctx context.Context, c *kms.KeyManagementClient, keyName string) (*Sign
 	if err != nil {
 		return nil, err
 	}
-	decoded, _ := pem.Decode([]byte(resp.Pem))
+	publicKey, _ := pem.Decode([]byte(resp.Pem))
 
-	// Calculate key hash from the checksum of the public key DER.
-	checksum := sha256.Sum256(decoded.Bytes)
-	s.keyHash = binary.BigEndian.Uint32(checksum[:])
+	// Calculate key hash the key name and public key.
+	h := sha256.New()
+	h.Write([]byte(s.keyName))
+	h.Write([]byte("\n"))
+	prefixedPublicKey := append([]byte{algEd25519}, publicKey.Bytes...)
+	h.Write(prefixedPublicKey)
+	sum := h.Sum(nil)
+	s.keyHash = binary.BigEndian.Uint32(sum)
 
 	return s, nil
 }
