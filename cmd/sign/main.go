@@ -23,85 +23,16 @@ package main
 
 import (
 	"context"
-	"crypto/sha256"
-	"encoding/binary"
-	"encoding/pem"
 	"flag"
 	"fmt"
 	"log"
 	"os"
 
+	"github.com/transparency-dev/armored-witness/pkg/kmssigner"
+
 	"cloud.google.com/go/kms/apiv1"
 	"golang.org/x/mod/sumdb/note"
-
-	"cloud.google.com/go/kms/apiv1/kmspb"
 )
-
-type signer struct {
-	// ctx must be stored because signer is used as an implementation of the
-	// note.Signer interface, which does not allow for a context in the Sign
-	// method. However, the KMS AsymmetricSign API requires a context.
-	ctx     context.Context
-	client  *kms.KeyManagementClient
-	keyHash uint32
-	keyName string
-}
-
-// google.cloud.kms.v1.CryptoKeyVersion.name
-// https://cloud.google.com/php/docs/reference/cloud-kms/latest/V1.CryptoKeyVersion
-const kmsKeyResourceNameFormat = "projects/%s/locations/%s/keyRings/%s/cryptoKeys/%s/cryptoKeyVersions/%d"
-
-// newSigner creates a signer which uses keys in GCP KMS. The signing algorithm
-// is expected to be
-// [ECDSA](https://cloud.google.com/certificate-authority-service/docs/choosing-key-algorithm#ecdsa).
-// To open a note signed by this signer, the verifier must also be ECDSA.
-func newSigner(ctx context.Context, c *kms.KeyManagementClient, keyName string) (*signer, error) {
-	s := &signer{}
-
-	s.client = c
-	s.ctx = ctx
-	s.keyName = keyName
-
-	// Set keyHash.
-	req := &kmspb.GetPublicKeyRequest{
-		Name: s.keyName,
-	}
-	resp, err := c.GetPublicKey(ctx, req)
-	if err != nil {
-		return nil, err
-	}
-	decoded, _ := pem.Decode([]byte(resp.Pem))
-
-	// Calculate key hash from the checksum of the public key DER.
-	checksum := sha256.Sum256(decoded.Bytes)
-	s.keyHash = binary.BigEndian.Uint32(checksum[:])
-
-	return s, nil
-}
-
-func (s *signer) Name() string {
-	return s.keyName
-}
-
-// KeyHash returns the first 4 bytes of the SHA256 hash of the signer's public
-// key. It is used as a hint in identifying the correct key to verify with.
-func (s *signer) KeyHash() uint32 {
-	return s.keyHash
-}
-
-// Sign returns a signature for the given message.
-func (s *signer) Sign(msg []byte) ([]byte, error) {
-	req := &kmspb.AsymmetricSignRequest{
-		Name: s.keyName,
-		Data: msg,
-	}
-	resp, err := s.client.AsymmetricSign(s.ctx, req)
-	if err != nil {
-		return nil, err
-	}
-
-	return resp.GetSignature(), nil
-}
 
 func main() {
 	gcpProject := flag.String("project_name", "",
@@ -150,9 +81,9 @@ func main() {
 	}
 	defer kmClient.Close()
 
-	kmsKeyResourceName := fmt.Sprintf(kmsKeyResourceNameFormat, *gcpProject, *keyLocation,
+	kmsKeyVersionResourceName := fmt.Sprintf(kmssigner.KeyVersionNameFormat, *gcpProject, *keyLocation,
 		*keyRing, *keyName, *keyVersion)
-	signer, err := newSigner(ctx, kmClient, kmsKeyResourceName)
+	signer, err := kmssigner.New(ctx, kmClient, kmsKeyVersionResourceName)
 	if err != nil {
 		log.Fatalf("failed to create signer: %v", err)
 	}
