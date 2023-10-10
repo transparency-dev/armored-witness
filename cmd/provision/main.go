@@ -23,7 +23,6 @@ import (
 	"crypto/rsa"
 	"crypto/sha256"
 	"encoding/gob"
-	"errors"
 	"flag"
 	"fmt"
 	"net/url"
@@ -64,6 +63,13 @@ var (
 	firmwareLogURL      = flag.String("firmware_log_url", "", "URL of the firmware transparency log to scan for firmware artefacts.")
 	firmwareLogOrigin   = flag.String("firmware_log_origin", "", "Origin string for the firmware transparency log.")
 	firmwareLogVerifier = flag.String("firmware_log_verifier", "", "Checkpoint verifier key for the firmware transparency log.")
+	binariesURL         = flag.String("binaries_url", "", "Base URL for fetching firmware artefacts referenced by FT log.")
+
+	appletVerifier   = flag.String("applet_verifier", "", "Verifier key for the applet manifest.")
+	bootVerifier     = flag.String("boot_verifier", "", "Verifier key for the boot manifest.")
+	osVerifier1      = flag.String("os_verifier_1", "", "Verifier key 1 for the os manifest.")
+	osVerifier2      = flag.String("os_verifier_2", "", "Verifier key 2 for the os manifest.")
+	recoveryVerifier = flag.String("recovery_verifier", "", "Verifier key for the recovery manifest.")
 
 	blockDeviceGlob = flag.String("blockdevs", "/dev/sd*", "Glob for plausible block devices where the armored witness could appear")
 
@@ -128,17 +134,51 @@ func fetchLatestArtefacts(ctx context.Context) (*firmware, error) {
 	if err != nil {
 		return nil, fmt.Errorf("invalid firmware log verifier: %v", err)
 	}
-	binFetcher := func(_ context.Context, r ftlog.FirmwareRelease) ([]byte, error) {
+	appletVerifier, err := note.NewVerifier(*appletVerifier)
+	if err != nil {
+		return nil, fmt.Errorf("invalid applet verifier: %v", err)
+	}
+	bootVerifier, err := note.NewVerifier(*bootVerifier)
+	if err != nil {
+		return nil, fmt.Errorf("invalid boot verifier: %v", err)
+	}
+	osVerifier1, err := note.NewVerifier(*osVerifier1)
+	if err != nil {
+		return nil, fmt.Errorf("invalid os verifier 1: %v", err)
+	}
+	osVerifier2, err := note.NewVerifier(*osVerifier2)
+	if err != nil {
+		return nil, fmt.Errorf("invalid os verifier 2: %v", err)
+	}
+	recoveryVerifier, err := note.NewVerifier(*recoveryVerifier)
+	if err != nil {
+		return nil, fmt.Errorf("invalid recovery verifier: %v", err)
+	}
+
+	binBaseURL, err := url.Parse(*binariesURL)
+	if err != nil {
+		return nil, fmt.Errorf("binaries URL invalid: %v", err)
+	}
+	bf := newLogFetcher(binBaseURL)
+	binFetcher := func(ctx context.Context, r ftlog.FirmwareRelease) ([]byte, error) {
 		klog.Infof("Asked to get bin for %v", r)
-		return nil, errors.New("not implemented")
+		p, err := update.BinaryPath(r)
+		if err != nil {
+			return nil, fmt.Errorf("BinaryPath: %v", err)
+		}
+		return bf(ctx, p)
 	}
 
 	updateFetcher, err := update.NewFetcher(ctx,
 		update.FetcherOpts{
-			LogFetcher:    newLogFetcher(logBaseURL),
-			LogOrigin:     *firmwareLogOrigin,
-			LogVerifier:   logVerifier,
-			BinaryFetcher: binFetcher,
+			LogFetcher:       newLogFetcher(logBaseURL),
+			LogOrigin:        *firmwareLogOrigin,
+			LogVerifier:      logVerifier,
+			BinaryFetcher:    binFetcher,
+			AppletVerifier:   appletVerifier,
+			BootVerifier:     bootVerifier,
+			OSVerifiers:      [2]note.Verifier{osVerifier1, osVerifier2},
+			RecoveryVerifier: recoveryVerifier,
 		})
 	if err != nil {
 		return nil, fmt.Errorf("NewFetcher: %v", err)
@@ -159,13 +199,13 @@ func fetchLatestArtefacts(ctx context.Context) (*firmware, error) {
 	if err != nil {
 		return nil, fmt.Errorf("GetOS: %v", err)
 	}
-	klog.Infof("OS bundle:\n%v", osMeta)
+	klog.Infof("OS bundle @ %d", osMeta.Index)
 
 	appletMeta, err := updateFetcher.GetApplet(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("GetOS: %v", err)
 	}
-	klog.Infof("Applet bundle:\n%v", appletMeta)
+	klog.Infof("Applet bundle @ %d", appletMeta.Index)
 
 	// TODO: Use the armored witness transparency logs as the source of firmware images.
 	// For now, we'll just expect that repos are checked-out in adjacent directories,
