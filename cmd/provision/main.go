@@ -61,8 +61,8 @@ var (
 
 	appletVerifier   = flag.String("applet_verifier", "", "Verifier key for the applet manifest.")
 	bootVerifier     = flag.String("boot_verifier", "", "Verifier key for the boot manifest.")
-	osVerifier1      = flag.String("os_verifier_1", "", "Verifier key 1 for the os manifest.")
-	osVerifier2      = flag.String("os_verifier_2", "", "Verifier key 2 for the os manifest.")
+	osVerifier1      = flag.String("os_verifier_1", "", "Verifier key 1 for the OS manifest.")
+	osVerifier2      = flag.String("os_verifier_2", "", "Verifier key 2 for the OS manifest.")
 	recoveryVerifier = flag.String("recovery_verifier", "", "Verifier key for the recovery manifest.")
 
 	blockDeviceGlob = flag.String("blockdevs", "/dev/sd*", "Glob for plausible block devices where the armored witness could appear")
@@ -135,11 +135,11 @@ func fetchLatestArtefacts(ctx context.Context) (*firmwares, error) {
 	}
 	osVerifier1, err := note.NewVerifier(*osVerifier1)
 	if err != nil {
-		return nil, fmt.Errorf("invalid os verifier 1: %v", err)
+		return nil, fmt.Errorf("invalid OS verifier 1: %v", err)
 	}
 	osVerifier2, err := note.NewVerifier(*osVerifier2)
 	if err != nil {
-		return nil, fmt.Errorf("invalid os verifier 2: %v", err)
+		return nil, fmt.Errorf("invalid OS verifier 2: %v", err)
 	}
 	recoveryVerifier, err := note.NewVerifier(*recoveryVerifier)
 	if err != nil {
@@ -179,12 +179,12 @@ func fetchLatestArtefacts(ctx context.Context) (*firmwares, error) {
 		return nil, fmt.Errorf("Scan: %v", err)
 	}
 
-	latestOsVer, latestAppletVer, err := updateFetcher.GetLatestVersions(ctx)
+	latestOSVer, latestAppletVer, err := updateFetcher.GetLatestVersions(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("GetLatestVersions: %v", err)
 	}
 
-	klog.Infof("Found latest versions: OS %v, Applet %v", latestOsVer, latestAppletVer)
+	klog.Infof("Found latest versions: OS %v, Applet %v", latestOSVer, latestAppletVer)
 
 	fw := &firmwares{
 		BootloaderBlock:    bootloaderBlock,

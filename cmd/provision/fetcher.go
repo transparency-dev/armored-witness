@@ -60,10 +60,10 @@ func readHTTP(ctx context.Context, u *url.URL) ([]byte, error) {
 		return nil, err
 	}
 	switch resp.StatusCode {
-	case 404:
+	case http.StatusNotFound:
 		klog.Infof("Not found: %q", u.String())
 		return nil, os.ErrNotExist
-	case 200:
+	case http.StatusOK:
 		break
 	default:
 		return nil, fmt.Errorf("unexpected http status %q", resp.Status)
