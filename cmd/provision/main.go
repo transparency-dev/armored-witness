@@ -157,11 +157,11 @@ func fetchLatestArtefacts(ctx context.Context) (*firmwares, error) {
 	}
 	bf := newLogFetcher(binBaseURL)
 	binFetcher := func(ctx context.Context, r ftlog.FirmwareRelease) ([]byte, error) {
-		klog.Infof("Asked to get bin for %v", r)
 		p, err := update.BinaryPath(r)
 		if err != nil {
 			return nil, fmt.Errorf("BinaryPath: %v", err)
 		}
+		klog.Infof("Fetching %v bin from %q", r.Component, p)
 		return bf(ctx, p)
 	}
 
@@ -217,12 +217,7 @@ func fetchLatestArtefacts(ctx context.Context) (*firmwares, error) {
 	}
 	klog.Infof("Found Recovery bundle @ %d", fw.Recovery.Index)
 
-	klog.Info("Loaded firmware artefacts:")
-	klog.Infof("Recovery (@ index %d):\n%s", fw.Recovery.Index, string(fw.Recovery.Manifest))
-	klog.Infof("Bootloader (@ index %d):\n%s", fw.Bootloader.Index, string(fw.Bootloader.Manifest))
-	klog.Infof("TrustedApplet (@ index %d):\n%s", fw.TrustedApplet.Index, string(fw.TrustedApplet.Manifest))
-	klog.Infof("TrustedOS (@ index %d):\n%s", fw.TrustedOS.Index, string(fw.TrustedOS.Manifest))
-
+	klog.Info("Loaded firmware artefacts.")
 	return fw, nil
 }
 
