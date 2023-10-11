@@ -223,19 +223,11 @@ func fetchLatestArtefacts(ctx context.Context) (*firmwares, error) {
 	klog.Infof("TrustedApplet (@ index %d):\n%s", fw.TrustedApplet.Index, string(fw.TrustedApplet.Manifest))
 	klog.Infof("TrustedOS (@ index %d):\n%s", fw.TrustedOS.Index, string(fw.TrustedOS.Manifest))
 
-	// OS and Applet need prepending with config structures.
-	if fw.TrustedApplet, err = prepareELF(fw.TrustedApplet, appletBlock); err != nil {
-		return nil, fmt.Errorf("failed to prepare TrustedApplet: %v", err)
-	}
-	if fw.TrustedOS, err = prepareELF(fw.TrustedOS, osBlock); err != nil {
-		return nil, fmt.Errorf("failed to prepare TrustedOS: %v", err)
-	}
-
 	return fw, nil
 }
 
 // waitAndProvision waits for a fresh armored witness device to be detected, and then provisions it.
-func waitAndProvision(ctx context.Context, fw *firmware) error {
+func waitAndProvision(ctx context.Context, fw *firmwares) error {
 	klog.Info("Operator, please ensure boot switch is set to USB, and then connect unprovisioned device 🙏")
 	// The device will initially be in HID mode (showing as "RecoveryMode" in the output to lsusb).
 	// So we'll detect it as such:
@@ -258,7 +250,7 @@ func waitAndProvision(ctx context.Context, fw *firmware) error {
 	// Booting the recovery image causes the device re-appear as a USB Mass Storage device.
 	// So we'll wait for that to happen, and figure out which /dev/ entry corresponds to it.
 	bDev, err := waitForBlockDevice(ctx, *blockDeviceGlob, func() error {
-		if err := target.BootIMX(fw.Recovery); err != nil {
+		if err := target.BootIMX(fw.Recovery.Firmware); err != nil {
 			return fmt.Errorf("failed to SDP boot recovery image on %v: %v", target.DeviceInfo.Path, err)
 		}
 		klog.Info("✅ Witness device booting recovering image")
@@ -402,7 +394,7 @@ func waitForBlockDevice(ctx context.Context, glob string, f func() error) (strin
 }
 
 // flashImages writes all the images in fw to the specified block device.
-func flashImages(dev string, fw *firmware) error {
+func flashImages(dev string, fw *firmwares) error {
 	f, err := os.OpenFile(dev, os.O_RDWR, 0o600)
 	if err != nil {
 		return fmt.Errorf("error opening %v: %v", dev, err)
@@ -413,14 +405,24 @@ func flashImages(dev string, fw *firmware) error {
 		}
 	}()
 
+	// OS and Applet need prepending with config structures.
+	osAndConfig, err := prepareELF(fw.TrustedOS, fw.TrustedOSBlock)
+	if err != nil {
+		return fmt.Errorf("failed to prepare TrustedApplet: %v", err)
+	}
+	appletAndConfig, err := prepareELF(fw.TrustedApplet, fw.TrustedAppletBlock)
+	if err != nil {
+		return fmt.Errorf("failed to prepare TrustedOS: %v", err)
+	}
+
 	for _, p := range []struct {
 		name  string
 		img   []byte
 		block int64
 	}{
-		{name: "Bootloader", img: fw.Bootloader, block: fw.BootloaderBlock},
-		{name: "TrustedOS", img: fw.TrustedOS, block: fw.TrustedOSBlock},
-		{name: "TrustedApplet", img: fw.TrustedApplet, block: fw.TrustedAppletBlock},
+		{name: "Bootloader", img: fw.Bootloader.Firmware, block: fw.BootloaderBlock},
+		{name: "TrustedOS", img: osAndConfig, block: fw.TrustedOSBlock},
+		{name: "TrustedApplet", img: appletAndConfig, block: fw.TrustedAppletBlock},
 	} {
 		if err := flashImage(p.img, f, p.block); err != nil {
 			klog.Infof("  ❌ %s", p.name)
