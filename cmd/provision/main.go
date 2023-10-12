@@ -51,6 +51,10 @@ const (
 	osBlock = 0x5000
 	// appletBlock defines the location of the first block of the TrustedApplet on MMC.
 	appletBlock = 0x200000
+	// appletDataBlock defines the location of the applet data storage area.
+	appletDataBlock = 0x400000
+	// appletDataNumBlocks is the number of blocks in the applet data storage area.
+	appletDataNumBlocks = 0x400000
 )
 
 var (
@@ -67,7 +71,8 @@ var (
 
 	blockDeviceGlob = flag.String("blockdevs", "/dev/sd*", "Glob for plausible block devices where the armored witness could appear")
 
-	runAnyway = flag.Bool("run_anyway", false, "Let the user override bailing on any potential problems we've detected.")
+	runAnyway   = flag.Bool("run_anyway", false, "Let the user override bailing on any potential problems we've detected.")
+	wipeWitness = flag.Bool("wipe_witness_state", true, "If true, erase the witness stored data")
 )
 
 func main() {
@@ -263,6 +268,11 @@ func waitAndProvision(ctx context.Context, fw *firmwares) error {
 	}
 	klog.Info("✅ Flashed all images")
 
+	if *wipeWitness {
+		if err := wipeAppletData(bDev); err != nil {
+			return fmt.Errorf("error while wiping applet data: %v", err)
+		}
+	}
 	// TODO: Write proof bundle.
 
 	klog.Info("Operator, please change boot switch to MMC, and then reboot device 🙏")
@@ -458,4 +468,30 @@ func prepareELF(bundle firmware.Bundle, block int64) ([]byte, error) {
 	buf.Write(bundle.Firmware)
 
 	return buf.Bytes(), nil
+}
+
+// wipeAppletData erases MMC blocks allocated to applet data storage.
+func wipeAppletData(dev string) error {
+	f, err := os.OpenFile(dev, os.O_RDWR, 0o600)
+	if err != nil {
+		return fmt.Errorf("error opening %v: %v", dev, err)
+	}
+	defer func() {
+		if err := f.Close(); err != nil {
+			klog.Errorf("Errorf closing %v: %v", dev, err)
+		}
+	}()
+
+	klog.Infof("Wiping data area...")
+	empty := make([]byte, mmcBlockSize)
+	for i, offset := 0, int64(appletDataBlock*mmcBlockSize); i < appletDataNumBlocks; i, offset = i+1, offset+mmcBlockSize {
+		if _, err := f.WriteAt(empty, offset); err != nil {
+			return fmt.Errorf("WriteAt: %v", err)
+		}
+		if i%(appletDataNumBlocks/100) == 0 {
+			klog.Infof("   %3d%", (i*100)/appletDataNumBlocks)
+		}
+	}
+	klog.Info("   100%")
+	return nil
 }
