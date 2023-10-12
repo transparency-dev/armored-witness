@@ -51,6 +51,10 @@ const (
 	osBlock = 0x5000
 	// appletBlock defines the location of the first block of the TrustedApplet on MMC.
 	appletBlock = 0x200000
+	// appletDataBlock defines the location of the applet data storage area.
+	appletDataBlock = 0x400000
+	// appletDataNumBlocks is the number of blocks in the applet data storage area.
+	appletDataNumBlocks = 0x400000
 )
 
 var (
@@ -65,9 +69,10 @@ var (
 	osVerifier2      = flag.String("os_verifier_2", "", "Verifier key 2 for the OS manifest.")
 	recoveryVerifier = flag.String("recovery_verifier", "", "Verifier key for the recovery manifest.")
 
-	blockDeviceGlob = flag.String("blockdevs", "/dev/sd*", "Glob for plausible block devices where the armored witness could appear")
+	blockDeviceGlob = flag.String("blockdevs", "/dev/sd*", "Glob for plausible block devices where the armored witness could appear.")
 
-	runAnyway = flag.Bool("run_anyway", false, "Let the user override bailing on any potential problems we've detected.")
+	runAnyway   = flag.Bool("run_anyway", false, "Let the user override bailing on any potential problems we've detected.")
+	wipeWitness = flag.Bool("wipe_witness_state", false, "If true, erase the witness stored data.")
 )
 
 func main() {
@@ -263,6 +268,11 @@ func waitAndProvision(ctx context.Context, fw *firmwares) error {
 	}
 	klog.Info("✅ Flashed all images")
 
+	if *wipeWitness {
+		if err := wipeAppletData(bDev); err != nil {
+			return fmt.Errorf("error while wiping applet data: %v", err)
+		}
+	}
 	// TODO: Write proof bundle.
 
 	klog.Info("Operator, please change boot switch to MMC, and then reboot device 🙏")
@@ -385,13 +395,13 @@ func waitForBlockDevice(ctx context.Context, glob string, f func() error) (strin
 
 // flashImages writes all the images in fw to the specified block device.
 func flashImages(dev string, fw *firmwares) error {
-	f, err := os.OpenFile(dev, os.O_RDWR, 0o600)
+	f, err := os.OpenFile(dev, os.O_RDWR|os.O_SYNC, 0o600)
 	if err != nil {
 		return fmt.Errorf("error opening %v: %v", dev, err)
 	}
 	defer func() {
 		if err := f.Close(); err != nil {
-			klog.Errorf("Errorf closing %v: %v", dev, err)
+			klog.Errorf("Error closing %v: %v", dev, err)
 		}
 	}()
 
@@ -458,4 +468,41 @@ func prepareELF(bundle firmware.Bundle, block int64) ([]byte, error) {
 	buf.Write(bundle.Firmware)
 
 	return buf.Bytes(), nil
+}
+
+// wipeAppletData erases MMC blocks allocated to applet data storage.
+func wipeAppletData(dev string) error {
+	f, err := os.OpenFile(dev, os.O_RDWR|os.O_SYNC, 0o600)
+	if err != nil {
+		return fmt.Errorf("error opening %v: %v", dev, err)
+	}
+	defer func() {
+		if err := f.Close(); err != nil {
+			klog.Errorf("Errorf closing %v: %v", dev, err)
+		}
+	}()
+
+	klog.Infof("Wiping data area blocks [0x%x, 0x%x)...", appletDataBlock, appletDataBlock+appletDataNumBlocks)
+	chunkBlocks := 2048
+	empty := make([]byte, chunkBlocks*mmcBlockSize)
+	t := time.NewTicker(5 * time.Second)
+	defer t.Stop()
+	for i := 0; i < appletDataNumBlocks; i += chunkBlocks {
+		select {
+		case <-t.C:
+			klog.Infof("   %3d%%", (i*100)/appletDataNumBlocks)
+		default:
+		}
+
+		offset := (int64(appletDataBlock+i) * mmcBlockSize)
+		if appletDataNumBlocks-i < chunkBlocks {
+			chunkBlocks = appletDataNumBlocks - i
+			empty = empty[:chunkBlocks*mmcBlockSize]
+		}
+		if _, err := f.WriteAt(empty, offset); err != nil {
+			return fmt.Errorf("WriteAt: %v", err)
+		}
+	}
+	klog.Info("   100%")
+	return nil
 }
