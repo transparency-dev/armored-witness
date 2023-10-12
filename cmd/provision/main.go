@@ -72,7 +72,7 @@ var (
 	blockDeviceGlob = flag.String("blockdevs", "/dev/sd*", "Glob for plausible block devices where the armored witness could appear")
 
 	runAnyway   = flag.Bool("run_anyway", false, "Let the user override bailing on any potential problems we've detected.")
-	wipeWitness = flag.Bool("wipe_witness_state", true, "If true, erase the witness stored data")
+	wipeWitness = flag.Bool("wipe_witness_state", false, "If true, erase the witness stored data")
 )
 
 func main() {
@@ -395,7 +395,7 @@ func waitForBlockDevice(ctx context.Context, glob string, f func() error) (strin
 
 // flashImages writes all the images in fw to the specified block device.
 func flashImages(dev string, fw *firmwares) error {
-	f, err := os.OpenFile(dev, os.O_RDWR, 0o600)
+	f, err := os.OpenFile(dev, os.O_RDWR|os.O_SYNC, 0o600)
 	if err != nil {
 		return fmt.Errorf("error opening %v: %v", dev, err)
 	}
@@ -472,7 +472,7 @@ func prepareELF(bundle firmware.Bundle, block int64) ([]byte, error) {
 
 // wipeAppletData erases MMC blocks allocated to applet data storage.
 func wipeAppletData(dev string) error {
-	f, err := os.OpenFile(dev, os.O_RDWR, 0o600)
+	f, err := os.OpenFile(dev, os.O_RDWR|os.O_SYNC, 0o600)
 	if err != nil {
 		return fmt.Errorf("error opening %v: %v", dev, err)
 	}
@@ -482,14 +482,25 @@ func wipeAppletData(dev string) error {
 		}
 	}()
 
-	klog.Infof("Wiping data area...")
-	empty := make([]byte, mmcBlockSize)
-	for i, offset := 0, int64(appletDataBlock*mmcBlockSize); i < appletDataNumBlocks; i, offset = i+1, offset+mmcBlockSize {
+	klog.Infof("Wiping data area blocks [0x%x, 0x%x)...", appletDataBlock, appletDataBlock+appletDataNumBlocks)
+	chunkBlocks := 2048
+	empty := make([]byte, chunkBlocks*mmcBlockSize)
+	t := time.NewTicker(5 * time.Second)
+	defer t.Stop()
+	for i := 0; i < appletDataNumBlocks; i += chunkBlocks {
+		select {
+		case <-t.C:
+			klog.Infof("   %3d%%", (i*100)/appletDataNumBlocks)
+		default:
+		}
+
+		offset := (int64(appletDataBlock+i) * mmcBlockSize)
+		if appletDataNumBlocks-i < chunkBlocks {
+			chunkBlocks = appletDataNumBlocks - i
+			empty = empty[:chunkBlocks*mmcBlockSize]
+		}
 		if _, err := f.WriteAt(empty, offset); err != nil {
 			return fmt.Errorf("WriteAt: %v", err)
-		}
-		if i%(appletDataNumBlocks/100) == 0 {
-			klog.Infof("   %3d%", (i*100)/appletDataNumBlocks)
 		}
 	}
 	klog.Info("   100%")
