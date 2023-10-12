@@ -69,10 +69,10 @@ var (
 	osVerifier2      = flag.String("os_verifier_2", "", "Verifier key 2 for the OS manifest.")
 	recoveryVerifier = flag.String("recovery_verifier", "", "Verifier key for the recovery manifest.")
 
-	blockDeviceGlob = flag.String("blockdevs", "/dev/sd*", "Glob for plausible block devices where the armored witness could appear")
+	blockDeviceGlob = flag.String("blockdevs", "/dev/sd*", "Glob for plausible block devices where the armored witness could appear.")
 
 	runAnyway   = flag.Bool("run_anyway", false, "Let the user override bailing on any potential problems we've detected.")
-	wipeWitness = flag.Bool("wipe_witness_state", false, "If true, erase the witness stored data")
+	wipeWitness = flag.Bool("wipe_witness_state", false, "If true, erase the witness stored data.")
 )
 
 func main() {
@@ -401,7 +401,7 @@ func flashImages(dev string, fw *firmwares) error {
 	}
 	defer func() {
 		if err := f.Close(); err != nil {
-			klog.Errorf("Errorf closing %v: %v", dev, err)
+			klog.Errorf("Error closing %v: %v", dev, err)
 		}
 	}()
 
