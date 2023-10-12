@@ -10,10 +10,11 @@ require (
 	github.com/fsnotify/fsnotify v1.6.0
 	github.com/spf13/cobra v1.7.0
 	github.com/spf13/pflag v1.0.5
-	github.com/transparency-dev/armored-witness-boot v0.0.0-20230829113042-42b20b0330ff
-	github.com/transparency-dev/armored-witness-common v0.0.0-20230925155235-8cf0518467f7
-	github.com/transparency-dev/armored-witness-os v0.0.0-20230829111838-c85319fa2674
-	github.com/usbarmory/armory-boot v0.0.0-20230808204644-0ff24f2da486
+	github.com/transparency-dev/armored-witness-boot v0.0.0-20231011120056-79f8a7e1e0c8
+	github.com/transparency-dev/armored-witness-common v0.0.0-20231011111647-11b48b013bcd
+	github.com/transparency-dev/armored-witness-os v0.0.0-20231010171114-e1c1c28a17ff
+	github.com/transparency-dev/serverless-log v0.0.0-20230922115421-a56a93b5681e
+	github.com/usbarmory/armory-boot v0.0.0-20230922092524-e66d926bc36c
 	github.com/usbarmory/hid v0.0.0-20210318233634-85ced88a1ffe
 	golang.org/x/exp v0.0.0-20230905200255-921286631fa9
 	golang.org/x/mod v0.13.0
@@ -25,9 +26,6 @@ require (
 	cloud.google.com/go/compute v1.19.3 // indirect
 	cloud.google.com/go/compute/metadata v0.2.3 // indirect
 	cloud.google.com/go/iam v1.1.0 // indirect
-	github.com/dsoprea/go-ext4 v0.0.0-20190528173430-c13b09fc0ff8 // indirect
-	github.com/dsoprea/go-logging v0.0.0-20200710184922-b02d349568dd // indirect
-	github.com/go-errors/errors v1.4.2 // indirect
 	github.com/go-logr/logr v1.2.0 // indirect
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
 	github.com/golang/protobuf v1.5.3 // indirect
@@ -37,12 +35,12 @@ require (
 	github.com/googleapis/gax-go/v2 v2.12.0 // indirect
 	github.com/gsora/fidati v0.0.0-20220824075547-eeb0a5f7d6c3 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
-	github.com/usbarmory/tamago v0.0.0-20230814171810-6cd63c1accf5 // indirect
+	github.com/transparency-dev/formats v0.0.0-20230920083814-0f75b1d4e813 // indirect
+	github.com/transparency-dev/merkle v0.0.2 // indirect
 	go.opencensus.io v0.24.0 // indirect
 	golang.org/x/crypto v0.14.0 // indirect
 	golang.org/x/net v0.17.0 // indirect
 	golang.org/x/oauth2 v0.8.0 // indirect
-	golang.org/x/sync v0.3.0 // indirect
 	golang.org/x/sys v0.13.0 // indirect
 	golang.org/x/text v0.13.0 // indirect
 	google.golang.org/api v0.128.0 // indirect
