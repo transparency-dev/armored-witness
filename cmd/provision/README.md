@@ -16,7 +16,12 @@ it to inspect & write to appropriate `/dev` files etc.
 
 One of the first things the tool will attempt to do is examine
 the firmware transparency (FT) log for the latest available versions of the
-4 ArmoredWitness firmware types: `BOOT`, `OS`, `APPLET`, and `RECOVERY`.
+4 ArmoredWitness firmware types:
+
+* `BOOT`: <https://github.com/transparency-dev/armored-witness-boot>
+* `OS`: <https://github.com/transparency-dev/armored-witness-os>
+* `APPLET`: <https://github.com/transparency-dev/armored-witness-applet>
+* `RECOVERY`: <https://github.com/usbarmory/armory-ums>
 
 For this to succeed, particularly if using a local FT log during development,
 please ensure that you have built and logged all 4 types of firmware -
