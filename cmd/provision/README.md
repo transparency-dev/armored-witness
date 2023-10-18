@@ -25,7 +25,9 @@ the firmware transparency (FT) log for the latest available versions of the
 
 For this to succeed, particularly if using a local FT log during development,
 please ensure that you have built and logged all 4 types of firmware -
-instructions on how to do this are in the main READMEs of the firmware repos.
+instructions on how to do this are in the main READMEs of the
+`armored-witness-*` firmware repos (instructions for logging the recovery image
+are in the `armored-witness-boot` README).
 
 ### Provisioning development builds
 
