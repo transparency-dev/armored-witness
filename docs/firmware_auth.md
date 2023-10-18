@@ -65,7 +65,7 @@ verification flow:
 ## Firmware Transparency
 
 All firmware artefacts for the ArmoredWitness are made discoverable through the use of
-Firmware Transparency. The goal is to make it hard for anyone to undertake a targetted
+Firmware Transparency. The goal is to make it hard for anyone to undertake a targeted
 attack against the devices by creating a signed malicious firmware release, without
 that attack also being easily detectable.
 
