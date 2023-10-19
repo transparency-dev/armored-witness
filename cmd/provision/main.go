@@ -38,6 +38,7 @@ import (
 	"github.com/transparency-dev/armored-witness-common/release/firmware"
 	"github.com/transparency-dev/armored-witness-common/release/firmware/ftlog"
 	"github.com/transparency-dev/armored-witness-common/release/firmware/update"
+	"github.com/transparency-dev/armored-witness/internal/fetcher"
 	"golang.org/x/mod/sumdb/note"
 )
 
@@ -166,7 +167,7 @@ func fetchLatestArtefacts(ctx context.Context) (*firmwares, error) {
 	if err != nil {
 		return nil, fmt.Errorf("binaries URL invalid: %v", err)
 	}
-	bf := newLogFetcher(binBaseURL)
+	bf := fetcher.New(binBaseURL)
 	binFetcher := func(ctx context.Context, r ftlog.FirmwareRelease) ([]byte, error) {
 		p, err := update.BinaryPath(r)
 		if err != nil {
@@ -178,7 +179,7 @@ func fetchLatestArtefacts(ctx context.Context) (*firmwares, error) {
 
 	updateFetcher, err := update.NewFetcher(ctx,
 		update.FetcherOpts{
-			LogFetcher:       newLogFetcher(logBaseURL),
+			LogFetcher:       fetcher.New(logBaseURL),
 			LogOrigin:        *firmwareLogOrigin,
 			LogVerifier:      logVerifier,
 			BinaryFetcher:    binFetcher,
