@@ -38,6 +38,7 @@ import (
 	"github.com/transparency-dev/armored-witness-common/release/firmware"
 	"github.com/transparency-dev/armored-witness-common/release/firmware/ftlog"
 	"github.com/transparency-dev/armored-witness-common/release/firmware/update"
+	"github.com/transparency-dev/armored-witness/internal/device"
 	"github.com/transparency-dev/armored-witness/internal/fetcher"
 	"golang.org/x/mod/sumdb/note"
 )
@@ -298,7 +299,7 @@ func waitAndProvision(ctx context.Context, fw *firmwares) error {
 	defer dev.Close()
 
 	klog.Infof("✅ Detected device %q", p)
-	s, err := witnessStatus(dev)
+	s, err := device.WitnessStatus(dev)
 	if err != nil {
 		return fmt.Errorf("failed to fetch witness status: %v", err)
 	}
@@ -323,14 +324,14 @@ func waitAndProvision(ctx context.Context, fw *firmwares) error {
 
 // waitForHIDDevice waits for an unprovisioned armored witness device
 // to appear on the USB bus.
-func waitForHIDDevice(ctx context.Context) (*Target, error) {
+func waitForHIDDevice(ctx context.Context) (*device.Target, error) {
 	klog.Info("Waiting for device to be detected...")
 	for {
 		select {
 		case <-ctx.Done():
 			return nil, ctx.Err()
 		case <-time.After(time.Second):
-			targets, err := DetectHID()
+			targets, err := device.DetectHID()
 			if err != nil {
 				klog.Warningf("Failed to detect devices: %v", err)
 				continue
@@ -353,7 +354,7 @@ func waitForU2FDevice(ctx context.Context) (string, *u2fhid.Device, error) {
 		case <-ctx.Done():
 			return "", nil, ctx.Err()
 		case <-time.After(time.Second):
-			p, target, err := detectU2F()
+			p, target, err := device.DetectU2F()
 			if err != nil {
 				klog.Warningf("Failed to detect devices: %v", err)
 				continue
