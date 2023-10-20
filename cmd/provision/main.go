@@ -47,6 +47,11 @@ const (
 
 	// bootloaderBlock defines the location of the first block of the bootloader on MMC.
 	bootloaderBlock = 0x2
+	// bootloaderConfigBlock defines the location of the bootloader config GOB on MMC.
+	// In constrast to the other firmware binaries below where each firmware is preceeded
+	// by its config GOB, the bootloader config is stored separatly due to the hard requirement
+	// for the binary location imposed by the i.MX ROM bootloader.
+	booloaderConfigBlock = 0x4FB0
 	// osBlock defines the location of the first block of the TrustedOS on MMC.
 	osBlock = 0x5000
 	// appletBlock defines the location of the first block of the TrustedApplet on MMC.
@@ -107,6 +112,12 @@ type firmwares struct {
 	Bootloader firmware.Bundle
 	// BootloaderBlock is the location on MMC where the bootloader should be written.
 	BootloaderBlock int64
+	// BootloaderConfigBlock is the location on the MMC where the bootloader config GOB
+	// should be written. Note that this is different to the other firmware images which
+	// have their config GOBs prepended before writing; we cannot do that with the
+	// bootloader since the mask ROM expects the IMX image to be available at a
+	// particular location very close to the start of the MMC.
+	BootloaderConfigBlock int64
 	// Recovery holds the recovery-boot image as an unsigned IMX.
 	Recovery firmware.Bundle
 	// TrustedOS holds the trusted OS firmware bundle.
@@ -192,9 +203,10 @@ func fetchLatestArtefacts(ctx context.Context) (*firmwares, error) {
 	klog.Infof("Found latest versions: OS %v, Applet %v", latestOSVer, latestAppletVer)
 
 	fw := &firmwares{
-		BootloaderBlock:    bootloaderBlock,
-		TrustedOSBlock:     osBlock,
-		TrustedAppletBlock: appletBlock,
+		BootloaderBlock:       bootloaderBlock,
+		BootloaderConfigBlock: booloaderConfigBlock,
+		TrustedOSBlock:        osBlock,
+		TrustedAppletBlock:    appletBlock,
 	}
 
 	if fw.TrustedOS, err = updateFetcher.GetOS(ctx); err != nil {
@@ -414,6 +426,10 @@ func flashImages(dev string, fw *firmwares) error {
 	if err != nil {
 		return fmt.Errorf("failed to prepare TrustedOS: %v", err)
 	}
+	bootloaderConfig, err := configFromBundle(fw.Bootloader, fw.BootloaderBlock*mmcBlockSize)
+	if err != nil {
+		return fmt.Errorf("failed to prepare Bootloader config: %v", err)
+	}
 
 	for _, p := range []struct {
 		name  string
@@ -421,6 +437,7 @@ func flashImages(dev string, fw *firmwares) error {
 		block int64
 	}{
 		{name: "Bootloader", img: fw.Bootloader.Firmware, block: fw.BootloaderBlock},
+		{name: "BootloaderConfig", img: bootloaderConfig, block: fw.BootloaderConfigBlock},
 		{name: "TrustedOS", img: osAndConfig, block: fw.TrustedOSBlock},
 		{name: "TrustedApplet", img: appletAndConfig, block: fw.TrustedAppletBlock},
 	} {
@@ -445,9 +462,29 @@ func flashImage(image []byte, to *os.File, atBlock int64) error {
 }
 
 // prepareELF returns a slice with a GOB-encoded configuration structure followed by the ELF image.
+// block is the first MMC block of the config+ELF region.
 func prepareELF(bundle firmware.Bundle, block int64) ([]byte, error) {
+	// For ELF firmwares (OS & Applet), the on-MMC layout is [configGOB|padding|ELF]
+	fwOffset := block*mmcBlockSize + config.MaxLength
+	cfgGob, err := configFromBundle(bundle, fwOffset)
+	if err != nil {
+		return nil, err
+	}
+
+	buf := bytes.Buffer{}
+	buf.Write(cfgGob)
+	pad := config.MaxLength - int64(buf.Len())
+	buf.Write(make([]byte, pad))
+	buf.Write(bundle.Firmware)
+
+	return buf.Bytes(), nil
+}
+
+// configFromBundle creates a populated config struct using the passed in contents.
+// firmwareOffset is the offset in bytes of the firmware binary from the start of the MMC.
+func configFromBundle(bundle firmware.Bundle, firmwareOffset int64) ([]byte, error) {
 	conf := &config.Config{
-		Offset: block*mmcBlockSize + config.MaxLength,
+		Offset: firmwareOffset,
 		Size:   int64(len(bundle.Firmware)),
 		Bundle: config.ProofBundle{
 			Checkpoint:     bundle.Checkpoint,
@@ -458,14 +495,9 @@ func prepareELF(bundle firmware.Bundle, block int64) ([]byte, error) {
 	}
 
 	buf := new(bytes.Buffer)
-
 	if err := gob.NewEncoder(buf).Encode(conf); err != nil {
 		return nil, fmt.Errorf("failed to encode config: %v", err)
 	}
-
-	pad := config.MaxLength - int64(buf.Len())
-	buf.Write(make([]byte, pad))
-	buf.Write(bundle.Firmware)
 
 	return buf.Bytes(), nil
 }
