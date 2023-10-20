@@ -23,7 +23,7 @@ import (
 	"time"
 
 	"github.com/fsnotify/fsnotify"
-	"k8s.io/klog"
+	"k8s.io/klog/v2"
 )
 
 // BootIntoRecovery attempts to boot an armored witness device in SDP (Serial Boot) mode
