@@ -11,8 +11,10 @@ require (
 	github.com/spf13/cobra v1.7.0
 	github.com/spf13/pflag v1.0.5
 	github.com/transparency-dev/armored-witness-boot v0.0.0-20231011120056-79f8a7e1e0c8
-	github.com/transparency-dev/armored-witness-common v0.0.0-20231011111647-11b48b013bcd
+	github.com/transparency-dev/armored-witness-common v0.0.0-20231012085018-f5e62744cd3e
 	github.com/transparency-dev/armored-witness-os v0.0.0-20231010171114-e1c1c28a17ff
+	github.com/transparency-dev/formats v0.0.0-20230920083814-0f75b1d4e813
+	github.com/transparency-dev/merkle v0.0.2
 	github.com/transparency-dev/serverless-log v0.0.0-20230922115421-a56a93b5681e
 	github.com/usbarmory/armory-boot v0.0.0-20230922092524-e66d926bc36c
 	github.com/usbarmory/hid v0.0.0-20210318233634-85ced88a1ffe
@@ -35,8 +37,6 @@ require (
 	github.com/googleapis/gax-go/v2 v2.12.0 // indirect
 	github.com/gsora/fidati v0.0.0-20220824075547-eeb0a5f7d6c3 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
-	github.com/transparency-dev/formats v0.0.0-20230920083814-0f75b1d4e813 // indirect
-	github.com/transparency-dev/merkle v0.0.2 // indirect
 	go.opencensus.io v0.24.0 // indirect
 	golang.org/x/crypto v0.14.0 // indirect
 	golang.org/x/net v0.17.0 // indirect
