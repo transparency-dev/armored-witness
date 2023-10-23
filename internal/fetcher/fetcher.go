@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package main
+package fetcher
 
 import (
 	"context"
@@ -26,8 +26,8 @@ import (
 	"k8s.io/klog/v2"
 )
 
-// newLogFetcher creates a Fetcher for the log at the given root location.
-func newLogFetcher(root *url.URL) client.Fetcher {
+// New creates a Fetcher for the log at the given root location.
+func New(root *url.URL) client.Fetcher {
 	get := getByScheme[root.Scheme]
 	if get == nil {
 		panic(fmt.Errorf("unsupported URL scheme %s", root.Scheme))

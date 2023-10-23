@@ -15,7 +15,7 @@
 // Large portions of this file come from
 // https://github.com/usbarmory/armory-boot/blob/master/cmd/armory-boot-usb/armory-boot-usb.go
 
-package main
+package device
 
 import (
 	"errors"

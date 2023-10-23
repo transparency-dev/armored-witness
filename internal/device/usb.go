@@ -15,7 +15,7 @@
 //go:build !tamago
 // +build !tamago
 
-package main
+package device
 
 import (
 	flynn_hid "github.com/flynn/hid"
@@ -25,9 +25,9 @@ import (
 	"github.com/transparency-dev/armored-witness-os/api"
 )
 
-// detectU2F returns the first U2F device found which matches
+// DetectU2F returns the first U2F device found which matches
 // the armored witness vendor and product IDs.
-func detectU2F() (string, *u2fhid.Device, error) {
+func DetectU2F() (string, *u2fhid.Device, error) {
 	devices, err := flynn_hid.Devices()
 	if err != nil {
 		return "", nil, err
@@ -46,8 +46,8 @@ func detectU2F() (string, *u2fhid.Device, error) {
 	return "", nil, nil
 }
 
-// witnessStatus issues the Status command to the armored witness via HID and returns the result.
-func witnessStatus(dev *u2fhid.Device) (*api.Status, error) {
+// WitnessStatus issues the Status command to the armored witness via HID and returns the result.
+func WitnessStatus(dev *u2fhid.Device) (*api.Status, error) {
 	res, err := dev.Command(api.U2FHID_ARMORY_INF, nil)
 	if err != nil {
 		return nil, err
