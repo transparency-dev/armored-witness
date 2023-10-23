@@ -30,7 +30,10 @@ import (
 // with the recovery firmware image, and then watches for a matching new block device
 // to be presented to the host.
 //
-// Returns the HID device and detected block device path.
+// If no armored witness device is present, this function will wait until either a device
+// is plugged in/rebooted into SDP mode by the user, or the context becomes done.
+//
+// Returns the HID device and detected block device path, or an error.
 func BootIntoRecovery(ctx context.Context, recoveryFirmware []byte, blockDeviceGlob string) (*Target, string, error) {
 	target, err := waitForHIDDevice(ctx)
 	if err != nil {
