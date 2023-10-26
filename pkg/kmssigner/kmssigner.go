@@ -16,7 +16,8 @@ const (
 	// google.cloud.kms.v1.CryptoKeyVersion.name
 	// https://cloud.google.com/php/docs/reference/cloud-kms/latest/V1.CryptoKeyVersion
 	KeyVersionNameFormat = "projects/%s/locations/%s/keyRings/%s/cryptoKeys/%s/cryptoKeyVersions/%d"
-	// From https://cs.opensource.google/go/x/mod/+/refs/tags/v0.12.0:sumdb/note/note.go;l=232;drc=baa5c2d058db25484c20d76985ba394e73176132
+	// From
+	// https://cs.opensource.google/go/x/mod/+/refs/tags/v0.12.0:sumdb/note/note.go;l=232;drc=baa5c2d058db25484c20d76985ba394e73176132
 	algEd25519 = 1
 )
 
@@ -54,7 +55,7 @@ func New(ctx context.Context, c *kms.KeyManagementClient, keyName string) (*Sign
 	}
 	publicKey, _ := pem.Decode([]byte(resp.Pem))
 
-	// Calculate key hash the key name and public key.
+	// Calculate key hash from the key name and public key.
 	h := sha256.New()
 	h.Write([]byte(s.keyName))
 	h.Write([]byte("\n"))
@@ -71,8 +72,8 @@ func (s *Signer) Name() string {
 	return s.keyName
 }
 
-// KeyHash returns the first 4 bytes of the SHA256 hash of the Signer's public
-// key. It is used as a hint in identifying the correct key to verify with.
+// KeyHash returns the computed key hash of the signer's public key and name.
+// It is used as a hint in identifying the correct key to verify with.
 func (s *Signer) KeyHash() uint32 {
 	return s.keyHash
 }
