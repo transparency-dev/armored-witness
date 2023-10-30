@@ -177,7 +177,7 @@ func (v *verifier) fetchRecoveryFirmware(ctx context.Context) error {
 		ManifestVerifiers: []note.Verifier{v.recoveryV},
 	}
 
-	if err := bv.Verify(r); err != nil {
+	if _, err := bv.Verify(r); err != nil {
 		return err
 	}
 
@@ -259,7 +259,8 @@ func (v *verifier) verifyFirmwares(ctx context.Context, fw firmwares) error {
 			LogVerifer:        v.logV,
 			ManifestVerifiers: p.manifestVs,
 		}
-		if err := bv.Verify(p.bundle); err != nil {
+		klog.V(1).Infof("Manifest:\n%s\b%[1]q", p.bundle.Manifest)
+		if _, err := bv.Verify(p.bundle); err != nil {
 			klog.Infof("  ❌ %s: %v", p.name, err)
 			errs = append(errs, fmt.Errorf("failed to verify %s: %v", p.name, err))
 			continue
@@ -344,6 +345,7 @@ func readFirmware(f *os.File, cfgBlock int64) (firmware.Bundle, error) {
 		Firmware:       make([]byte, cfg.Size),
 	}
 	klog.Infof("Found config at block 0x%x", cfgBlock)
+	klog.V(1).Infof("Config:\n%+v", cfg)
 	klog.Infof("Reading 0x%x bytes of firmware from MMC byte offset 0x%x", cfg.Size, cfg.Offset)
 	if _, err := f.ReadAt(fw.Firmware, cfg.Offset); err != nil {
 		return firmware.Bundle{}, fmt.Errorf("failed to read firmware data: %v", err)
