@@ -6,7 +6,7 @@ import (
 	"encoding/binary"
 	"encoding/pem"
 
-	"cloud.google.com/go/kms/apiv1"
+	kms "cloud.google.com/go/kms/apiv1"
 
 	"cloud.google.com/go/kms/apiv1/kmspb"
 )
@@ -38,16 +38,16 @@ type Signer struct {
 // expected to be
 // [Ed25519](https://pkg.go.dev/golang.org/x/mod/sumdb/note#hdr-Generating_Keys).
 // To open a note signed by this Signer, the verifier must also be Ed25519.
-func New(ctx context.Context, c *kms.KeyManagementClient, keyName string) (*Signer, error) {
+func New(ctx context.Context, c *kms.KeyManagementClient, keyResource, noteSignerName string) (*Signer, error) {
 	s := &Signer{}
 
 	s.client = c
 	s.ctx = ctx
-	s.keyName = keyName
+	s.keyName = noteSignerName
 
 	// Set keyHash.
 	req := &kmspb.GetPublicKeyRequest{
-		Name: s.keyName,
+		Name: keyResource,
 	}
 	resp, err := c.GetPublicKey(ctx, req)
 	if err != nil {
