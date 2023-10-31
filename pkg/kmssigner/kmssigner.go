@@ -7,6 +7,7 @@ import (
 	"crypto/x509"
 	"encoding/binary"
 	"encoding/pem"
+	"errors"
 
 	"cloud.google.com/go/kms/apiv1"
 
@@ -78,7 +79,7 @@ func keyHash(keyName string, pemKey []byte) (uint32, error) {
 	}
 	publicKey, ok := k.(ed25519.PublicKey)
 	if !ok {
-		return 0, err
+		return 0, errors.New("failed to assert ed25519.PublicKey type")
 	}
 
 	prefixedPublicKey := append([]byte{algEd25519}, publicKey...)
