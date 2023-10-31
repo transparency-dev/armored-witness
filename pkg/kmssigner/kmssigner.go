@@ -2,9 +2,12 @@ package kmssigner
 
 import (
 	"context"
+	"crypto/ed25519"
 	"crypto/sha256"
+	"crypto/x509"
 	"encoding/binary"
 	"encoding/pem"
+	"errors"
 
 	"cloud.google.com/go/kms/apiv1"
 
@@ -53,18 +56,37 @@ func New(ctx context.Context, c *kms.KeyManagementClient, keyName string) (*Sign
 	if err != nil {
 		return nil, err
 	}
-	publicKey, _ := pem.Decode([]byte(resp.Pem))
-
-	// Calculate key hash from the key name and public key.
-	h := sha256.New()
-	h.Write([]byte(s.keyName))
-	h.Write([]byte("\n"))
-	prefixedPublicKey := append([]byte{algEd25519}, publicKey.Bytes...)
-	h.Write(prefixedPublicKey)
-	sum := h.Sum(nil)
-	s.keyHash = binary.BigEndian.Uint32(sum)
+	kh, err := keyHash(s.keyName, []byte(resp.Pem))
+	if err != nil {
+		return nil, err
+	}
+	s.keyHash = kh
 
 	return s, nil
+}
+
+// keyHash calculates the key hash from the key name and public key.
+func keyHash(keyName string, pemKey []byte) (uint32, error) {
+	block, _ := pem.Decode(pemKey)
+
+	h := sha256.New()
+	h.Write([]byte(keyName))
+	h.Write([]byte("\n"))
+
+	k, err := x509.ParsePKIXPublicKey(block.Bytes)
+	if err != nil {
+		return 0, err
+	}
+	publicKey, ok := k.(ed25519.PublicKey)
+	if !ok {
+		return 0, errors.New("failed to assert ed25519.PublicKey type")
+	}
+
+	prefixedPublicKey := append([]byte{algEd25519}, publicKey...)
+	h.Write(prefixedPublicKey)
+	sum := h.Sum(nil)
+
+	return binary.BigEndian.Uint32(sum), nil
 }
 
 // Name identifies the key that this Signer uses.
