@@ -28,10 +28,11 @@ type Signer struct {
 	// ctx must be stored because Signer is used as an implementation of the
 	// note.Signer interface, which does not allow for a context in the Sign
 	// method. However, the KMS AsymmetricSign API requires a context.
-	ctx     context.Context
-	client  *kms.KeyManagementClient
-	keyHash uint32
-	keyName string
+	ctx         context.Context
+	client      *kms.KeyManagementClient
+	keyHash     uint32
+	keyName     string
+	keyResource string
 }
 
 // New creates a signer which uses keys in GCP KMS. The signing algorithm is
@@ -44,6 +45,7 @@ func New(ctx context.Context, c *kms.KeyManagementClient, keyResource, noteSigne
 	s.client = c
 	s.ctx = ctx
 	s.keyName = noteSignerName
+	s.keyResource = keyResource
 
 	// Set keyHash.
 	req := &kmspb.GetPublicKeyRequest{
@@ -81,7 +83,7 @@ func (s *Signer) KeyHash() uint32 {
 // Sign returns a signature for the given message.
 func (s *Signer) Sign(msg []byte) ([]byte, error) {
 	req := &kmspb.AsymmetricSignRequest{
-		Name: s.keyName,
+		Name: s.keyResource,
 		Data: msg,
 	}
 	resp, err := s.client.AsymmetricSign(s.ctx, req)
