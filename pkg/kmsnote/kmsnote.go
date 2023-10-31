@@ -1,15 +1,18 @@
-package kmssigner
+package kmsnote
 
 import (
 	"context"
 	"crypto/ed25519"
 	"crypto/sha256"
 	"crypto/x509"
+	"encoding/base64"
 	"encoding/binary"
 	"encoding/pem"
 	"errors"
+	"fmt"
 
 	kms "cloud.google.com/go/kms/apiv1"
+	"golang.org/x/mod/sumdb/note"
 
 	"cloud.google.com/go/kms/apiv1/kmspb"
 )
@@ -23,6 +26,37 @@ const (
 	// https://cs.opensource.google/go/x/mod/+/refs/tags/v0.12.0:sumdb/note/note.go;l=232;drc=baa5c2d058db25484c20d76985ba394e73176132
 	algEd25519 = 1
 )
+
+func publicKeyFromPEM(pemKey []byte) ([]byte, error) {
+	block, _ := pem.Decode(pemKey)
+	if block == nil {
+		return nil, errors.New("failed to decode pemKey")
+	}
+
+	k, err := x509.ParsePKIXPublicKey(block.Bytes)
+	if err != nil {
+		return nil, err
+	}
+
+	publicKey, ok := k.(ed25519.PublicKey)
+	if !ok {
+		return nil, errors.New("failed to assert ed25519.PublicKey type")
+	}
+
+	return publicKey, nil
+}
+
+// keyHash calculates the ed25519 key hash from the key name and public key.
+func keyHash(keyName string, publicKey []byte) (uint32, error) {
+	h := sha256.New()
+	h.Write([]byte(keyName))
+	h.Write([]byte("\n"))
+	prefixedPublicKey := append([]byte{algEd25519}, publicKey...)
+	h.Write(prefixedPublicKey)
+	sum := h.Sum(nil)
+
+	return binary.BigEndian.Uint32(sum), nil
+}
 
 // Signer is an implementation of a
 // [note signer](https://pkg.go.dev/golang.org/x/mod/sumdb/note#Signer) which
@@ -38,11 +72,11 @@ type Signer struct {
 	keyResource string
 }
 
-// New creates a signer which uses keys in GCP KMS. The signing algorithm is
-// expected to be
+// NewSigner creates a signer which uses keys in GCP KMS. The signing algorithm
+// is expected to be
 // [Ed25519](https://pkg.go.dev/golang.org/x/mod/sumdb/note#hdr-Generating_Keys).
 // To open a note signed by this Signer, the verifier must also be Ed25519.
-func New(ctx context.Context, c *kms.KeyManagementClient, keyResource, noteSignerName string) (*Signer, error) {
+func NewSigner(ctx context.Context, c *kms.KeyManagementClient, keyName string) (*Signer, error) {
 	s := &Signer{}
 
 	s.client = c
@@ -58,37 +92,19 @@ func New(ctx context.Context, c *kms.KeyManagementClient, keyResource, noteSigne
 	if err != nil {
 		return nil, err
 	}
-	kh, err := keyHash(s.keyName, []byte(resp.Pem))
+
+	publicKey, err := publicKeyFromPEM([]byte(resp.Pem))
+	if err != nil {
+		return nil, err
+	}
+
+	kh, err := keyHash(s.keyName, publicKey)
 	if err != nil {
 		return nil, err
 	}
 	s.keyHash = kh
 
 	return s, nil
-}
-
-// keyHash calculates the key hash from the key name and public key.
-func keyHash(keyName string, pemKey []byte) (uint32, error) {
-	block, _ := pem.Decode(pemKey)
-
-	h := sha256.New()
-	h.Write([]byte(keyName))
-	h.Write([]byte("\n"))
-
-	k, err := x509.ParsePKIXPublicKey(block.Bytes)
-	if err != nil {
-		return 0, err
-	}
-	publicKey, ok := k.(ed25519.PublicKey)
-	if !ok {
-		return 0, errors.New("failed to assert ed25519.PublicKey type")
-	}
-
-	prefixedPublicKey := append([]byte{algEd25519}, publicKey...)
-	h.Write(prefixedPublicKey)
-	sum := h.Sum(nil)
-
-	return binary.BigEndian.Uint32(sum), nil
 }
 
 // Name identifies the key that this Signer uses.
@@ -114,4 +130,31 @@ func (s *Signer) Sign(msg []byte) ([]byte, error) {
 	}
 
 	return resp.GetSignature(), nil
+}
+
+// NewVerifier creates a verifier which uses keys in GCP KMS. The signing
+// algorithm is expected to be
+// [Ed25519](https://pkg.go.dev/golang.org/x/mod/sumdb/note#hdr-Generating_Keys).
+func NewVerifier(ctx context.Context, c *kms.KeyManagementClient, kmsKeyName, noteKeyName string) (note.Verifier, error) {
+	req := &kmspb.GetPublicKeyRequest{
+		Name: kmsKeyName,
+	}
+	resp, err := c.GetPublicKey(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+
+	publicKey, err := publicKeyFromPEM([]byte(resp.Pem))
+	if err != nil {
+		return nil, err
+	}
+
+	h, err := keyHash(noteKeyName, publicKey)
+	if err != nil {
+		return nil, err
+	}
+
+	prefixedPublicKey := append([]byte{algEd25519}, publicKey...)
+	vkey := fmt.Sprintf("%s+%08x+%s", noteKeyName, h, base64.StdEncoding.EncodeToString(prefixedPublicKey))
+	return note.NewVerifier(vkey)
 }
