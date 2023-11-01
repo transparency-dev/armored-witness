@@ -69,12 +69,12 @@ var (
 					noteVerifier:  "transparency.dev-aw-boot-ci+9f62b6ac+AbnipFmpRltfRiS9JCxLUcAZsbeH4noBOJXbVD3H5Eg4",
 				},
 				"os1": {
-					kmsKeyName:    "trusted-os1-ci",
+					kmsKeyName:    "trusted-os-1-ci",
 					kmsKeyVersion: 1,
 					noteVerifier:  "transparency.dev-aw-os1-ci+7a0eaef3+AcsqvmrcKIbs21H2Bm2fWb6oFWn/9MmLGNc6NLJty2eQ",
 				},
 				"os2": {
-					kmsKeyName:    "trusted-os2-ci",
+					kmsKeyName:    "trusted-os-2-ci",
 					kmsKeyVersion: 1,
 					noteVerifier:  "transparency.dev-aw-os2-ci+af8e4114+AbBJk5MgxRB+68KhGojhUdSt1ts5GAdRIT1Eq9zEkgQh",
 				},
