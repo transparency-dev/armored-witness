@@ -30,21 +30,100 @@ import (
 
 	"github.com/transparency-dev/armored-witness/pkg/kmssigner"
 
-	"cloud.google.com/go/kms/apiv1"
+	kms "cloud.google.com/go/kms/apiv1"
+	"golang.org/x/exp/maps"
 	"golang.org/x/mod/sumdb/note"
+)
+
+// keyInfo represents a KMS key and its corresponding public verifier.
+type keyInfo struct {
+	kmsKeyName    string
+	kmsKeyVersion uint
+	noteVerifier  string
+}
+
+var (
+	// signingCfg holds the KMS and note parameters for the various artefacts keyed by release environment.
+	signingCfg = map[string]struct {
+		kmsKeyRing string
+		kmsRegion  string
+		keys       map[string]keyInfo
+	}{
+		"ci": {
+			kmsKeyRing: "firmware-release-ci",
+			kmsRegion:  "global",
+			keys: map[string]keyInfo{
+				"ftlog": {
+					kmsKeyName:    "ft-log-ci",
+					kmsKeyVersion: 1,
+					noteVerifier:  "transparency.dev-aw-ftlog-ci+eed5ba0f+AR6gW0mycDtL17iM2uvQUThJsoiuSRirstEj9a5AdCCu",
+				},
+				"applet": {
+					kmsKeyName:    "trusted-applet-ci",
+					kmsKeyVersion: 1,
+					noteVerifier:  "transparency.dev-aw-applet-ci+f6aefd80+AV1fgxtByjXuPjPfi0/7qTbEBlPGGCyxqr6ZlppoLOz3",
+				},
+				"boot": {
+					kmsKeyName:    "bootloader-ci",
+					kmsKeyVersion: 1,
+					noteVerifier:  "transparency.dev-aw-boot-ci+66e43394+AbnipFmpRltfRiS9JCxLUcAZsbeH4noBOJXbVD3H5Eg4",
+				},
+				"os1": {
+					kmsKeyName:    "trusted-os1-ci",
+					kmsKeyVersion: 1,
+					noteVerifier:  "transparency.dev-aw-os1-ci+dd8ea9bb+AcsqvmrcKIbs21H2Bm2fWb6oFWn/9MmLGNc6NLJty2eQ",
+				},
+				"os2": {
+					kmsKeyName:    "trusted-os2-ci",
+					kmsKeyVersion: 1,
+					noteVerifier:  "transparency.dev-aw-os2-ci+917d40ec+AbBJk5MgxRB+68KhGojhUdSt1ts5GAdRIT1Eq9zEkgQh",
+				},
+				"recovery": {
+					kmsKeyName:    "recovery-ci",
+					kmsKeyVersion: 1,
+					noteVerifier:  "transparency.dev-aw-recovery-ci+0395fbdd+AarlJMSl0rbTMf31B5o9bqc6PHorwvF1GbwyJRXArbfg",
+				},
+			},
+		},
+		"prod": {
+			kmsKeyRing: "firmware-release-prod",
+			kmsRegion:  "global",
+			keys: map[string]keyInfo{
+				"ftlog": {
+					kmsKeyName:    "ft-log-prod",
+					kmsKeyVersion: 1,
+					noteVerifier:  "transparency.dev-aw-ftlog-prod+1d0792e5+Aa3qdhefd2cc/98jV3blslJT2L+iFR8WKHeGcgFmyjnt",
+				},
+				"applet": {
+					kmsKeyName:    "trusted-applet-prod",
+					kmsKeyVersion: 1,
+					noteVerifier:  "transparency.dev-aw-applet-prod+f022187a+AZSnFa8GxH+jHV6ahELk6peqVObbPKrYAdYyMjrzNF35",
+				},
+				"boot": {
+					kmsKeyName:    "bootloader-prod",
+					kmsKeyVersion: 1,
+					noteVerifier:  "transparency.dev-aw-boot-prod+1e323b02+AR+KIx++GIlMBICxLkf4ZUK5RDlvJuiYUboqX5//RmUm",
+				},
+				"os1": {
+					kmsKeyName:    "trusted-os-prod",
+					kmsKeyVersion: 1,
+					noteVerifier:  "transparency.dev-aw-os-prod+03170554+AV7mmRamQp6VC9CutzSXzqtNhYNyNmQQRcLX07F6qlC1",
+				},
+				"recovery": {
+					kmsKeyName:    "recovery-prod",
+					kmsKeyVersion: 1,
+					noteVerifier:  "transparency.dev-aw-recovery-prod+93159fea+ATu+HMUuO8ZsgaNwP97XMcb/+Ve8W1u1KdFQHNzOyLxx",
+				},
+			},
+		},
+	}
 )
 
 func main() {
 	gcpProject := flag.String("project_name", "",
 		"The GCP project name where the signing key lives.")
-	keyRing := flag.String("key_ring", "",
-		"Key ring of the signing key. See https://cloud.google.com/kms/docs/resource-hierarchy#key_rings.")
-	keyName := flag.String("key_name", "",
-		"Name of the signing key in the key ring.")
-	keyVersion := flag.Uint("key_version", 0,
-		"Version of the signing key. See https://cloud.google.com/kms/docs/resource-hierarchy#key_versions")
-	keyLocation := flag.String("key_location", "",
-		"Location (GCP region) of the signing key.")
+	release := flag.String("release", "", fmt.Sprintf("Release type, one of: %v", maps.Keys(signingCfg)))
+	artefact := flag.String("artefact", "", "Type of artefact being signed, one of: "+artefactTypes())
 	manifestFile := flag.String("manifest_file", "",
 		"The file containing the content to sign.")
 	outputFile := flag.String("output_file", "",
@@ -55,17 +134,13 @@ func main() {
 	if *gcpProject == "" {
 		log.Fatal("project_name is required.")
 	}
-	if *keyRing == "" {
-		log.Fatal("key_ring is required.")
+	rel, ok := signingCfg[*release]
+	if !ok {
+		log.Fatalf("release is required, and must be one of %v", maps.Keys(signingCfg))
 	}
-	if *keyName == "" {
-		log.Fatal("key_name is required.")
-	}
-	if *keyVersion == 0 {
-		log.Fatal("key_version must be > 0.")
-	}
-	if *keyLocation == "" {
-		log.Fatal("key_location is required.")
+	keyInfo, ok := rel.keys[*artefact]
+	if !ok {
+		log.Fatalf("artefact is required and must be one of %v", artefactTypes())
 	}
 	if *manifestFile == "" {
 		log.Fatal("manifest_file is required.")
@@ -81,11 +156,15 @@ func main() {
 	}
 	defer kmClient.Close()
 
-	kmsKeyVersionResourceName := fmt.Sprintf(kmssigner.KeyVersionNameFormat, *gcpProject, *keyLocation,
-		*keyRing, *keyName, *keyVersion)
-	signer, err := kmssigner.New(ctx, kmClient, kmsKeyVersionResourceName)
+	verifier, err := note.NewVerifier(keyInfo.noteVerifier)
 	if err != nil {
-		log.Fatalf("failed to create signer: %v", err)
+		log.Fatalf("invalid note verifier for %s/%s: %v", *release, *artefact, err)
+	}
+	kmsKeyVersionResourceName := fmt.Sprintf(kmssigner.KeyVersionNameFormat, *gcpProject, rel.kmsRegion,
+		rel.kmsKeyRing, keyInfo.kmsKeyName, keyInfo.kmsKeyVersion)
+	signer, err := kmssigner.New(ctx, kmClient, kmsKeyVersionResourceName, verifier.Name())
+	if err != nil {
+		log.Fatalf("failed to create signer for %s/%s: %v", *release, *artefact, err)
 	}
 
 	// Sign manifestFile as note.
@@ -98,8 +177,21 @@ func main() {
 		log.Fatalf("failed to sign note text from %q: %v", *manifestFile, err)
 	}
 
+	// Verify signature was made by expected key
+	if _, err := note.Open(manifestBytes, note.VerifierList(verifier)); err != nil {
+		log.Fatalf("failed to verify signature for %s/%s: %v", *release, *artefact, err)
+	}
+
 	// Write output file.
 	if err := os.WriteFile(*outputFile, msg, 0664); err != nil {
 		log.Fatalf("failed to write outputFile %q: %v", *outputFile, err)
 	}
+}
+
+func artefactTypes() string {
+	r := ""
+	for k, v := range signingCfg {
+		r += fmt.Sprintf("%s: %v", k, maps.Keys(v.keys))
+	}
+	return r
 }

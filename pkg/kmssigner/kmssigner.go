@@ -9,7 +9,7 @@ import (
 	"encoding/pem"
 	"errors"
 
-	"cloud.google.com/go/kms/apiv1"
+	kms "cloud.google.com/go/kms/apiv1"
 
 	"cloud.google.com/go/kms/apiv1/kmspb"
 )
@@ -31,26 +31,28 @@ type Signer struct {
 	// ctx must be stored because Signer is used as an implementation of the
 	// note.Signer interface, which does not allow for a context in the Sign
 	// method. However, the KMS AsymmetricSign API requires a context.
-	ctx     context.Context
-	client  *kms.KeyManagementClient
-	keyHash uint32
-	keyName string
+	ctx         context.Context
+	client      *kms.KeyManagementClient
+	keyHash     uint32
+	keyName     string
+	keyResource string
 }
 
 // New creates a signer which uses keys in GCP KMS. The signing algorithm is
 // expected to be
 // [Ed25519](https://pkg.go.dev/golang.org/x/mod/sumdb/note#hdr-Generating_Keys).
 // To open a note signed by this Signer, the verifier must also be Ed25519.
-func New(ctx context.Context, c *kms.KeyManagementClient, keyName string) (*Signer, error) {
+func New(ctx context.Context, c *kms.KeyManagementClient, keyResource, noteSignerName string) (*Signer, error) {
 	s := &Signer{}
 
 	s.client = c
 	s.ctx = ctx
-	s.keyName = keyName
+	s.keyName = noteSignerName
+	s.keyResource = keyResource
 
 	// Set keyHash.
 	req := &kmspb.GetPublicKeyRequest{
-		Name: s.keyName,
+		Name: keyResource,
 	}
 	resp, err := c.GetPublicKey(ctx, req)
 	if err != nil {
@@ -103,7 +105,7 @@ func (s *Signer) KeyHash() uint32 {
 // Sign returns a signature for the given message.
 func (s *Signer) Sign(msg []byte) ([]byte, error) {
 	req := &kmspb.AsymmetricSignRequest{
-		Name: s.keyName,
+		Name: s.keyResource,
 		Data: msg,
 	}
 	resp, err := s.client.AsymmetricSign(s.ctx, req)
