@@ -56,32 +56,32 @@ var (
 				"ftlog": {
 					kmsKeyName:    "ft-log-ci",
 					kmsKeyVersion: 1,
-					noteVerifier:  "transparency.dev-aw-ftlog-ci+eed5ba0f+AR6gW0mycDtL17iM2uvQUThJsoiuSRirstEj9a5AdCCu",
+					noteVerifier:  "transparency.dev-aw-ftlog-ci+f5479c1e+AR6gW0mycDtL17iM2uvQUThJsoiuSRirstEj9a5AdCCu",
 				},
 				"applet": {
 					kmsKeyName:    "trusted-applet-ci",
 					kmsKeyVersion: 1,
-					noteVerifier:  "transparency.dev-aw-applet-ci+f6aefd80+AV1fgxtByjXuPjPfi0/7qTbEBlPGGCyxqr6ZlppoLOz3",
+					noteVerifier:  "transparency.dev-aw-applet-ci+3ff32e2c+AV1fgxtByjXuPjPfi0/7qTbEBlPGGCyxqr6ZlppoLOz3",
 				},
 				"boot": {
 					kmsKeyName:    "bootloader-ci",
 					kmsKeyVersion: 1,
-					noteVerifier:  "transparency.dev-aw-boot-ci+66e43394+AbnipFmpRltfRiS9JCxLUcAZsbeH4noBOJXbVD3H5Eg4",
+					noteVerifier:  "transparency.dev-aw-boot-ci+9f62b6ac+AbnipFmpRltfRiS9JCxLUcAZsbeH4noBOJXbVD3H5Eg4",
 				},
 				"os1": {
 					kmsKeyName:    "trusted-os1-ci",
 					kmsKeyVersion: 1,
-					noteVerifier:  "transparency.dev-aw-os1-ci+dd8ea9bb+AcsqvmrcKIbs21H2Bm2fWb6oFWn/9MmLGNc6NLJty2eQ",
+					noteVerifier:  "transparency.dev-aw-os1-ci+7a0eaef3+AcsqvmrcKIbs21H2Bm2fWb6oFWn/9MmLGNc6NLJty2eQ",
 				},
 				"os2": {
 					kmsKeyName:    "trusted-os2-ci",
 					kmsKeyVersion: 1,
-					noteVerifier:  "transparency.dev-aw-os2-ci+917d40ec+AbBJk5MgxRB+68KhGojhUdSt1ts5GAdRIT1Eq9zEkgQh",
+					noteVerifier:  "transparency.dev-aw-os2-ci+af8e4114+AbBJk5MgxRB+68KhGojhUdSt1ts5GAdRIT1Eq9zEkgQh",
 				},
 				"recovery": {
 					kmsKeyName:    "recovery-ci",
 					kmsKeyVersion: 1,
-					noteVerifier:  "transparency.dev-aw-recovery-ci+0395fbdd+AarlJMSl0rbTMf31B5o9bqc6PHorwvF1GbwyJRXArbfg",
+					noteVerifier:  "transparency.dev-aw-recovery-ci+cc699423+AarlJMSl0rbTMf31B5o9bqc6PHorwvF1GbwyJRXArbfg",
 				},
 			},
 		},
@@ -92,27 +92,27 @@ var (
 				"ftlog": {
 					kmsKeyName:    "ft-log-prod",
 					kmsKeyVersion: 1,
-					noteVerifier:  "transparency.dev-aw-ftlog-prod+1d0792e5+Aa3qdhefd2cc/98jV3blslJT2L+iFR8WKHeGcgFmyjnt",
+					noteVerifier:  "transparency.dev-aw-ftlog-prod+72b0da75+Aa3qdhefd2cc/98jV3blslJT2L+iFR8WKHeGcgFmyjnt",
 				},
 				"applet": {
 					kmsKeyName:    "trusted-applet-prod",
 					kmsKeyVersion: 1,
-					noteVerifier:  "transparency.dev-aw-applet-prod+f022187a+AZSnFa8GxH+jHV6ahELk6peqVObbPKrYAdYyMjrzNF35",
+					noteVerifier:  "transparency.dev-aw-applet-prod+d45f2a0d+AZSnFa8GxH+jHV6ahELk6peqVObbPKrYAdYyMjrzNF35",
 				},
 				"boot": {
 					kmsKeyName:    "bootloader-prod",
 					kmsKeyVersion: 1,
-					noteVerifier:  "transparency.dev-aw-boot-prod+1e323b02+AR+KIx++GIlMBICxLkf4ZUK5RDlvJuiYUboqX5//RmUm",
+					noteVerifier:  "transparency.dev-aw-boot-prod+2fa9168e+AR+KIx++GIlMBICxLkf4ZUK5RDlvJuiYUboqX5//RmUm",
 				},
-				"os1": {
+				"os": {
 					kmsKeyName:    "trusted-os-prod",
 					kmsKeyVersion: 1,
-					noteVerifier:  "transparency.dev-aw-os-prod+03170554+AV7mmRamQp6VC9CutzSXzqtNhYNyNmQQRcLX07F6qlC1",
+					noteVerifier:  "transparency.dev-aw-os-prod+c31218b7+AV7mmRamQp6VC9CutzSXzqtNhYNyNmQQRcLX07F6qlC1",
 				},
 				"recovery": {
 					kmsKeyName:    "recovery-prod",
 					kmsKeyVersion: 1,
-					noteVerifier:  "transparency.dev-aw-recovery-prod+93159fea+ATu+HMUuO8ZsgaNwP97XMcb/+Ve8W1u1KdFQHNzOyLxx",
+					noteVerifier:  "transparency.dev-aw-recovery-prod+f3710baa+ATu+HMUuO8ZsgaNwP97XMcb/+Ve8W1u1KdFQHNzOyLxx",
 				},
 			},
 		},
