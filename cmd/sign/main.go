@@ -178,7 +178,7 @@ func main() {
 	}
 
 	// Verify signature was made by expected key
-	if _, err := note.Open(manifestBytes, note.VerifierList(verifier)); err != nil {
+	if _, err := note.Open(msg, note.VerifierList(verifier)); err != nil {
 		log.Fatalf("failed to verify signature for %s/%s: %v", *release, *artefact, err)
 	}
 
