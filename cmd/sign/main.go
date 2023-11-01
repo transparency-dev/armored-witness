@@ -53,7 +53,7 @@ $ sign --note_file=<path to previously signed manifest> --note_verifier=<verifie
 type keyInfo struct {
 	kmsKeyName    string
 	kmsKeyVersion uint
-	noteVerifier  string
+	noteKeyName   string
 }
 
 var (
@@ -179,16 +179,13 @@ func main() {
 	}
 	defer kmClient.Close()
 
-	verifier, err := note.NewVerifier(keyInfo.noteVerifier)
-	kmsKeyVersionResourceName := fmt.Sprintf(kmsnote.KeyVersionNameFormat, *gcpProject, *keyLocation,
-		*keyRing, *keyName, *keyVersion)
-	signer, err := kmsnote.NewSigner(ctx, kmClient, kmsKeyVersionResourceName)
+	kmsKeyName := fmt.Sprintf(kmsnote.KeyVersionNameFormat, *gcpProject, rel.kmsRegion,
+		rel.kmsKeyRing, keyInfo.kmsKeyName, keyInfo.kmsKeyVersion)
+	verifier, err := kmsnote.NewVerifier(ctx, kmClient, kmsKeyName, keyInfo.noteKeyName)
 	if err != nil {
 		log.Fatalf("invalid note verifier for %s/%s: %v", *release, *artefact, err)
 	}
-	kmsKeyVersionResourceName := fmt.Sprintf(kmssigner.KeyVersionNameFormat, *gcpProject, rel.kmsRegion,
-		rel.kmsKeyRing, keyInfo.kmsKeyName, keyInfo.kmsKeyVersion)
-	signer, err := kmssigner.New(ctx, kmClient, kmsKeyVersionResourceName, verifier.Name())
+	signer, err := kmsnote.NewSigner(ctx, kmClient, kmsKeyName, keyInfo.noteKeyName)
 	if err != nil {
 		log.Fatalf("failed to create signer for %s/%s: %v", *release, *artefact, err)
 	}
