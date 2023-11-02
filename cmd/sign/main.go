@@ -17,8 +17,8 @@
 // from Google Cloud Platform's
 // [Key Management Service](https://cloud.google.com/kms/docs).
 //
-// It is intended to be used to sign a manifest file for the Armored Witness
-// firmware transparency log.
+// It is intended to be used to sign/cosign a manifest file for the Armored
+// Witness firmware transparency log.
 package main
 
 import (
@@ -34,6 +34,20 @@ import (
 	"golang.org/x/exp/maps"
 	"golang.org/x/mod/sumdb/note"
 )
+
+const usageString = `
+This program is used to sign manifests using the note format.
+
+It can be used to create an initial signed manifest directly from a JSON file,
+or, it can be used to counter-sign an existing signed manifest.
+
+To create a signed manifest, the --manifest_file flag must be supplied:
+$ sign --manifest_file=<path to manifest> --output=<path to output>
+
+To counter sign a manifest, the --note_file and --note_verifier flags must
+be supplied:
+$ sign --note_file=<path to previously signed manifest> --note_verifier=<verifier string for previous signature>
+`
 
 // keyInfo represents a KMS key and its corresponding public verifier.
 type keyInfo struct {
@@ -126,8 +140,17 @@ func main() {
 	artefact := flag.String("artefact", "", "Type of artefact being signed, one of: "+artefactTypes())
 	manifestFile := flag.String("manifest_file", "",
 		"The file containing the content to sign.")
+	noteFile := flag.String("note_file", "", "The file containing a note to cosign.")
+	noteVerifier := flag.String("note_verifier", "", "If cosigning an existing note, this verifier string is used to verify the note before countersigning.")
 	outputFile := flag.String("output_file", "",
 		"The file to write the note to.")
+
+	flag.Usage = func() {
+		fmt.Fprintf(flag.CommandLine.Output(), "Usage of %s:\n", os.Args[0])
+		fmt.Fprintf(flag.CommandLine.Output(), usageString+"\n\n")
+		fmt.Fprintf(flag.CommandLine.Output(), "Flags:\n")
+		flag.PrintDefaults()
+	}
 
 	flag.Parse()
 
@@ -142,8 +165,8 @@ func main() {
 	if !ok {
 		log.Fatalf("artefact is required and must be one of %v", artefactTypes())
 	}
-	if *manifestFile == "" {
-		log.Fatal("manifest_file is required.")
+	if len(*manifestFile) == len(*noteFile) {
+		log.Fatalf("either manifest_file or note_file must be provided")
 	}
 	if *outputFile == "" {
 		log.Fatal("output_file is required.")
@@ -167,12 +190,31 @@ func main() {
 		log.Fatalf("failed to create signer for %s/%s: %v", *release, *artefact, err)
 	}
 
-	// Sign manifestFile as note.
-	manifestBytes, err := os.ReadFile(*manifestFile)
-	if err != nil {
-		log.Fatalf("failed to read manifest_file %q: %v", *manifestFile, err)
+	var n *note.Note
+	switch {
+	case *manifestFile != "":
+		// Sign manifestFile as note.
+		manifestBytes, err := os.ReadFile(*manifestFile)
+		if err != nil {
+			log.Fatalf("failed to read manifest_file %q: %v", *manifestFile, err)
+		}
+		n = &note.Note{Text: string(manifestBytes)}
+	case *noteFile != "":
+		nRaw, err := os.ReadFile(*noteFile)
+		if err != nil {
+			log.Fatalf("failed to read note_file %q: %v", *noteFile, err)
+		}
+		nV, err := note.NewVerifier(*noteVerifier)
+		if err != nil {
+			log.Fatalf("note_verifier: %v", err)
+		}
+		n, err = note.Open(nRaw, note.VerifierList(nV))
+		if err != nil {
+			log.Fatalf("failed to open note from %q: %v", *noteFile, err)
+		}
 	}
-	msg, err := note.Sign(&note.Note{Text: string(manifestBytes)}, signer)
+
+	msg, err := note.Sign(n, signer)
 	if err != nil {
 		log.Fatalf("failed to sign note text from %q: %v", *manifestFile, err)
 	}
