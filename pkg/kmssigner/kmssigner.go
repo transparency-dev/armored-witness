@@ -1,4 +1,4 @@
-package kmsnote
+package kmssigner
 
 import (
 	"context"
@@ -12,7 +12,6 @@ import (
 	"fmt"
 
 	kms "cloud.google.com/go/kms/apiv1"
-	"golang.org/x/mod/sumdb/note"
 
 	"cloud.google.com/go/kms/apiv1/kmspb"
 )
@@ -132,29 +131,29 @@ func (s *Signer) Sign(msg []byte) ([]byte, error) {
 	return resp.GetSignature(), nil
 }
 
-// NewVerifier creates a verifier which uses keys in GCP KMS. The signing
-// algorithm is expected to be
-// [Ed25519](https://pkg.go.dev/golang.org/x/mod/sumdb/note#hdr-Generating_Keys).
-func NewVerifier(ctx context.Context, c *kms.KeyManagementClient, kmsKeyName, noteKeyName string) (note.Verifier, error) {
+// VerifierKeyString returns a string which can be used to create a note
+// verifier based on a GCP KMS
+// [Ed25519](https://pkg.go.dev/golang.org/x/mod/sumdb/note#hdr-Generating_Keys)
+// key.
+func VerifierKeyString(ctx context.Context, c *kms.KeyManagementClient, kmsKeyName, noteKeyName string) (string, error) {
 	req := &kmspb.GetPublicKeyRequest{
 		Name: kmsKeyName,
 	}
 	resp, err := c.GetPublicKey(ctx, req)
 	if err != nil {
-		return nil, err
+		return "", err
 	}
 
 	publicKey, err := publicKeyFromPEM([]byte(resp.Pem))
 	if err != nil {
-		return nil, err
+		return "", err
 	}
 
 	h, err := keyHash(noteKeyName, publicKey)
 	if err != nil {
-		return nil, err
+		return "", err
 	}
 
 	prefixedPublicKey := append([]byte{algEd25519}, publicKey...)
-	vkey := fmt.Sprintf("%s+%08x+%s", noteKeyName, h, base64.StdEncoding.EncodeToString(prefixedPublicKey))
-	return note.NewVerifier(vkey)
+	return fmt.Sprintf("%s+%08x+%s", noteKeyName, h, base64.StdEncoding.EncodeToString(prefixedPublicKey)), nil
 }

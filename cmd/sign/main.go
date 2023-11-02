@@ -28,7 +28,7 @@ import (
 	"log"
 	"os"
 
-	"github.com/transparency-dev/armored-witness/pkg/kmsnote"
+	"github.com/transparency-dev/armored-witness/pkg/kmssigner"
 
 	kms "cloud.google.com/go/kms/apiv1"
 	"golang.org/x/exp/maps"
@@ -179,13 +179,17 @@ func main() {
 	}
 	defer kmClient.Close()
 
-	kmsKeyName := fmt.Sprintf(kmsnote.KeyVersionNameFormat, *gcpProject, rel.kmsRegion,
+	kmsKeyName := fmt.Sprintf(kmssigner.KeyVersionNameFormat, *gcpProject, rel.kmsRegion,
 		rel.kmsKeyRing, keyInfo.kmsKeyName, keyInfo.kmsKeyVersion)
-	verifier, err := kmsnote.NewVerifier(ctx, kmClient, kmsKeyName, keyInfo.noteKeyName)
+	vkey, err := kmssigner.VerifierKeyString(ctx, kmClient, kmsKeyName, keyInfo.noteKeyName)
+	if err != nil {
+		log.Fatalf("failed to create verifier string for KMS key %s: %v", kmsKeyName, err)
+	}
+	verifier, err := note.NewVerifier(vkey)
 	if err != nil {
 		log.Fatalf("invalid note verifier for %s/%s: %v", *release, *artefact, err)
 	}
-	signer, err := kmsnote.NewSigner(ctx, kmClient, kmsKeyName, keyInfo.noteKeyName)
+	signer, err := kmssigner.NewSigner(ctx, kmClient, kmsKeyName, keyInfo.noteKeyName)
 	if err != nil {
 		log.Fatalf("failed to create signer for %s/%s: %v", *release, *artefact, err)
 	}
