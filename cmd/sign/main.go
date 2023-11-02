@@ -165,7 +165,7 @@ func main() {
 	if !ok {
 		log.Fatalf("artefact is required and must be one of %v", artefactTypes())
 	}
-	if len(*manifestFile) == len(*noteFile) {
+	if haveM, haveN := len(*manifestFile) > 0, len(*noteFile) > 0; haveM == haveN {
 		log.Fatalf("either manifest_file or note_file must be provided")
 	}
 	if *outputFile == "" {
