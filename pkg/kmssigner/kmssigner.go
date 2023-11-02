@@ -10,6 +10,7 @@ import (
 	"errors"
 
 	kms "cloud.google.com/go/kms/apiv1"
+	"golang.org/x/mod/sumdb/note"
 
 	"cloud.google.com/go/kms/apiv1/kmspb"
 )
@@ -24,6 +25,37 @@ const (
 	algEd25519 = 1
 )
 
+func publicKeyFromPEM(pemKey []byte) ([]byte, error) {
+	block, _ := pem.Decode(pemKey)
+	if block == nil {
+		return nil, errors.New("failed to decode pemKey")
+	}
+
+	k, err := x509.ParsePKIXPublicKey(block.Bytes)
+	if err != nil {
+		return nil, err
+	}
+
+	publicKey, ok := k.(ed25519.PublicKey)
+	if !ok {
+		return nil, errors.New("failed to assert ed25519.PublicKey type")
+	}
+
+	return publicKey, nil
+}
+
+// keyHash calculates the ed25519 key hash from the key name and public key.
+func keyHash(keyName string, publicKey []byte) (uint32, error) {
+	h := sha256.New()
+	h.Write([]byte(keyName))
+	h.Write([]byte("\n"))
+	prefixedPublicKey := append([]byte{algEd25519}, publicKey...)
+	h.Write(prefixedPublicKey)
+	sum := h.Sum(nil)
+
+	return binary.BigEndian.Uint32(sum), nil
+}
+
 // Signer is an implementation of a
 // [note signer](https://pkg.go.dev/golang.org/x/mod/sumdb/note#Signer) which
 // interfaces with GCP KMS.
@@ -31,64 +63,46 @@ type Signer struct {
 	// ctx must be stored because Signer is used as an implementation of the
 	// note.Signer interface, which does not allow for a context in the Sign
 	// method. However, the KMS AsymmetricSign API requires a context.
-	ctx         context.Context
-	client      *kms.KeyManagementClient
-	keyHash     uint32
-	keyName     string
-	keyResource string
+	ctx        context.Context
+	client     *kms.KeyManagementClient
+	keyHash    uint32
+	keyName    string
+	kmsKeyName string
 }
 
 // New creates a signer which uses keys in GCP KMS. The signing algorithm is
 // expected to be
 // [Ed25519](https://pkg.go.dev/golang.org/x/mod/sumdb/note#hdr-Generating_Keys).
 // To open a note signed by this Signer, the verifier must also be Ed25519.
-func New(ctx context.Context, c *kms.KeyManagementClient, keyResource, noteSignerName string) (*Signer, error) {
+func New(ctx context.Context, c *kms.KeyManagementClient, kmsKeyName, noteKeyName string) (*Signer, error) {
 	s := &Signer{}
 
 	s.client = c
 	s.ctx = ctx
-	s.keyName = noteSignerName
-	s.keyResource = keyResource
+	s.keyName = noteKeyName
+	s.kmsKeyName = kmsKeyName
 
 	// Set keyHash.
 	req := &kmspb.GetPublicKeyRequest{
-		Name: keyResource,
+		Name: kmsKeyName,
 	}
 	resp, err := c.GetPublicKey(ctx, req)
 	if err != nil {
 		return nil, err
 	}
-	kh, err := keyHash(s.keyName, []byte(resp.Pem))
+
+	publicKey, err := publicKeyFromPEM([]byte(resp.Pem))
+	if err != nil {
+		return nil, err
+	}
+
+	kh, err := keyHash(s.keyName, publicKey)
 	if err != nil {
 		return nil, err
 	}
 	s.keyHash = kh
 
 	return s, nil
-}
-
-// keyHash calculates the key hash from the key name and public key.
-func keyHash(keyName string, pemKey []byte) (uint32, error) {
-	block, _ := pem.Decode(pemKey)
-
-	h := sha256.New()
-	h.Write([]byte(keyName))
-	h.Write([]byte("\n"))
-
-	k, err := x509.ParsePKIXPublicKey(block.Bytes)
-	if err != nil {
-		return 0, err
-	}
-	publicKey, ok := k.(ed25519.PublicKey)
-	if !ok {
-		return 0, errors.New("failed to assert ed25519.PublicKey type")
-	}
-
-	prefixedPublicKey := append([]byte{algEd25519}, publicKey...)
-	h.Write(prefixedPublicKey)
-	sum := h.Sum(nil)
-
-	return binary.BigEndian.Uint32(sum), nil
 }
 
 // Name identifies the key that this Signer uses.
@@ -105,7 +119,7 @@ func (s *Signer) KeyHash() uint32 {
 // Sign returns a signature for the given message.
 func (s *Signer) Sign(msg []byte) ([]byte, error) {
 	req := &kmspb.AsymmetricSignRequest{
-		Name: s.keyResource,
+		Name: s.kmsKeyName,
 		Data: msg,
 	}
 	resp, err := s.client.AsymmetricSign(s.ctx, req)
@@ -114,4 +128,25 @@ func (s *Signer) Sign(msg []byte) ([]byte, error) {
 	}
 
 	return resp.GetSignature(), nil
+}
+
+// VerifierKeyString returns a string which can be used to create a note
+// verifier based on a GCP KMS
+// [Ed25519](https://pkg.go.dev/golang.org/x/mod/sumdb/note#hdr-Generating_Keys)
+// key.
+func VerifierKeyString(ctx context.Context, c *kms.KeyManagementClient, kmsKeyName, noteKeyName string) (string, error) {
+	req := &kmspb.GetPublicKeyRequest{
+		Name: kmsKeyName,
+	}
+	resp, err := c.GetPublicKey(ctx, req)
+	if err != nil {
+		return "", err
+	}
+
+	publicKey, err := publicKeyFromPEM([]byte(resp.Pem))
+	if err != nil {
+		return "", err
+	}
+
+	return note.NewEd25519VerifierKey(noteKeyName, publicKey)
 }
