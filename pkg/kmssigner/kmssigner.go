@@ -5,13 +5,12 @@ import (
 	"crypto/ed25519"
 	"crypto/sha256"
 	"crypto/x509"
-	"encoding/base64"
 	"encoding/binary"
 	"encoding/pem"
 	"errors"
-	"fmt"
 
 	kms "cloud.google.com/go/kms/apiv1"
+	"golang.org/x/mod/sumdb/note"
 
 	"cloud.google.com/go/kms/apiv1/kmspb"
 )
@@ -71,11 +70,11 @@ type Signer struct {
 	kmsKeyName string
 }
 
-// NewSigner creates a signer which uses keys in GCP KMS. The signing algorithm
-// is expected to be
+// New creates a signer which uses keys in GCP KMS. The signing algorithm is
+// expected to be
 // [Ed25519](https://pkg.go.dev/golang.org/x/mod/sumdb/note#hdr-Generating_Keys).
 // To open a note signed by this Signer, the verifier must also be Ed25519.
-func NewSigner(ctx context.Context, c *kms.KeyManagementClient, kmsKeyName, noteKeyName string) (*Signer, error) {
+func New(ctx context.Context, c *kms.KeyManagementClient, kmsKeyName, noteKeyName string) (*Signer, error) {
 	s := &Signer{}
 
 	s.client = c
@@ -149,11 +148,5 @@ func VerifierKeyString(ctx context.Context, c *kms.KeyManagementClient, kmsKeyNa
 		return "", err
 	}
 
-	h, err := keyHash(noteKeyName, publicKey)
-	if err != nil {
-		return "", err
-	}
-
-	prefixedPublicKey := append([]byte{algEd25519}, publicKey...)
-	return fmt.Sprintf("%s+%08x+%s", noteKeyName, h, base64.StdEncoding.EncodeToString(prefixedPublicKey)), nil
+	return note.NewEd25519VerifierKey(noteKeyName, publicKey)
 }
