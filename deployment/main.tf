@@ -17,6 +17,9 @@ module "lb-http" {
   ssl                             = var.tls
   managed_ssl_certificate_domains = [var.serve_domain]
   https_redirect                  = var.tls
+  
+  create_ipv6_address             = true
+  enable_ipv6                     = true
 
   backends = {
     default = {
