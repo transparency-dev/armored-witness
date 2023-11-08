@@ -1,3 +1,8 @@
+// Package kmssigner provides a
+// [note](https://pkg.go.dev/golang.org/x/mod/sumdb/note)-compatible signer
+// which uses keys from Google Cloud Platform KMS.
+//
+// TODO(jayhou): move this package to https://github.com/transparency-dev/serverless-log.
 package kmssigner
 
 import (
