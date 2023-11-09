@@ -16,14 +16,6 @@ variable "tls" {
   type        = bool
 }
 
-variable "bucket_firmware_log_ci" {
-  description = "Bucket name for CI firmware log data"
-}
-
-variable "bucket_firmware_artefacts_ci" {
-  description = "Bucket name for CI firmware artefact data"
-}
-
 variable "distributor_host" {
   description = "Host name serving distributor service API"
 }
