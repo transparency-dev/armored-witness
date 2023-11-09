@@ -33,8 +33,8 @@ module "lb-http" {
         }
       ]
 
-      health_check = null
-
+    health_check = null
+    
       enable_cdn = false
 
       iap_config = {
@@ -68,7 +68,6 @@ resource "google_compute_url_map" "default" {
   path_matcher {
     name = "allpaths"
 
-    /*
     # If we don't know what this is, send them to the website.
     default_url_redirect {
       https_redirect = true
@@ -82,13 +81,15 @@ resource "google_compute_url_map" "default" {
 
     path_rule {
       paths = [
-        "/*"
+        "/distributor/*"
       ]
+      route_action {
+        url_rewrite {
+          host_rewrite = var.distributor_host
+        }
+      }
       service = module.lb-http.backend_services["default"].id
     }
-    */
-
-    default_service = module.lb-http.backend_services["default"].id
 
     #####
     # CI log & aretefacts rules
@@ -103,7 +104,6 @@ resource "google_compute_url_map" "default" {
       }
       service = google_compute_backend_bucket.firmware_log_ci.id
     }
-
     path_rule {
       paths = [
         "/armored-witness-firmware/ci/artefacts/0/*"
@@ -136,6 +136,7 @@ resource "google_compute_backend_bucket" "firmware_artefacts_ci" {
 
 resource "google_compute_global_network_endpoint_group" "distributor" {
   name                  = "distributor"
+  provider              = google-beta
   default_port          = var.distributor_port
   network_endpoint_type = "INTERNET_FQDN_PORT"
 }
