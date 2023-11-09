@@ -204,6 +204,7 @@ resource "google_compute_backend_bucket" "firmware_artefacts_ci" {
 
 resource "google_compute_global_network_endpoint_group" "distributor" {
   name                  = "distributor"
+  project               = var.project_id
   provider              = google-beta
   default_port          = var.distributor_port
   network_endpoint_type = "INTERNET_FQDN_PORT"
