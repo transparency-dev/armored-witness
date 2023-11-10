@@ -1,3 +1,12 @@
+# Configure remote terraform backend for state.
+terraform {
+ backend "gcs" {
+   bucket  = "armored-witness-bucket-tfstate"
+   prefix  = "terraform/state"
+ }
+}
+
+# Project
 provider "google" {
   project = var.project_id
 }
@@ -226,8 +235,8 @@ resource "google_kms_key_ring" "firmware_release_prod" {
   name     = "firmware-release-prod"
 }
 
-# TODO(jayhou): This configuration cannot be applied right now because of the
-# algorithm. Uncomment again when it is supported.
+# # TODO(jayhou): This configuration cannot be applied right now because of the
+# # algorithm. Uncomment again when it is supported.
 # ### KMS keys
 # resource "google_kms_crypto_key" "bootloader_ci" {
 #   key_ring                   = "projects/armored-witness/locations/global/keyRings/firmware-release-ci"
@@ -329,4 +338,32 @@ resource "google_kms_key_ring" "firmware_release_prod" {
 #   }
 # }
 
+resource "google_kms_key_ring" "terraform_state" {
+  name = "armored-witness-bucket-tfstate"
+  location = "europe-west2"
+}
+
+resource "google_kms_crypto_key" "terraform_state_bucket" {
+  name            = "terraform-state-bucket"
+  key_ring        = google_kms_key_ring.terraform_state.id
+  rotation_period = "86400s"
+
+  lifecycle {
+    prevent_destroy = false
+  }
+}
+
+resource "google_storage_bucket" "terraform_state" {
+  name          = "armored-witness-bucket-tfstate"
+  force_destroy = false
+  location      = "europe-west2"
+  storage_class = "STANDARD"
+  versioning {
+    enabled = true
+  }
+  encryption {
+    default_kms_key_name = google_kms_crypto_key.terraform_state_bucket.id
+  }
+  uniform_bucket_level_access = true
+}
 # TODO(jayhou): add GCF stuff.
