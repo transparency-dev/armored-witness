@@ -136,6 +136,7 @@ func (t *Target) BootIMX(imx []byte) error {
 	}
 
 	klog.Infof("Serial download on %s complete", t.DeviceInfo.Path)
+	time.Sleep(time.Second)
 	return nil
 }
 
