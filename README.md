@@ -40,17 +40,14 @@ The firmware for the ArmoredWitness is all written in Go, and compiled with [Tam
 
 There are 3 main parts to the ArmoredWitness firmware stack:
 
-* Bootloader \
-<https://github.com/transparency-dev/armored-witness-bootloader> \
+* [Bootloader](https://github.com/transparency-dev/armored-witness-boot) \
 A very simple TamaGo unikernel which loads the OS from MMC, verifies it, and finally boots it.
-* Trusted OS \
-<https://github.com/transparency-dev/armored-witness-os> \
+* [Trusted OS](https://github.com/transparency-dev/armored-witness-os) \
 The OS is a TamaGo unikernel which is primarily concerned with:
   * Managing the device hardware (Ethernet, storage, LEDs, etc.),
   * Loading and verifying the Applet from MMC, and executing it inside a TEE,
   * Providing an RPC-like syscall interface to the Applet.
-* Witness Applet \
-<https://github.com/transparency-dev/armored-witness-applet>  \
+* [Witness Applet](https://github.com/transparency-dev/armored-witness-applet)  \
 The Trusted Applet is where the witness itself lives. \
 In addition to running the witness code, the applet also handles the TCP/IP side of networking (using RPC to send/receive packets).
 
