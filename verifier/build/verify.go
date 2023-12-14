@@ -36,7 +36,7 @@ const (
 // NewReproducibleBuildVerifier returns a ReproducibleBuildVerifier that will delete
 // any temporary git repositories after use if cleanup is true, or leave them around
 // for further investigation if false.
-func NewReproducibleBuildVerifier(cleanup bool, tamago Tamago, sigs releaseSigStore) (*ReproducibleBuildVerifier, error) {
+func NewReproducibleBuildVerifier(cleanup bool, tamago Tamago, sigs releaseImplicitMetadata) (*ReproducibleBuildVerifier, error) {
 	return &ReproducibleBuildVerifier{
 		cleanup: cleanup,
 		tamago:  tamago,
@@ -49,7 +49,7 @@ func NewReproducibleBuildVerifier(cleanup bool, tamago Tamago, sigs releaseSigSt
 type ReproducibleBuildVerifier struct {
 	cleanup bool
 	tamago  Tamago
-	sigs    releaseSigStore
+	sigs    releaseImplicitMetadata
 }
 
 // VerifyManifest attempts to reproduce the FirmwareRelease at index `i` in the log by

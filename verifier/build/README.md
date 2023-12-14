@@ -5,10 +5,10 @@ The log properties are checked to ensure the log is consistent with any previous
 view, and that all claims are verifiably committed to by the log.
 
 For each manifest claim that it hasn't seen before, the following steps are taken:
- 1. The source repository is cloned at the release tag
+ 1. The source repository is cloned at the git commit hash
  2. The git revision at the tag is checked against the manifest
- 3. The imx file is compiled from source
- 4. The hash for the imx in the manifest is compared against the locally built version
+ 3. The ELF file is compiled from source
+ 4. The hash for the ELF in the manifest is compared against the locally built version
 
 ## Running
 

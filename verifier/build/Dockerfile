@@ -24,7 +24,7 @@ RUN go build -o /build/bin/monitor ./verifier/build
 #
 # Set up the final image
 #
-FROM ubuntu:18.04
+FROM ubuntu:22.04
 
 RUN apt-get update
 RUN apt-get -y install curl unzip wget xxd git

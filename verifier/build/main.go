@@ -46,8 +46,8 @@ var (
 	pollInterval        = flag.Duration("poll_interval", 1*time.Minute, "The interval at which the log will be polled for new data")
 	stateFile           = flag.String("state_file", "", "File path for where checkpoints should be stored")
 	distributorURL      = flag.String("distributor_url", "https://api.transparency.dev", "URL identifying the REST distributor")
-	logURL              = flag.String("log_url", "https://storage.googleapis.com/armored-witness-firmware-log-ci/", "URL identifying the location of the log")
-	binURL              = flag.String("bin_url", "https://storage.googleapis.com/armored-witness-firmware-ci/", "URL identifying the location of the binaries that are logged")
+	logURL              = flag.String("log_url", "https://api.transparency.dev/armored-witness-firmware/ci/log/0/", "URL identifying the location of the log")
+	binURL              = flag.String("bin_url", "https://api.transparency.dev/armored-witness-firmware/ci/artefacts/0/", "URL identifying the location of the binaries that are logged")
 	logOrigin           = flag.String("log_origin", "transparency.dev/armored-witness/firmware_transparency/ci/0", "The expected first line of checkpoints issued by the log")
 	logPubKey           = flag.String("log_pubkey", "transparency.dev-aw-ftlog-ci+f5479c1e+AR6gW0mycDtL17iM2uvQUThJsoiuSRirstEj9a5AdCCu", "The log's public key")
 	osReleasePubKey1    = flag.String("os_release_pubkey1", "transparency.dev-aw-os1-ci+7a0eaef3+AcsqvmrcKIbs21H2Bm2fWb6oFWn/9MmLGNc6NLJty2eQ", "The first OS release signer's public key")
@@ -72,7 +72,7 @@ func main() {
 	if err != nil {
 		klog.Exitf("Failed to init tamago: %v", err)
 	}
-	sigStore := newReleaseSigStoreFromFlags()
+	sigStore := newReleaseImplicitMetadata()
 	defer sigStore.cleanup()
 
 	rbv, err := NewReproducibleBuildVerifier(*cleanup, tamago, sigStore)
@@ -123,9 +123,9 @@ func main() {
 	}
 }
 
-// newReleaseSigStoreFromFlags returns a signature verifier constructed from the
+// newReleaseImplicitMetadata returns a signature verifier constructed from the
 // flags, or dies trying.
-func newReleaseSigStoreFromFlags() releaseSigStore {
+func newReleaseImplicitMetadata() releaseImplicitMetadata {
 	osReleaseVerifier1, err := note.NewVerifier(*osReleasePubKey1)
 	if err != nil {
 		klog.Exitf("Failed to construct OS release verifier: %v", err)
@@ -161,7 +161,7 @@ func newReleaseSigStoreFromFlags() releaseSigStore {
 		klog.Exitf("Failed to create public key file: %v", err)
 	}
 
-	return releaseSigStore{
+	return releaseImplicitMetadata{
 		osV1: osReleaseVerifier1,
 		osV2: osReleaseVerifier2,
 		appV: appletReleaseVerifier,
@@ -182,10 +182,14 @@ func newReleaseSigStoreFromFlags() releaseSigStore {
 	}
 }
 
-// releaseSigStore stores the signatures used for verifying releases.
-// Having such an object avoids needing to pass lots of state as args, or parsing
-// keys in different places.
-type releaseSigStore struct {
+// releaseImplicitMetadata stores all of the information needed to reproduce and
+// verify releases. This is all of the data that is not passed in-band with the
+// release (i.e. is not in the Makefile or code).
+// In order to be maximally useful this exposes its state as env variables, which
+// is how they are consumed. Some of these point at files, which need to be cleaned
+// up after usage. This cleanup must be done by the owner of this object via the
+// cleanup function.
+type releaseImplicitMetadata struct {
 	osV1    note.Verifier
 	osV2    note.Verifier
 	appV    note.Verifier
@@ -199,7 +203,7 @@ type releaseSigStore struct {
 type Monitor struct {
 	st        client.LogStateTracker
 	stateFile string
-	sigStore  releaseSigStore
+	sigStore  releaseImplicitMetadata
 	handler   func(context.Context, uint64, ftlog.FirmwareRelease) error
 }
 
@@ -244,26 +248,6 @@ func (m *Monitor) From(ctx context.Context, start uint64) error {
 			return fmt.Errorf("failed to unmarshal release at index %d: %w", i, err)
 		}
 
-		assertSigners := func(n *note.Note, names ...note.Verifier) error {
-			needed := make(map[string]bool)
-			for _, n := range names {
-				needed[n.Name()] = true
-			}
-			for _, s := range n.Sigs {
-				if !needed[s.Name] {
-					return fmt.Errorf("unexpected sig for %s", s.Name)
-				}
-				delete(needed, s.Name)
-			}
-			if len(needed) > 0 {
-				keys := make([]string, 0, len(needed))
-				for k := range needed {
-					keys = append(keys, k)
-				}
-				return fmt.Errorf("no sigs found for %v", keys)
-			}
-			return nil
-		}
 		switch release.Component {
 		case ftlog.ComponentApplet:
 			if err := assertSigners(releaseNote, m.sigStore.appV); err != nil {
@@ -342,4 +326,25 @@ func newFetcher(root *url.URL) (client.Fetcher, error) {
 		defer resp.Body.Close()
 		return io.ReadAll(resp.Body)
 	}, nil
+}
+
+func assertSigners(n *note.Note, names ...note.Verifier) error {
+	needed := make(map[string]bool)
+	for _, n := range names {
+		needed[n.Name()] = true
+	}
+	for _, s := range n.Sigs {
+		if !needed[s.Name] {
+			return fmt.Errorf("unexpected sig for %s", s.Name)
+		}
+		delete(needed, s.Name)
+	}
+	if len(needed) > 0 {
+		keys := make([]string, 0, len(needed))
+		for k := range needed {
+			keys = append(keys, k)
+		}
+		return fmt.Errorf("no sigs found for %v", keys)
+	}
+	return nil
 }
