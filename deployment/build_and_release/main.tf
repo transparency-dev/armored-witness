@@ -95,105 +95,105 @@ resource "google_kms_key_ring" "firmware_release_prod" {
 # TODO(jayhou): This configuration cannot be applied right now because of the
 # algorithm. Uncomment again when it is supported.
 ### KMS keys
-resource "google_kms_crypto_key" "bootloader_ci" {
-  key_ring = "projects/armored-witness/locations/global/keyRings/firmware-release-ci"
-  name     = "bootloader-ci"
-  purpose  = "ASYMMETRIC_SIGN"
-  version_template {
-    algorithm        = "EC_SIGN_ED25519"
-    protection_level = "SOFTWARE"
-  }
-}
-resource "google_kms_crypto_key" "recovery_ci" {
-  key_ring = "projects/armored-witness/locations/global/keyRings/firmware-release-ci"
-  name     = "recovery-ci"
-  purpose  = "ASYMMETRIC_SIGN"
-  version_template {
-    algorithm        = "EC_SIGN_ED25519"
-    protection_level = "SOFTWARE"
-  }
-}
-resource "google_kms_crypto_key" "trusted_applet_ci" {
-  key_ring = "projects/armored-witness/locations/global/keyRings/firmware-release-ci"
-  name     = "trusted-applet-ci"
-  purpose  = "ASYMMETRIC_SIGN"
-  version_template {
-    algorithm        = "EC_SIGN_ED25519"
-    protection_level = "SOFTWARE"
-  }
-}
-resource "google_kms_crypto_key" "trusted_os_1_ci" {
-  key_ring = "projects/armored-witness/locations/global/keyRings/firmware-release-ci"
-  name     = "trusted-os-1-ci"
-  purpose  = "ASYMMETRIC_SIGN"
-  version_template {
-    algorithm        = "EC_SIGN_ED25519"
-    protection_level = "SOFTWARE"
-  }
-}
-resource "google_kms_crypto_key" "trusted_os_2_ci" {
-  key_ring = "projects/armored-witness/locations/global/keyRings/firmware-release-ci"
-  name     = "trusted-os-2-ci"
-  purpose  = "ASYMMETRIC_SIGN"
-  version_template {
-    algorithm        = "EC_SIGN_ED25519"
-    protection_level = "SOFTWARE"
-  }
-}
-resource "google_kms_crypto_key" "ft_log_ci" {
-  key_ring = "projects/armored-witness/locations/global/keyRings/firmware-release-ci"
-  name     = "ft-log-ci"
-  purpose  = "ASYMMETRIC_SIGN"
-  version_template {
-    algorithm        = "EC_SIGN_ED25519"
-    protection_level = "SOFTWARE"
-  }
-}
-resource "google_kms_crypto_key" "bootloader_prod" {
-  key_ring = "projects/armored-witness/locations/global/keyRings/firmware-release-prod"
-  name     = "bootloader-prod"
-  purpose  = "ASYMMETRIC_SIGN"
-  version_template {
-    algorithm        = "EC_SIGN_ED25519"
-    protection_level = "SOFTWARE"
-  }
-}
-resource "google_kms_crypto_key" "recovery_prod" {
-  key_ring = "projects/armored-witness/locations/global/keyRings/firmware-release-prod"
-  name     = "recovery-prod"
-  purpose  = "ASYMMETRIC_SIGN"
-  version_template {
-    algorithm        = "EC_SIGN_ED25519"
-    protection_level = "SOFTWARE"
-  }
-}
-resource "google_kms_crypto_key" "trusted_applet_prod" {
-  key_ring = "projects/armored-witness/locations/global/keyRings/firmware-release-prod"
-  name     = "trusted-applet-prod"
-  purpose  = "ASYMMETRIC_SIGN"
-  version_template {
-    algorithm        = "EC_SIGN_ED25519"
-    protection_level = "SOFTWARE"
-  }
-}
-resource "google_kms_crypto_key" "trusted_os_prod" {
-  key_ring = "projects/armored-witness/locations/global/keyRings/firmware-release-prod"
-  name     = "trusted-os-prod"
-  purpose  = "ASYMMETRIC_SIGN"
-  version_template {
-    algorithm        = "EC_SIGN_ED25519"
-    protection_level = "SOFTWARE"
-  }
-}
-resource "google_kms_crypto_key" "ft_log_prod" {
-  key_ring = "projects/armored-witness/locations/global/keyRings/firmware-release-prod"
-  name     = "ft-log-prod"
-  purpose  = "ASYMMETRIC_SIGN"
-  version_template {
-    algorithm        = "EC_SIGN_ED25519"
-    protection_level = "SOFTWARE"
-  }
-}
+#resource "google_kms_crypto_key" "bootloader_ci" {
+#  key_ring = "projects/armored-witness/locations/global/keyRings/firmware-release-ci"
+#  name     = "bootloader-ci"
+#  purpose  = "ASYMMETRIC_SIGN"
+#  version_template {
+#    algorithm        = "EC_SIGN_ED25519"
+#    protection_level = "SOFTWARE"
+#  }
+#}
+#resource "google_kms_crypto_key" "recovery_ci" {
+#  key_ring = "projects/armored-witness/locations/global/keyRings/firmware-release-ci"
+#  name     = "recovery-ci"
+#  purpose  = "ASYMMETRIC_SIGN"
+#  version_template {
+#    algorithm        = "EC_SIGN_ED25519"
+#    protection_level = "SOFTWARE"
+#  }
+#}
+#resource "google_kms_crypto_key" "trusted_applet_ci" {
+#  key_ring = "projects/armored-witness/locations/global/keyRings/firmware-release-ci"
+#  name     = "trusted-applet-ci"
+#  purpose  = "ASYMMETRIC_SIGN"
+#  version_template {
+#    algorithm        = "EC_SIGN_ED25519"
+#    protection_level = "SOFTWARE"
+#  }
+#}
+#resource "google_kms_crypto_key" "trusted_os_1_ci" {
+#  key_ring = "projects/armored-witness/locations/global/keyRings/firmware-release-ci"
+#  name     = "trusted-os-1-ci"
+#  purpose  = "ASYMMETRIC_SIGN"
+#  version_template {
+#    algorithm        = "EC_SIGN_ED25519"
+#    protection_level = "SOFTWARE"
+#  }
+#}
+#resource "google_kms_crypto_key" "trusted_os_2_ci" {
+#  key_ring = "projects/armored-witness/locations/global/keyRings/firmware-release-ci"
+#  name     = "trusted-os-2-ci"
+#  purpose  = "ASYMMETRIC_SIGN"
+#  version_template {
+#    algorithm        = "EC_SIGN_ED25519"
+#    protection_level = "SOFTWARE"
+#  }
+#}
+#resource "google_kms_crypto_key" "ft_log_ci" {
+#  key_ring = "projects/armored-witness/locations/global/keyRings/firmware-release-ci"
+#  name     = "ft-log-ci"
+#  purpose  = "ASYMMETRIC_SIGN"
+#  version_template {
+#    algorithm        = "EC_SIGN_ED25519"
+#    protection_level = "SOFTWARE"
+#  }
+#}
+#resource "google_kms_crypto_key" "bootloader_prod" {
+#  key_ring = "projects/armored-witness/locations/global/keyRings/firmware-release-prod"
+#  name     = "bootloader-prod"
+#  purpose  = "ASYMMETRIC_SIGN"
+#  version_template {
+#    algorithm        = "EC_SIGN_ED25519"
+#    protection_level = "SOFTWARE"
+#  }
+#}
+#resource "google_kms_crypto_key" "recovery_prod" {
+#  key_ring = "projects/armored-witness/locations/global/keyRings/firmware-release-prod"
+#  name     = "recovery-prod"
+#  purpose  = "ASYMMETRIC_SIGN"
+#  version_template {
+#    algorithm        = "EC_SIGN_ED25519"
+#    protection_level = "SOFTWARE"
+#  }
+#}
+#resource "google_kms_crypto_key" "trusted_applet_prod" {
+#  key_ring = "projects/armored-witness/locations/global/keyRings/firmware-release-prod"
+#  name     = "trusted-applet-prod"
+#  purpose  = "ASYMMETRIC_SIGN"
+#  version_template {
+#    algorithm        = "EC_SIGN_ED25519"
+#    protection_level = "SOFTWARE"
+#  }
+#}
+#resource "google_kms_crypto_key" "trusted_os_prod" {
+#  key_ring = "projects/armored-witness/locations/global/keyRings/firmware-release-prod"
+#  name     = "trusted-os-prod"
+#  purpose  = "ASYMMETRIC_SIGN"
+#  version_template {
+#    algorithm        = "EC_SIGN_ED25519"
+#    protection_level = "SOFTWARE"
+#  }
+#}
+#resource "google_kms_crypto_key" "ft_log_prod" {
+#  key_ring = "projects/armored-witness/locations/global/keyRings/firmware-release-prod"
+#  name     = "ft-log-prod"
+#  purpose  = "ASYMMETRIC_SIGN"
+#  version_template {
+#    algorithm        = "EC_SIGN_ED25519"
+#    protection_level = "SOFTWARE"
+#  }
+#}
 
 resource "google_kms_key_ring" "terraform_state" {
   name     = "armored-witness-bucket-tfstate"
