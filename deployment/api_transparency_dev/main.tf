@@ -218,26 +218,28 @@ resource "google_compute_global_network_endpoint" "distributor" {
   fqdn                          = var.distributor_host
 }
 
-resource "google_kms_key_ring" "terraform_state" {
-  name     = "armored-witness-bucket-tfstate"
-  location = var.tf_state_location
-}
-
-resource "google_kms_crypto_key" "terraform_state_bucket" {
-  name     = "terraform-state-bucket"
-  key_ring = google_kms_key_ring.terraform_state.id
-}
-
-resource "google_storage_bucket" "terraform_state" {
-  name          = "armored-witness-bucket-tfstate"
-  force_destroy = false
-  location      = var.tf_state_location
-  storage_class = "STANDARD"
-  versioning {
-    enabled = true
-  }
-  encryption {
-    default_kms_key_name = google_kms_crypto_key.terraform_state_bucket.id
-  }
-  uniform_bucket_level_access = true
-}
+## Terraform keys
+## Commented out here as they're provided in the build_and_release unit.
+#resource "google_kms_key_ring" "terraform_state" {
+#  name     = "armored-witness-bucket-tfstate"
+#  location = var.tf_state_location
+#}
+#
+#resource "google_kms_crypto_key" "terraform_state_bucket" {
+#  name     = "terraform-state-bucket"
+#  key_ring = google_kms_key_ring.terraform_state.id
+#}
+#
+#resource "google_storage_bucket" "terraform_state" {
+#  name          = "armored-witness-bucket-tfstate"
+#  force_destroy = false
+#  location      = var.tf_state_location
+#  storage_class = "STANDARD"
+#  versioning {
+#    enabled = true
+#  }
+#  encryption {
+#    default_kms_key_name = google_kms_crypto_key.terraform_state_bucket.id
+#  }
+#  uniform_bucket_level_access = true
+#}
