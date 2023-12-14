@@ -95,7 +95,7 @@ func main() {
 		}
 	}
 
-	klog.Info("No known backlog, switching mode to poll log for new checkpoints...")
+	klog.Infof("No known backlog, switching mode to poll log for new checkpoints. Current size: %d", st.LatestConsistent.Size)
 
 	// We've processed all leaves committed to by the tracker's checkpoint, and now we enter polling mode.
 	ticker := time.NewTicker(*pollInterval)
