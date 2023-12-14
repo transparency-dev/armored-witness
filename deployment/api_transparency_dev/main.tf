@@ -121,7 +121,32 @@ resource "google_compute_url_map" "default" {
     }
 
     #####
-    # CI log & aretefacts rules
+    ## CI log & aretefacts rules
+    # CI log rev 0
+    path_rule {
+      paths = [
+        "/armored-witness-firmware/ci/log/0/*"
+      ]
+      route_action {
+        url_rewrite {
+          path_prefix_rewrite = "/"
+        }
+      }
+      service = google_compute_backend_bucket.firmware_log_ci.id
+    }
+    path_rule {
+      paths = [
+        "/armored-witness-firmware/ci/artefacts/0/*"
+      ]
+      route_action {
+        url_rewrite {
+          path_prefix_rewrite = "/"
+        }
+      }
+      service = google_compute_backend_bucket.firmware_artefacts_ci.id
+    }
+
+    # CI log rev 1
     path_rule {
       paths = [
         "/armored-witness-firmware/ci/log/1/*"
@@ -149,20 +174,35 @@ resource "google_compute_url_map" "default" {
   }
 }
 
-# Corresponding load balancer backend buckets.
-resource "google_compute_backend_bucket" "firmware_log_ci_1" {
-  name        = "firmware-log-ci-backend-1"
-  description = "Contains CI firmware transparency log 1"
-  bucket_name = "armored-witness-firmware-log-ci-1" # google_storage_bucket.armored_witness_firmware_log_ci.name
+## Corresponding load balancer backend buckets.
+# CI log rev 0
+resource "google_compute_backend_bucket" "firmware_log_ci" {
+  name        = "firmware-log-ci-backend"
+  description = "Contains CI firmware transparency log"
+  bucket_name = "armored-witness-firmware-log-ci" # google_storage_bucket.armored_witness_firmware_log_ci.name
+  enable_cdn  = false
+}
+resource "google_compute_backend_bucket" "firmware_artefacts_ci" {
+  name        = "firmware-artefacts-ci-backend"
+  description = "Contains CI firmware artefacts for FT log"
+  bucket_name = "armored-witness-firmware-ci" # google_storage_bucket.armored_witness_firmware_ci.name
   enable_cdn  = false
 }
 
+# CI log rev 1
+resource "google_compute_backend_bucket" "firmware_log_ci_1" {
+  name        = "firmware-log-ci-backend-1"
+  description = "Contains CI firmware transparency log 1"
+  bucket_name = "armored-witness-firmware-log-ci-1" # google_storage_bucket.armored_witness_firmware_log_ci_1.name
+  enable_cdn  = false
+}
 resource "google_compute_backend_bucket" "firmware_artefacts_ci_1" {
   name        = "firmware-artefacts-ci-backend-1"
   description = "Contains CI firmware artefacts for FT log 1"
-  bucket_name = "armored-witness-firmware-ci-1" # google_storage_bucket.armored_witness_firmware_ci.name
+  bucket_name = "armored-witness-firmware-ci-1" # google_storage_bucket.armored_witness_firmware_ci_1.name
   enable_cdn  = false
 }
+
 
 resource "google_compute_global_network_endpoint_group" "distributor" {
   name                  = "distributor"

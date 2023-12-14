@@ -57,21 +57,53 @@ resource "google_project_service" "storage_googleapis_com" {
 }
 
 # GCS buckets
+
+# prod log rev 0
 resource "google_storage_bucket" "armored_witness_firmware" {
   location                    = "EU"
-  name                        = "armored-witness-firmware-1"
+  name                        = "armored-witness-firmware"
   storage_class               = "STANDARD"
   uniform_bucket_level_access = true
 }
-resource "google_storage_bucket" "armored_witness_firmware_ci_1" {
+resource "google_storage_bucket" "armored_witness_firmware_log" {
+  location                    = "US"
+  name                        = "armored-witness-firmware-log"
+  storage_class               = "STANDARD"
+  uniform_bucket_level_access = true
+}
+
+# prod log rev 1
+resource "google_storage_bucket" "armored_witness_firmware_1" {
   location                    = "EU"
-  name                        = "armored-witness-firmware-ci-1"
+  name                        = "armored-witness-firmware-1"
   storage_class               = "STANDARD"
   uniform_bucket_level_access = true
 }
 resource "google_storage_bucket" "armored_witness_firmware_log_1" {
   location                    = "US"
   name                        = "armored-witness-firmware-log-1"
+  storage_class               = "STANDARD"
+  uniform_bucket_level_access = true
+}
+
+# CI log rev 0
+resource "google_storage_bucket" "armored_witness_firmware_ci" {
+  location                    = "EU"
+  name                        = "armored-witness-firmware-ci"
+  storage_class               = "STANDARD"
+  uniform_bucket_level_access = true
+}
+resource "google_storage_bucket" "armored_witness_firmware_log_ci" {
+  location                    = "US"
+  name                        = "armored-witness-firmware-log-ci"
+  storage_class               = "STANDARD"
+  uniform_bucket_level_access = true
+}
+
+# CI log rev 1
+resource "google_storage_bucket" "armored_witness_firmware_ci_1" {
+  location                    = "EU"
+  name                        = "armored-witness-firmware-ci-1"
   storage_class               = "STANDARD"
   uniform_bucket_level_access = true
 }
