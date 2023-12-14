@@ -324,7 +324,14 @@ func newFetcher(root *url.URL) (client.Fetcher, error) {
 			return nil, err
 		}
 		defer resp.Body.Close()
-		return io.ReadAll(resp.Body)
+		body, err := io.ReadAll(resp.Body)
+		if err != nil {
+			return nil, err
+		}
+		if resp.StatusCode != http.StatusOK {
+			return nil, fmt.Errorf("got non-OK status code (%d) from %s", resp.StatusCode, u)
+		}
+		return body, nil
 	}, nil
 }
 
