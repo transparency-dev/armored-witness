@@ -59,25 +59,25 @@ resource "google_project_service" "storage_googleapis_com" {
 # GCS buckets
 resource "google_storage_bucket" "armored_witness_firmware" {
   location                    = "EU"
-  name                        = "armored-witness-firmware"
+  name                        = "armored-witness-firmware-1"
   storage_class               = "STANDARD"
   uniform_bucket_level_access = true
 }
-resource "google_storage_bucket" "armored_witness_firmware_ci" {
+resource "google_storage_bucket" "armored_witness_firmware_ci_1" {
   location                    = "EU"
-  name                        = "armored-witness-firmware-ci"
+  name                        = "armored-witness-firmware-ci-1"
   storage_class               = "STANDARD"
   uniform_bucket_level_access = true
 }
-resource "google_storage_bucket" "armored_witness_firmware_log" {
+resource "google_storage_bucket" "armored_witness_firmware_log_1" {
   location                    = "US"
-  name                        = "armored-witness-firmware-log"
+  name                        = "armored-witness-firmware-log-1"
   storage_class               = "STANDARD"
   uniform_bucket_level_access = true
 }
-resource "google_storage_bucket" "armored_witness_firmware_log_ci" {
+resource "google_storage_bucket" "armored_witness_firmware_log_ci_1" {
   location                    = "US"
-  name                        = "armored-witness-firmware-log-ci"
+  name                        = "armored-witness-firmware-log-ci-1"
   storage_class               = "STANDARD"
   uniform_bucket_level_access = true
 }
