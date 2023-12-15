@@ -97,6 +97,8 @@ github.com/transparency-dev/merkle v0.0.2 h1:Q9nBoQcZcgPamMkGn7ghV8XiTZ/kRxn1yCG
 github.com/transparency-dev/merkle v0.0.2/go.mod h1:pqSy+OXefQ1EDUVmAJ8MUhHB9TXGuzVAT58PqBoHz1A=
 github.com/transparency-dev/serverless-log v0.0.0-20230922115421-a56a93b5681e h1:KlUufKQ9ub7NC26OI63F6TofPJxgE6QAqsJPQlg012g=
 github.com/transparency-dev/serverless-log v0.0.0-20230922115421-a56a93b5681e/go.mod h1:FWvVqFb4YXC41AzWnwZ5O11kWNtWoZ5jBMbfgHd9zH4=
+github.com/transparency-dev/serverless-log v0.0.0-20231215100646-e8c7edc4f3d4 h1:ujGkF+ENXCMPUJTjFmXjeFPK5wG2lh0PU//GAEYKB98=
+github.com/transparency-dev/serverless-log v0.0.0-20231215100646-e8c7edc4f3d4/go.mod h1:rx4EB9NW4aZFJT5kxf6BWRWbZSThl36jv7O5o5r/qv8=
 github.com/usbarmory/armory-boot v0.0.0-20230922092524-e66d926bc36c h1:qQL3CljMNrk9TyG8EUvCAPU7/bTVitJMhqlKSNhskis=
 github.com/usbarmory/armory-boot v0.0.0-20230922092524-e66d926bc36c/go.mod h1:20DIzHJntbLDOptGT7TOm8DkT5mL2jRyzPzVXAYVHJ8=
 github.com/usbarmory/hid v0.0.0-20210318233634-85ced88a1ffe h1:WWop+y0QNxBEZAKu9xlNiZWgo5+y5VkzlyngVMViBlE=
@@ -133,6 +135,7 @@ golang.org/x/sync v0.0.0-20181108010431-42b317875d0f/go.mod h1:RxMgew5VJxzue5/jJ
 golang.org/x/sync v0.0.0-20190423024810-112230192c58/go.mod h1:RxMgew5VJxzue5/jJTE5uejpjVlOe/izrB70Jof72aM=
 golang.org/x/sync v0.4.0 h1:zxkM55ReGkDlKSM+Fu41A+zmbZuaPVbGMzvvdUPznYQ=
 golang.org/x/sync v0.4.0/go.mod h1:FU7BRWz2tNW+3quACPkgCx/L+uEAv1htQ0V83Z9Rj+Y=
+golang.org/x/sync v0.5.0/go.mod h1:Czt+wKu1gCyEFDUtn0jG5QVvpJ6rzVqr5aXyt9drQfk=
 golang.org/x/sys v0.0.0-20180830151530-49385e6e1522/go.mod h1:STP8DvDyc/dI5b8T5hshtkjS+E42TnysNCUPdjciGhY=
 golang.org/x/sys v0.0.0-20190215142949-d0b11bdaac8a/go.mod h1:STP8DvDyc/dI5b8T5hshtkjS+E42TnysNCUPdjciGhY=
 golang.org/x/sys v0.0.0-20190412213103-97732733099d/go.mod h1:h1NjWce9XRLGQEsW7wpKNCjG9DtNlClVuFLEZdDNbEs=
