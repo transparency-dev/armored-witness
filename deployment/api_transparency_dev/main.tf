@@ -121,7 +121,8 @@ resource "google_compute_url_map" "default" {
     }
 
     #####
-    # CI log & aretefacts rules
+    ## CI log & aretefacts rules
+    # CI log rev 0
     path_rule {
       paths = [
         "/armored-witness-firmware/ci/log/0/*"
@@ -145,24 +146,63 @@ resource "google_compute_url_map" "default" {
       service = google_compute_backend_bucket.firmware_artefacts_ci.id
     }
 
+    # CI log rev 1
+    path_rule {
+      paths = [
+        "/armored-witness-firmware/ci/log/1/*"
+      ]
+      route_action {
+        url_rewrite {
+          path_prefix_rewrite = "/"
+        }
+      }
+      service = google_compute_backend_bucket.firmware_log_ci_1.id
+    }
+    path_rule {
+      paths = [
+        "/armored-witness-firmware/ci/artefacts/1/*"
+      ]
+      route_action {
+        url_rewrite {
+          path_prefix_rewrite = "/"
+        }
+      }
+      service = google_compute_backend_bucket.firmware_artefacts_ci_1.id
+    }
+
     # TODO(prod logs & artefacts)
   }
 }
 
-# Corresponding load balancer backend buckets.
+## Corresponding load balancer backend buckets.
+# CI log rev 0
 resource "google_compute_backend_bucket" "firmware_log_ci" {
   name        = "firmware-log-ci-backend"
   description = "Contains CI firmware transparency log"
   bucket_name = "armored-witness-firmware-log-ci" # google_storage_bucket.armored_witness_firmware_log_ci.name
   enable_cdn  = false
 }
-
 resource "google_compute_backend_bucket" "firmware_artefacts_ci" {
   name        = "firmware-artefacts-ci-backend"
-  description = "Contains CI firmware artefacts"
+  description = "Contains CI firmware artefacts for FT log"
   bucket_name = "armored-witness-firmware-ci" # google_storage_bucket.armored_witness_firmware_ci.name
   enable_cdn  = false
 }
+
+# CI log rev 1
+resource "google_compute_backend_bucket" "firmware_log_ci_1" {
+  name        = "firmware-log-ci-backend-1"
+  description = "Contains CI firmware transparency log 1"
+  bucket_name = "armored-witness-firmware-log-ci-1" # google_storage_bucket.armored_witness_firmware_log_ci_1.name
+  enable_cdn  = false
+}
+resource "google_compute_backend_bucket" "firmware_artefacts_ci_1" {
+  name        = "firmware-artefacts-ci-backend-1"
+  description = "Contains CI firmware artefacts for FT log 1"
+  bucket_name = "armored-witness-firmware-ci-1" # google_storage_bucket.armored_witness_firmware_ci_1.name
+  enable_cdn  = false
+}
+
 
 resource "google_compute_global_network_endpoint_group" "distributor" {
   name                  = "distributor"
@@ -178,26 +218,28 @@ resource "google_compute_global_network_endpoint" "distributor" {
   fqdn                          = var.distributor_host
 }
 
-resource "google_kms_key_ring" "terraform_state" {
-  name     = "armored-witness-bucket-tfstate"
-  location = var.tf_state_location
-}
-
-resource "google_kms_crypto_key" "terraform_state_bucket" {
-  name     = "terraform-state-bucket"
-  key_ring = google_kms_key_ring.terraform_state.id
-}
-
-resource "google_storage_bucket" "terraform_state" {
-  name          = "armored-witness-bucket-tfstate"
-  force_destroy = false
-  location      = var.tf_state_location
-  storage_class = "STANDARD"
-  versioning {
-    enabled = true
-  }
-  encryption {
-    default_kms_key_name = google_kms_crypto_key.terraform_state_bucket.id
-  }
-  uniform_bucket_level_access = true
-}
+## Terraform keys
+## Commented out here as they're provided in the build_and_release unit.
+#resource "google_kms_key_ring" "terraform_state" {
+#  name     = "armored-witness-bucket-tfstate"
+#  location = var.tf_state_location
+#}
+#
+#resource "google_kms_crypto_key" "terraform_state_bucket" {
+#  name     = "terraform-state-bucket"
+#  key_ring = google_kms_key_ring.terraform_state.id
+#}
+#
+#resource "google_storage_bucket" "terraform_state" {
+#  name          = "armored-witness-bucket-tfstate"
+#  force_destroy = false
+#  location      = var.tf_state_location
+#  storage_class = "STANDARD"
+#  versioning {
+#    enabled = true
+#  }
+#  encryption {
+#    default_kms_key_name = google_kms_crypto_key.terraform_state_bucket.id
+#  }
+#  uniform_bucket_level_access = true
+#}
