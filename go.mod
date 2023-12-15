@@ -15,7 +15,7 @@ require (
 	github.com/transparency-dev/armored-witness-os v0.0.0-20231010171114-e1c1c28a17ff
 	github.com/transparency-dev/formats v0.0.0-20230920083814-0f75b1d4e813
 	github.com/transparency-dev/merkle v0.0.2
-	github.com/transparency-dev/serverless-log v0.0.0-20230922115421-a56a93b5681e
+	github.com/transparency-dev/serverless-log v0.0.0-20231215100646-e8c7edc4f3d4
 	github.com/usbarmory/armory-boot v0.0.0-20230922092524-e66d926bc36c
 	github.com/usbarmory/hid v0.0.0-20210318233634-85ced88a1ffe
 	golang.org/x/exp v0.0.0-20230905200255-921286631fa9
@@ -40,7 +40,7 @@ require (
 	golang.org/x/crypto v0.14.0 // indirect
 	golang.org/x/net v0.17.0 // indirect
 	golang.org/x/oauth2 v0.13.0 // indirect
-	golang.org/x/sync v0.4.0 // indirect
+	golang.org/x/sync v0.5.0 // indirect
 	golang.org/x/sys v0.13.0 // indirect
 	golang.org/x/text v0.13.0 // indirect
 	google.golang.org/api v0.149.0 // indirect
