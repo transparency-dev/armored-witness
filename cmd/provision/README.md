@@ -12,6 +12,35 @@ Note that because of the level of access this tool requires, you
 must either run it via `sudo`, or configure `udev` rules etc. to allow
 it to inspect & write to appropriate `/dev` files etc.
 
+## Flashing CI Builds
+
+A device can be configured with builds from the CI pipeline without needing much
+of the tooling in the advanced section of this doc. The first step is to install
+the provision tool:
+
+```shell
+go install github.com/transparency-dev/armored-witness/cmd/provision@main
+```
+
+After this is installed, the tool can be run with the following command to flash
+the latest builds of each of the components onto the device:
+
+```shell
+sudo $(which provision) \
+  --binaries_url=https://api.transparency.dev/armored-witness-firmware/ci/artefacts/1/ \
+  --firmware_log_url=https://api.transparency.dev/armored-witness-firmware/ci/log/1/ \
+  --firmware_log_origin=transparency.dev/armored-witness/firmware_transparency/ci/1 \
+  --firmware_log_verifier=transparency.dev-aw-ftlog-ci+f5479c1e+AR6gW0mycDtL17iM2uvQUThJsoiuSRirstEj9a5AdCCu \
+  --applet_verifier=transparency.dev-aw-applet-ci+3ff32e2c+AV1fgxtByjXuPjPfi0/7qTbEBlPGGCyxqr6ZlppoLOz3 \
+  --boot_verifier=transparency.dev-aw-boot-ci+9f62b6ac+AbnipFmpRltfRiS9JCxLUcAZsbeH4noBOJXbVD3H5Eg4 \
+  --recovery_verifier=transparency.dev-aw-recovery-ci+cc699423+AarlJMSl0rbTMf31B5o9bqc6PHorwvF1GbwyJRXArbfg \
+  --os_verifier_1=transparency.dev-aw-os1-ci+7a0eaef3+AcsqvmrcKIbs21H2Bm2fWb6oFWn/9MmLGNc6NLJty2eQ \
+  --os_verifier_2=transparency.dev-aw-os2-ci+af8e4114+AbBJk5MgxRB+68KhGojhUdSt1ts5GAdRIT1Eq9zEkgQh \
+  --wipe_witness_state
+```
+
+# Provisioning Dev Builds
+
 ## Prerequisites
 
 One of the first things the tool will attempt to do is examine
