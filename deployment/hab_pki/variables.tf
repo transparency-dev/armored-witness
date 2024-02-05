@@ -27,6 +27,6 @@ variable "hab_pki_lifetime" {
   default     = 788400000 // 25 years
 }
 
-variable "hab_ci_srk_revision" {
-  description = "Revision count for CI SRK, CSF, and IMG certs. This must be incremented if these certs are regenerated for any reason"
+variable "hab_ci_revision" {
+  description = "Revision count for CI HAB PKI certs. This must be incremented if these certs are regenerated for any reason"
 }

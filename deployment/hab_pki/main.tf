@@ -16,9 +16,6 @@ data "google_project" "project" {
 }
 
 # Enable necessary APIs
-resource "google_project_service" "cloudasset_googleapis_com" {
-  service = "cloudasset.googleapis.com"
-}
 resource "google_project_service" "cloudkms_googleapis_com" {
   service = "cloudkms.googleapis.com"
 }
@@ -54,7 +51,7 @@ resource "google_kms_crypto_key" "hab_csf_ci" {
   for_each = toset(local.hab_intermediates)
 
   key_ring = google_kms_key_ring.hab_ci.id
-  name     = format("hab-csf%d-rev%d-ci", each.value, var.hab_ci_srk_revision)
+  name     = format("hab-csf%d-rev%d-ci", each.value, var.hab_ci_revision)
   purpose  = "ASYMMETRIC_SIGN"
   version_template {
     algorithm        = format("RSA_SIGN_PKCS1_%d_SHA256", var.hab_keylength)
@@ -64,7 +61,7 @@ resource "google_kms_crypto_key" "hab_csf_ci" {
 data "google_kms_crypto_key" "hab_csf_ci" {
   for_each = toset(local.hab_intermediates)
 
-  name     = format("hab-csf%s-rev%d-ci", each.value, var.hab_ci_srk_revision)
+  name     = format("hab-csf%s-rev%d-ci", each.value, var.hab_ci_revision)
   key_ring = data.google_kms_key_ring.hab_ci.id
 
   depends_on = [
@@ -81,7 +78,7 @@ resource "google_kms_crypto_key" "hab_img_ci" {
   for_each = toset(local.hab_intermediates)
 
   key_ring = google_kms_key_ring.hab_ci.id
-  name     = format("hab-img%d-rev%d-ci", each.value, var.hab_ci_srk_revision)
+  name     = format("hab-img%d-rev%d-ci", each.value, var.hab_ci_revision)
   purpose  = "ASYMMETRIC_SIGN"
   version_template {
     algorithm        = format("RSA_SIGN_PKCS1_%d_SHA256", var.hab_keylength)
@@ -91,7 +88,7 @@ resource "google_kms_crypto_key" "hab_img_ci" {
 data "google_kms_crypto_key" "hab_img_ci" {
   for_each = toset(local.hab_intermediates)
 
-  name     = format("hab-img%s-rev%d-ci", each.value, var.hab_ci_srk_revision)
+  name     = format("hab-img%s-rev%d-ci", each.value, var.hab_ci_revision)
   key_ring = data.google_kms_key_ring.hab_ci.id
 
   depends_on = [
@@ -153,11 +150,12 @@ resource "google_privateca_ca_pool" "hab_ci" {
 # CI HAB Root CA authority
 resource "google_privateca_certificate_authority" "hab_root_ci" {
   pool                     = google_privateca_ca_pool.hab_ci.name
-  certificate_authority_id = "hab-root-ci"
+  certificate_authority_id = format("hab-root-rev%d-ci", var.hab_ci_revision)
   location                 = "us-central1"
-
+  lifetime = format("%ds", var.hab_pki_lifetime)
   deletion_protection                    = true
 
+  type = "SELF_SIGNED"
   config {
     subject_config {
       subject {
@@ -182,7 +180,6 @@ resource "google_privateca_certificate_authority" "hab_root_ci" {
       }
     }
   }
-  type = "SELF_SIGNED"
   key_spec {
     algorithm = format("RSA_PKCS1_%d_SHA256", var.hab_keylength)
   }
@@ -199,11 +196,12 @@ resource "google_privateca_certificate_authority" "hab_srk_ci" {
   for_each = toset(local.hab_intermediates)
 
   pool                     = google_privateca_ca_pool.hab_ci.name
-  certificate_authority_id = format("hab-srk%s-rev%d-ci", each.value, var.hab_ci_srk_revision)
+  certificate_authority_id = format("hab-srk%s-rev%d-ci", each.value, var.hab_ci_revision)
   location                 = "us-central1"
-
+  lifetime = format("%ds", var.hab_pki_lifetime)
   deletion_protection = "true"
 
+  type = "SUBORDINATE"
   subordinate_config {
     certificate_authority = google_privateca_certificate_authority.hab_root_ci.name
   }
@@ -231,18 +229,16 @@ resource "google_privateca_certificate_authority" "hab_srk_ci" {
       }
     }
   }
-  lifetime = format("%ds", var.hab_pki_lifetime)
   key_spec {
     algorithm = format("RSA_PKCS1_%d_SHA256", var.hab_keylength)
   }
-  type = "SUBORDINATE"
 }
 
 # CI HAB CSF cert for each of the SRK intermediates above.
 resource "google_privateca_certificate" "hab_csf_ci" {
   for_each = google_privateca_certificate_authority.hab_srk_ci
 
-  name                  = format("hab-csf%s-rev%d-ci", each.key, var.hab_ci_srk_revision)
+  name                  = format("hab-csf%s-rev%d-ci", each.key, var.hab_ci_revision)
   location              = "us-central1"
   pool                  = each.value.pool
   certificate_authority = each.value.certificate_authority_id
@@ -278,7 +274,7 @@ resource "google_privateca_certificate" "hab_csf_ci" {
 resource "google_privateca_certificate" "hab_img_ci" {
   for_each = google_privateca_certificate_authority.hab_srk_ci
 
-  name                  = format("hab-img%s-rev%d-ci", each.key, var.hab_ci_srk_revision)
+  name                  = format("hab-img%s-rev%d-ci", each.key, var.hab_ci_revision)
   location              = "us-central1"
   pool                  = each.value.pool
   certificate_authority = each.value.certificate_authority_id
