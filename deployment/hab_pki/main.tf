@@ -31,13 +31,13 @@ resource "google_project_service" "privateca_api" {
 }
 
 # KMS key rings & data sources
-resource "google_kms_key_ring" "hab_ci" {
+resource "google_kms_key_ring" "hab" {
   location = var.signing_keyring_location
   name     = "hab-ci"
 }
-data "google_kms_key_ring" "hab_ci" {
-  location = google_kms_key_ring.hab_ci.location
-  name     = google_kms_key_ring.hab_ci.name
+data "google_kms_key_ring" "hab" {
+  location = google_kms_key_ring.hab.location
+  name     = google_kms_key_ring.hab.name
 }
 
 ### KMS keys
@@ -47,10 +47,10 @@ data "google_kms_key_ring" "hab_ci" {
 # The resource creates the key within the keyring, and the data sections below
 # ultimately provide a mechanism for getting the public key out from the HSM
 # so that it can be certified by the leaf certificates of the HAB PKI below. 
-resource "google_kms_crypto_key" "hab_csf_ci" {
+resource "google_kms_crypto_key" "hab_csf" {
   for_each = toset(local.hab_intermediates)
 
-  key_ring = google_kms_key_ring.hab_ci.id
+  key_ring = google_kms_key_ring.hab.id
   name     = format("hab-csf%d-rev%d-ci", each.value, var.hab_ci_revision)
   purpose  = "ASYMMETRIC_SIGN"
   version_template {
@@ -58,26 +58,26 @@ resource "google_kms_crypto_key" "hab_csf_ci" {
     protection_level = "HSM"
   }
 }
-data "google_kms_crypto_key" "hab_csf_ci" {
+data "google_kms_crypto_key" "hab_csf" {
   for_each = toset(local.hab_intermediates)
 
   name     = format("hab-csf%s-rev%d-ci", each.value, var.hab_ci_revision)
-  key_ring = data.google_kms_key_ring.hab_ci.id
+  key_ring = data.google_kms_key_ring.hab.id
 
   depends_on = [
-    google_kms_crypto_key.hab_csf_ci
+    google_kms_crypto_key.hab_csf
   ]
 }
-data "google_kms_crypto_key_version" "hab_csf_ci" {
+data "google_kms_crypto_key_version" "hab_csf" {
   for_each = toset(local.hab_intermediates)
 
-  crypto_key = data.google_kms_crypto_key.hab_csf_ci[each.key].id
+  crypto_key = data.google_kms_crypto_key.hab_csf[each.key].id
 }
 # CI HAB IMG key & data sources for each of the SRK intermediates below.
-resource "google_kms_crypto_key" "hab_img_ci" {
+resource "google_kms_crypto_key" "hab_img" {
   for_each = toset(local.hab_intermediates)
 
-  key_ring = google_kms_key_ring.hab_ci.id
+  key_ring = google_kms_key_ring.hab.id
   name     = format("hab-img%d-rev%d-ci", each.value, var.hab_ci_revision)
   purpose  = "ASYMMETRIC_SIGN"
   version_template {
@@ -85,20 +85,20 @@ resource "google_kms_crypto_key" "hab_img_ci" {
     protection_level = "HSM"
   }
 }
-data "google_kms_crypto_key" "hab_img_ci" {
+data "google_kms_crypto_key" "hab_img" {
   for_each = toset(local.hab_intermediates)
 
   name     = format("hab-img%s-rev%d-ci", each.value, var.hab_ci_revision)
-  key_ring = data.google_kms_key_ring.hab_ci.id
+  key_ring = data.google_kms_key_ring.hab.id
 
   depends_on = [
-    google_kms_crypto_key.hab_img_ci
+    google_kms_crypto_key.hab_img
   ]
 }
-data "google_kms_crypto_key_version" "hab_img_ci" {
+data "google_kms_crypto_key_version" "hab_img" {
   for_each = toset(local.hab_intermediates)
 
-  crypto_key = data.google_kms_crypto_key.hab_img_ci[each.key].id
+  crypto_key = data.google_kms_crypto_key.hab_img[each.key].id
 }
 
 ###########################################################################
@@ -121,7 +121,7 @@ data "google_kms_crypto_key_version" "hab_img_ci" {
 ###########################################################################
 
 # CI HAB CA pool
-resource "google_privateca_ca_pool" "hab_ci" {
+resource "google_privateca_ca_pool" "hab" {
   name     = "aw-hab-ca-pool-rev0-ci"
   location = "us-central1"
   tier     = "ENTERPRISE"
@@ -148,8 +148,8 @@ resource "google_privateca_ca_pool" "hab_ci" {
 }
 
 # CI HAB Root CA authority
-resource "google_privateca_certificate_authority" "hab_root_ci" {
-  pool                     = google_privateca_ca_pool.hab_ci.name
+resource "google_privateca_certificate_authority" "hab_root" {
+  pool                     = google_privateca_ca_pool.hab.name
   certificate_authority_id = format("hab-root-rev%d-ci", var.hab_ci_revision)
   location                 = "us-central1"
   lifetime = format("%ds", var.hab_pki_lifetime)
@@ -192,10 +192,10 @@ locals {
 }
 
 # CI HAB SRK intermediates (one each for hab_intermediates above)
-resource "google_privateca_certificate_authority" "hab_srk_ci" {
+resource "google_privateca_certificate_authority" "hab_srk" {
   for_each = toset(local.hab_intermediates)
 
-  pool                     = google_privateca_ca_pool.hab_ci.name
+  pool                     = google_privateca_ca_pool.hab.name
   certificate_authority_id = format("hab-srk%s-rev%d-ci", each.value, var.hab_ci_revision)
   location                 = "us-central1"
   lifetime = format("%ds", var.hab_pki_lifetime)
@@ -203,7 +203,7 @@ resource "google_privateca_certificate_authority" "hab_srk_ci" {
 
   type = "SUBORDINATE"
   subordinate_config {
-    certificate_authority = google_privateca_certificate_authority.hab_root_ci.name
+    certificate_authority = google_privateca_certificate_authority.hab_root.name
   }
   config {
     subject_config {
@@ -235,8 +235,8 @@ resource "google_privateca_certificate_authority" "hab_srk_ci" {
 }
 
 # CI HAB CSF cert for each of the SRK intermediates above.
-resource "google_privateca_certificate" "hab_csf_ci" {
-  for_each = google_privateca_certificate_authority.hab_srk_ci
+resource "google_privateca_certificate" "hab_csf" {
+  for_each = google_privateca_certificate_authority.hab_srk
 
   name                  = format("hab-csf%s-rev%d-ci", each.key, var.hab_ci_revision)
   location              = "us-central1"
@@ -265,14 +265,14 @@ resource "google_privateca_certificate" "hab_csf_ci" {
     }
     public_key {
       format = "PEM"
-      key    = base64encode(data.google_kms_crypto_key_version.hab_csf_ci[each.key].public_key[0].pem)
+      key    = base64encode(data.google_kms_crypto_key_version.hab_csf[each.key].public_key[0].pem)
     }
   }
 }
 
 # CI HAB IMG cert for each of the SRK intermediates above.
-resource "google_privateca_certificate" "hab_img_ci" {
-  for_each = google_privateca_certificate_authority.hab_srk_ci
+resource "google_privateca_certificate" "hab_img" {
+  for_each = google_privateca_certificate_authority.hab_srk
 
   name                  = format("hab-img%s-rev%d-ci", each.key, var.hab_ci_revision)
   location              = "us-central1"
@@ -301,7 +301,7 @@ resource "google_privateca_certificate" "hab_img_ci" {
     }
     public_key {
       format = "PEM"
-      key    = base64encode(data.google_kms_crypto_key_version.hab_img_ci[each.key].public_key[0].pem)
+      key    = base64encode(data.google_kms_crypto_key_version.hab_img[each.key].public_key[0].pem)
     }
   }
 }
