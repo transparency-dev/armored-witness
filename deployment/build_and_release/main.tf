@@ -114,7 +114,7 @@ resource "google_storage_bucket" "armored_witness_firmware_log_ci_1" {
   uniform_bucket_level_access = true
 }
 
-# KMS key rings
+# KMS key rings & data sources
 resource "google_kms_key_ring" "firmware_release_ci" {
   location = var.signing_keyring_location
   name     = "firmware-release-ci"
@@ -226,6 +226,10 @@ resource "google_kms_key_ring" "firmware_release_prod" {
 #    protection_level = "SOFTWARE"
 #  }
 #}
+
+############################################################
+## Terraform state bucket
+############################################################
 
 resource "google_kms_key_ring" "terraform_state" {
   name     = "armored-witness-bucket-tfstate"
