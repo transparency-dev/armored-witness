@@ -51,14 +51,36 @@ module "lb-http" {
   enable_ipv6         = true
 
   backends = {
-    default = {
-      description = "Distributor API backend"
+    prod = {
+      description = "Distributor API backend (prod)"
       protocol    = "HTTPS"
       port_name   = "https"
       port        = 443
       groups = [
         {
-          group = google_compute_global_network_endpoint_group.distributor.id
+          group = google_compute_global_network_endpoint_group.distributor_prod.id
+        }
+      ]
+
+      health_check = null
+
+      enable_cdn = false
+
+      iap_config = {
+        enable = false
+      }
+      log_config = {
+        enable = false
+      }
+    }
+    ci = {
+      description = "Distributor API backend (ci)"
+      protocol    = "HTTPS"
+      port_name   = "https"
+      port        = 443
+      groups = [
+        {
+          group = google_compute_global_network_endpoint_group.distributor_ci.id
         }
       ]
 
@@ -114,10 +136,22 @@ resource "google_compute_url_map" "default" {
       ]
       route_action {
         url_rewrite {
-          host_rewrite = var.distributor_host
+          host_rewrite = var.distributor_prod_host
         }
       }
-      service = module.lb-http.backend_services["default"].id
+      service = module.lb-http.backend_services["prod"].id
+    }
+    path_rule {
+      paths = [
+        "/distributor-ci/*"
+      ]
+      route_action {
+        url_rewrite {
+          path_prefix_rewrite = "/distributor/"
+          host_rewrite        = var.distributor_ci_host
+        }
+      }
+      service = module.lb-http.backend_services["ci"].id
     }
 
     #####
@@ -204,18 +238,30 @@ resource "google_compute_backend_bucket" "firmware_artefacts_ci_1" {
 }
 
 
-resource "google_compute_global_network_endpoint_group" "distributor" {
-  name                  = "distributor"
+resource "google_compute_global_network_endpoint_group" "distributor_prod" {
+  name                  = "distributor-prod"
   project               = var.project_id
   provider              = google-beta
-  default_port          = var.distributor_port
+  default_port          = var.distributor_prod_port
+  network_endpoint_type = "INTERNET_FQDN_PORT"
+}
+resource "google_compute_global_network_endpoint_group" "distributor_ci" {
+  name                  = "distributor-ci"
+  project               = var.project_id
+  provider              = google-beta
+  default_port          = var.distributor_ci_port
   network_endpoint_type = "INTERNET_FQDN_PORT"
 }
 
-resource "google_compute_global_network_endpoint" "distributor" {
-  global_network_endpoint_group = google_compute_global_network_endpoint_group.distributor.name
-  port                          = var.distributor_port
-  fqdn                          = var.distributor_host
+resource "google_compute_global_network_endpoint" "distributor_prod" {
+  global_network_endpoint_group = google_compute_global_network_endpoint_group.distributor_prod.name
+  port                          = var.distributor_prod_port
+  fqdn                          = var.distributor_prod_host
+}
+resource "google_compute_global_network_endpoint" "distributor_ci" {
+  global_network_endpoint_group = google_compute_global_network_endpoint_group.distributor_ci.name
+  port                          = var.distributor_ci_port
+  fqdn                          = var.distributor_ci_host
 }
 
 ## Terraform keys
