@@ -1,9 +1,6 @@
 # Configure remote terraform backend for state.
 terraform {
-  backend "gcs" {
-    bucket = "armored-witness-bucket-tfstate"
-    prefix = "terraform/hab_pki/state"
-  }
+  backend "gcs" {}
 }
 
 # Project
@@ -33,7 +30,7 @@ resource "google_project_service" "privateca_api" {
 # KMS key rings & data sources
 resource "google_kms_key_ring" "hab" {
   location = var.signing_keyring_location
-  name     = "hab-ci"
+  name     = "hab-${var.env}"
 }
 data "google_kms_key_ring" "hab" {
   location = google_kms_key_ring.hab.location
@@ -42,7 +39,7 @@ data "google_kms_key_ring" "hab" {
 
 ### KMS keys
 
-# CI HAB CSF key & data sources for each of the SRK intermediates below.
+# HAB CSF key & data sources for each of the SRK intermediates below.
 #
 # The resource creates the key within the keyring, and the data sections below
 # ultimately provide a mechanism for getting the public key out from the HSM
@@ -51,7 +48,7 @@ resource "google_kms_crypto_key" "hab_csf" {
   for_each = toset(local.hab_intermediates)
 
   key_ring = google_kms_key_ring.hab.id
-  name     = format("hab-csf%d-rev%d-ci", each.value, var.hab_ci_revision)
+  name     = format("hab-csf%d-rev%d-%s", each.value, var.hab_revision, var.env)
   purpose  = "ASYMMETRIC_SIGN"
   version_template {
     algorithm        = format("RSA_SIGN_PKCS1_%d_SHA256", var.hab_keylength)
@@ -61,7 +58,7 @@ resource "google_kms_crypto_key" "hab_csf" {
 data "google_kms_crypto_key" "hab_csf" {
   for_each = toset(local.hab_intermediates)
 
-  name     = format("hab-csf%s-rev%d-ci", each.value, var.hab_ci_revision)
+  name     = format("hab-csf%s-rev%d-%s", each.value, var.hab_revision, var.env)
   key_ring = data.google_kms_key_ring.hab.id
 
   depends_on = [
@@ -73,12 +70,12 @@ data "google_kms_crypto_key_version" "hab_csf" {
 
   crypto_key = data.google_kms_crypto_key.hab_csf[each.key].id
 }
-# CI HAB IMG key & data sources for each of the SRK intermediates below.
+# HAB IMG key & data sources for each of the SRK intermediates below.
 resource "google_kms_crypto_key" "hab_img" {
   for_each = toset(local.hab_intermediates)
 
   key_ring = google_kms_key_ring.hab.id
-  name     = format("hab-img%d-rev%d-ci", each.value, var.hab_ci_revision)
+  name     = format("hab-img%d-rev%d-%s", each.value, var.hab_revision, var.env)
   purpose  = "ASYMMETRIC_SIGN"
   version_template {
     algorithm        = format("RSA_SIGN_PKCS1_%d_SHA256", var.hab_keylength)
@@ -88,7 +85,7 @@ resource "google_kms_crypto_key" "hab_img" {
 data "google_kms_crypto_key" "hab_img" {
   for_each = toset(local.hab_intermediates)
 
-  name     = format("hab-img%s-rev%d-ci", each.value, var.hab_ci_revision)
+  name     = format("hab-img%s-rev%d-%s", each.value, var.hab_revision, var.env)
   key_ring = data.google_kms_key_ring.hab.id
 
   depends_on = [
@@ -102,7 +99,7 @@ data "google_kms_crypto_key_version" "hab_img" {
 }
 
 ###########################################################################
-## CI HAB Certificate Authority config.
+## HAB Certificate Authority config.
 ## 
 ## This should construct a CA hierarchy as below for use with HAB signing:
 ##                                .--------.
@@ -120,10 +117,10 @@ data "google_kms_crypto_key_version" "hab_img" {
 ##     `----'  `----'   `----'  `----'   `----'  `----'   `----'  `----'
 ###########################################################################
 
-# CI HAB CA pool
+# HAB CA pool
 resource "google_privateca_ca_pool" "hab" {
-  name     = "aw-hab-ca-pool-rev0-ci"
-  location = "us-central1"
+  name     = format("aw-hab-ca-pool-rev0-%s", var.env)
+  location = var.region
   tier     = "ENTERPRISE"
   publishing_options {
     publish_ca_cert = true
@@ -147,11 +144,11 @@ resource "google_privateca_ca_pool" "hab" {
   }
 }
 
-# CI HAB Root CA authority
+# HAB Root CA authority
 resource "google_privateca_certificate_authority" "hab_root" {
   pool                     = google_privateca_ca_pool.hab.name
-  certificate_authority_id = format("hab-root-rev%d-ci", var.hab_ci_revision)
-  location                 = "us-central1"
+  certificate_authority_id = format("hab-root-rev%d-%s", var.hab_revision, var.env)
+  location                 = var.region
   lifetime = format("%ds", var.hab_pki_lifetime)
   deletion_protection                    = true
 
@@ -160,8 +157,8 @@ resource "google_privateca_certificate_authority" "hab_root" {
     subject_config {
       subject {
         organization        = "TrustFabric"
-        organizational_unit = "ArmoredWitness CI"
-        common_name         = "ArmoredWitness Root CI"
+        organizational_unit = format("ArmoredWitness %s", upper(var.env))
+        common_name         = format("ArmoredWitness Root %s", upper(var.env))
       }
     }
     x509_config {
@@ -191,13 +188,13 @@ locals {
   hab_intermediates = [for i in range(1, 1 + var.hab_num_intermediates) : format("%s", i)]
 }
 
-# CI HAB SRK intermediates (one each for hab_intermediates above)
+# HAB SRK intermediates (one each for hab_intermediates above)
 resource "google_privateca_certificate_authority" "hab_srk" {
   for_each = toset(local.hab_intermediates)
 
   pool                     = google_privateca_ca_pool.hab.name
-  certificate_authority_id = format("hab-srk%s-rev%d-ci", each.value, var.hab_ci_revision)
-  location                 = "us-central1"
+  certificate_authority_id = format("hab-srk%s-rev%d-%s", each.value, var.hab_revision, var.env)
+  location                 = var.region
   lifetime = format("%ds", var.hab_pki_lifetime)
   deletion_protection = "true"
 
@@ -209,8 +206,8 @@ resource "google_privateca_certificate_authority" "hab_srk" {
     subject_config {
       subject {
         organization        = "TrustFabric"
-        organizational_unit = "ArmoredWitness CI"
-        common_name         = format("ArmoredWitness SRK%s CI", each.value)
+        organizational_unit = format("ArmoredWitness %s", upper(var.env))
+        common_name         = format("ArmoredWitness SRK%s %s", each.value, upper(var.env))
       }
     }
     x509_config {
@@ -234,12 +231,12 @@ resource "google_privateca_certificate_authority" "hab_srk" {
   }
 }
 
-# CI HAB CSF cert for each of the SRK intermediates above.
+# HAB CSF cert for each of the SRK intermediates above.
 resource "google_privateca_certificate" "hab_csf" {
   for_each = google_privateca_certificate_authority.hab_srk
 
-  name                  = format("hab-csf%s-rev%d-ci", each.key, var.hab_ci_revision)
-  location              = "us-central1"
+  name                  = format("hab-csf%s-rev%d-%s", each.key, var.hab_revision, var.env)
+  location              = var.region
   pool                  = each.value.pool
   certificate_authority = each.value.certificate_authority_id
   lifetime              = format("%ds", var.hab_pki_lifetime)
@@ -247,8 +244,8 @@ resource "google_privateca_certificate" "hab_csf" {
     subject_config {
       subject {
         organization        = "TrustFabric"
-        organizational_unit = "ArmoredWitness CI"
-        common_name         = format("ArmoredWitness SRK%s CSF CI", each.key)
+        organizational_unit = format("ArmoredWitness %s", upper(var.env))
+        common_name         = format("ArmoredWitness SRK%s CSF %s", each.key, upper(var.env))
       }
     }
     x509_config {
@@ -270,12 +267,12 @@ resource "google_privateca_certificate" "hab_csf" {
   }
 }
 
-# CI HAB IMG cert for each of the SRK intermediates above.
+# HAB IMG cert for each of the SRK intermediates above.
 resource "google_privateca_certificate" "hab_img" {
   for_each = google_privateca_certificate_authority.hab_srk
 
-  name                  = format("hab-img%s-rev%d-ci", each.key, var.hab_ci_revision)
-  location              = "us-central1"
+  name                  = format("hab-img%s-rev%d-%s", each.key, var.hab_revision, var.env)
+  location              = var.region
   pool                  = each.value.pool
   certificate_authority = each.value.certificate_authority_id
   lifetime              = format("%ds", var.hab_pki_lifetime)
@@ -283,8 +280,8 @@ resource "google_privateca_certificate" "hab_img" {
     subject_config {
       subject {
         organization        = "TrustFabric"
-        organizational_unit = "ArmoredWitness CI"
-        common_name         = format("ArmoredWitness SRK%s IMG CI", each.key)
+        organizational_unit = format("ArmoredWitness %s", upper(var.env))
+        common_name         = format("ArmoredWitness SRK%s IMG %s", each.key, upper(var.env))
       }
     }
     x509_config {
@@ -304,32 +301,4 @@ resource "google_privateca_certificate" "hab_img" {
       key    = base64encode(data.google_kms_crypto_key_version.hab_img[each.key].public_key[0].pem)
     }
   }
-}
-
-############################################################
-## Terraform state bucket
-############################################################
-
-resource "google_kms_key_ring" "terraform_state" {
-  name     = "armored-witness-bucket-tfstate"
-  location = var.tf_state_location
-}
-
-resource "google_kms_crypto_key" "terraform_state_bucket" {
-  name     = "terraform-state-bucket"
-  key_ring = google_kms_key_ring.terraform_state.id
-}
-
-resource "google_storage_bucket" "terraform_state" {
-  name          = "armored-witness-bucket-tfstate"
-  force_destroy = false
-  location      = var.tf_state_location
-  storage_class = "STANDARD"
-  versioning {
-    enabled = true
-  }
-  encryption {
-    default_kms_key_name = google_kms_crypto_key.terraform_state_bucket.id
-  }
-  uniform_bucket_level_access = true
 }

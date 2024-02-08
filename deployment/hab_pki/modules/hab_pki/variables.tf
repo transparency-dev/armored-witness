@@ -2,6 +2,14 @@ variable "project_id" {
   description = "The project ID to host the cluster in"
 }
 
+variable "region" {
+  description = "The GCP region to host the resources in"
+}
+
+variable "env" {
+  description = "Unique id for the environment, e.g. ci or prod"
+}
+
 variable "signing_keyring_location" {
   description = "The GCP location to create the signing keyring"
 }
@@ -27,6 +35,6 @@ variable "hab_pki_lifetime" {
   default     = 788400000 // 25 years
 }
 
-variable "hab_ci_revision" {
-  description = "Revision count for CI HAB PKI certs. This must be incremented if these certs are regenerated for any reason"
+variable "hab_revision" {
+  description = "Revision count for HAB PKI certs. This must be incremented if these certs are regenerated for any reason"
 }
