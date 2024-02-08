@@ -1,5 +1,19 @@
-project_id               = "armored-witness"
-signing_keyring_location = "global"
-tf_state_location        = "europe-west2"
+include {
+  path = find_in_parent_folders()
+}
 
-hab_ci_revision = 4
+terraform {
+  source = "${get_path_to_repo_root()}/deployment/hab_pki/modules/hab_pki"
+}
+
+locals {
+  common_vars = read_terragrunt_config(find_in_parent_folders())
+}
+
+inputs = merge(
+  local.common_vars.locals,
+  {
+    env = "ci"
+    hab_ci_revision = 4
+  }
+)

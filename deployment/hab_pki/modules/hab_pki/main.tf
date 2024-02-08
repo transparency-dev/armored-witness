@@ -123,7 +123,7 @@ data "google_kms_crypto_key_version" "hab_img" {
 # CI HAB CA pool
 resource "google_privateca_ca_pool" "hab" {
   name     = "aw-hab-ca-pool-rev0-ci"
-  location = "us-central1"
+  location = var.region
   tier     = "ENTERPRISE"
   publishing_options {
     publish_ca_cert = true
@@ -151,7 +151,7 @@ resource "google_privateca_ca_pool" "hab" {
 resource "google_privateca_certificate_authority" "hab_root" {
   pool                     = google_privateca_ca_pool.hab.name
   certificate_authority_id = format("hab-root-rev%d-ci", var.hab_ci_revision)
-  location                 = "us-central1"
+  location                 = var.region
   lifetime = format("%ds", var.hab_pki_lifetime)
   deletion_protection                    = true
 
@@ -197,7 +197,7 @@ resource "google_privateca_certificate_authority" "hab_srk" {
 
   pool                     = google_privateca_ca_pool.hab.name
   certificate_authority_id = format("hab-srk%s-rev%d-ci", each.value, var.hab_ci_revision)
-  location                 = "us-central1"
+  location                 = var.region
   lifetime = format("%ds", var.hab_pki_lifetime)
   deletion_protection = "true"
 
@@ -239,7 +239,7 @@ resource "google_privateca_certificate" "hab_csf" {
   for_each = google_privateca_certificate_authority.hab_srk
 
   name                  = format("hab-csf%s-rev%d-ci", each.key, var.hab_ci_revision)
-  location              = "us-central1"
+  location              = var.region
   pool                  = each.value.pool
   certificate_authority = each.value.certificate_authority_id
   lifetime              = format("%ds", var.hab_pki_lifetime)
@@ -275,7 +275,7 @@ resource "google_privateca_certificate" "hab_img" {
   for_each = google_privateca_certificate_authority.hab_srk
 
   name                  = format("hab-img%s-rev%d-ci", each.key, var.hab_ci_revision)
-  location              = "us-central1"
+  location              = var.region
   pool                  = each.value.pool
   certificate_authority = each.value.certificate_authority_id
   lifetime              = format("%ds", var.hab_pki_lifetime)
