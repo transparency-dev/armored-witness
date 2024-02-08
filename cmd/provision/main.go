@@ -38,6 +38,7 @@ import (
 	"github.com/transparency-dev/armored-witness-common/release/firmware/update"
 	"github.com/transparency-dev/armored-witness/internal/device"
 	"github.com/transparency-dev/armored-witness/internal/fetcher"
+	"golang.org/x/exp/maps"
 	"golang.org/x/mod/sumdb/note"
 )
 
@@ -60,9 +61,29 @@ const (
 	appletDataBlock = 0x400000
 	// appletDataNumBlocks is the number of blocks in the applet data storage area.
 	appletDataNumBlocks = 0x400000
+
+	// Flag template for provisioning CI devices
+	template_ci = "ci"
 )
 
 var (
+	templates = map[string]map[string]string{
+		template_ci: {
+			"binaries_url":          "https://api.transparency.dev/armored-witness-firmware/ci/artefacts/1/",
+			"firmware_log_url":      "https://api.transparency.dev/armored-witness-firmware/ci/log/1/",
+			"firmware_log_origin":   "transparency.dev/armored-witness/firmware_transparency/ci/1",
+			"firmware_log_verifier": "transparency.dev-aw-ftlog-ci+f5479c1e+AR6gW0mycDtL17iM2uvQUThJsoiuSRirstEj9a5AdCCu",
+			"applet_verifier":       "transparency.dev-aw-applet-ci+3ff32e2c+AV1fgxtByjXuPjPfi0/7qTbEBlPGGCyxqr6ZlppoLOz3",
+			"boot_verifier":         "transparency.dev-aw-boot-ci+9f62b6ac+AbnipFmpRltfRiS9JCxLUcAZsbeH4noBOJXbVD3H5Eg4",
+			"recovery_verifier":     "transparency.dev-aw-recovery-ci+cc699423+AarlJMSl0rbTMf31B5o9bqc6PHorwvF1GbwyJRXArbfg",
+			"os_verifier_1":         "transparency.dev-aw-os1-ci+7a0eaef3+AcsqvmrcKIbs21H2Bm2fWb6oFWn/9MmLGNc6NLJty2eQ",
+			"os_verifier_2":         "transparency.dev-aw-os2-ci+af8e4114+AbBJk5MgxRB+68KhGojhUdSt1ts5GAdRIT1Eq9zEkgQh",
+		},
+	}
+)
+
+var (
+	template            = flag.String("template", "", fmt.Sprintf("One of the optional preconfigured templates (%v)", maps.Keys(templates)))
 	firmwareLogURL      = flag.String("firmware_log_url", "", "URL of the firmware transparency log to scan for firmware artefacts.")
 	firmwareLogOrigin   = flag.String("firmware_log_origin", "", "Origin string for the firmware transparency log.")
 	firmwareLogVerifier = flag.String("firmware_log_verifier", "", "Checkpoint verifier key for the firmware transparency log.")
@@ -80,9 +101,30 @@ var (
 	wipeWitness = flag.Bool("wipe_witness_state", false, "If true, erase the witness stored data.")
 )
 
+func applyFlagTemplate(k string) {
+	t, ok := templates[k]
+	if !ok {
+		klog.Exitf("No such template %q", k)
+	}
+	for f, v := range t {
+		if u := flag.Lookup(f); u == nil {
+			klog.Exitf("Internal error - template flag --%v unknown", f)
+		} else if u.Value.String() != "" {
+			klog.Exitf("Cannot set --template and --%s", f)
+		}
+		klog.Infof("Using template flag setting --%v=%v", f, v)
+		if err := flag.Set(f, v); err != nil {
+			klog.Exitf("Failed to set template flag --%v: %v", f, err)
+		}
+	}
+}
+
 func main() {
 	klog.InitFlags(nil)
 	flag.Parse()
+	if *template != "" {
+		applyFlagTemplate(*template)
+	}
 	ctx := context.Background()
 
 	if u, err := user.Current(); err != nil {
