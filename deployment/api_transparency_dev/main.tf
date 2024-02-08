@@ -37,7 +37,7 @@ resource "google_project_service" "storage_googleapis_com" {
 
 module "lb-http" {
   source  = "GoogleCloudPlatform/lb-http/google//modules/serverless_negs"
-  version = "~> 9.0"
+  version = "~> 10.0"
 
   name                  = var.lb_name
   project               = var.project_id
