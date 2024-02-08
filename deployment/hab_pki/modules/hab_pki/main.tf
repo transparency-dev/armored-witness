@@ -33,7 +33,7 @@ resource "google_project_service" "privateca_api" {
 # KMS key rings & data sources
 resource "google_kms_key_ring" "hab" {
   location = var.signing_keyring_location
-  name     = format("hab-%s", var.env)
+  name     = "hab-${var.env}"
 }
 data "google_kms_key_ring" "hab" {
   location = google_kms_key_ring.hab.location
