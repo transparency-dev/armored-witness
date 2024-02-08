@@ -1,9 +1,6 @@
 # Configure remote terraform backend for state.
 terraform {
-  backend "gcs" {
-    bucket = "armored-witness-bucket-tfstate"
-    prefix = "terraform/hab_pki/state"
-  }
+  backend "gcs" {}
 }
 
 # Project
@@ -304,32 +301,4 @@ resource "google_privateca_certificate" "hab_img" {
       key    = base64encode(data.google_kms_crypto_key_version.hab_img[each.key].public_key[0].pem)
     }
   }
-}
-
-############################################################
-## Terraform state bucket
-############################################################
-
-resource "google_kms_key_ring" "terraform_state" {
-  name     = "armored-witness-bucket-tfstate"
-  location = var.tf_state_location
-}
-
-resource "google_kms_crypto_key" "terraform_state_bucket" {
-  name     = "terraform-state-bucket"
-  key_ring = google_kms_key_ring.terraform_state.id
-}
-
-resource "google_storage_bucket" "terraform_state" {
-  name          = "armored-witness-bucket-tfstate"
-  force_destroy = false
-  location      = var.tf_state_location
-  storage_class = "STANDARD"
-  versioning {
-    enabled = true
-  }
-  encryption {
-    default_kms_key_name = google_kms_crypto_key.terraform_state_bucket.id
-  }
-  uniform_bucket_level_access = true
 }
