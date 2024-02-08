@@ -160,8 +160,8 @@ resource "google_privateca_certificate_authority" "hab_root" {
     subject_config {
       subject {
         organization        = "TrustFabric"
-        organizational_unit = format("ArmoredWitness %s", var.env)
-        common_name         = format("ArmoredWitness Root %s", var.env)
+        organizational_unit = format("ArmoredWitness %s", upper(var.env))
+        common_name         = format("ArmoredWitness Root %s", upper(var.env))
       }
     }
     x509_config {
@@ -209,8 +209,8 @@ resource "google_privateca_certificate_authority" "hab_srk" {
     subject_config {
       subject {
         organization        = "TrustFabric"
-        organizational_unit = format("ArmoredWitness %s", var.env)
-        common_name         = format("ArmoredWitness SRK%s %s", each.value, var.env)
+        organizational_unit = format("ArmoredWitness %s", upper(var.env))
+        common_name         = format("ArmoredWitness SRK%s %s", each.value, upper(var.env))
       }
     }
     x509_config {
@@ -247,8 +247,8 @@ resource "google_privateca_certificate" "hab_csf" {
     subject_config {
       subject {
         organization        = "TrustFabric"
-        organizational_unit = format("ArmoredWitness %s", var.env)
-        common_name         = format("ArmoredWitness SRK%s CSF %s", each.key, var.env)
+        organizational_unit = format("ArmoredWitness %s", upper(var.env))
+        common_name         = format("ArmoredWitness SRK%s CSF %s", each.key, upper(var.env))
       }
     }
     x509_config {
@@ -283,8 +283,8 @@ resource "google_privateca_certificate" "hab_img" {
     subject_config {
       subject {
         organization        = "TrustFabric"
-        organizational_unit = format("ArmoredWitness %s", var.env)
-        common_name         = format("ArmoredWitness SRK%s IMG %s", each.key, var.env)
+        organizational_unit = format("ArmoredWitness %s", upper(var.env))
+        common_name         = format("ArmoredWitness SRK%s IMG %s", each.key, upper(var.env))
       }
     }
     x509_config {
