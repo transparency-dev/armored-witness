@@ -14,6 +14,6 @@ inputs = merge(
   local.common_vars.locals,
   {
     env = "ci"
-    hab_ci_revision = 4
+    hab_revision = 4
   }
 )
