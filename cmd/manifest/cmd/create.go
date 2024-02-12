@@ -55,6 +55,7 @@ func init() {
 	createCmd.Flags().String("git_commit_fingerprint", "", "Hex-encoded SHA-1 commit hash of the git repository when checked out at the specified git_tag.")
 	createCmd.Flags().String("firmware_file", "", "Path of the firmware ELF file. ")
 	createCmd.Flags().String("tamago_version", "", "The version of the Tamago (https://github.com/usbarmory/tamago) used to compile the Trusted Applet.")
+	createCmd.Flags().StringArray("build_env", []string{}, "Environment variables required to reproduce this build.")
 	createCmd.Flags().String("output_file", "", "The file to write the manifest to. If this is not set, then only print the manifest to stdout.")
 	createCmd.Flags().String("firmware_type", "", fmt.Sprintf("One of %v ", maps.Keys(knownFirmwareTypes)))
 	createCmd.Flags().String("hab_target", "", "The devices the --hab_signature is targeting.")
@@ -68,6 +69,10 @@ func create(cmd *cobra.Command, args []string) {
 	gitCommitFingerprint := requireFlagString(cmd.Flags(), "git_commit_fingerprint")
 	firmwareFile := requireFlagString(cmd.Flags(), "firmware_file")
 	tamagoVersion := requireFlagString(cmd.Flags(), "tamago_version")
+	buildEnvs, err := cmd.Flags().GetStringArray("build_env")
+	if err != nil {
+		log.Fatalf("Failed to get []string from build_env")
+	}
 	firmwareType := requireFlagString(cmd.Flags(), "firmware_type")
 	if _, ok := knownFirmwareTypes[firmwareType]; !ok {
 		log.Fatalf("firmware_type must be one of %v", maps.Keys(knownFirmwareTypes))
@@ -96,6 +101,7 @@ func create(cmd *cobra.Command, args []string) {
 		GitCommitFingerprint: gitCommitFingerprint,
 		FirmwareDigestSha256: digestBytes[:],
 		TamagoVersion:        *tamagoVersionName,
+		BuildEnvs:            buildEnvs,
 	}
 	if firmwareType == ftlog.ComponentBoot || firmwareType == ftlog.ComponentRecovery {
 		habSigFile := requireFlagString(cmd.Flags(), "hab_signature_file")
@@ -145,7 +151,7 @@ func requireFlagString(f *pflag.FlagSet, name string) string {
 		log.Fatalf("Getting flag %v: %v", name, err)
 	}
 	if v == "" {
-		log.Fatalf("Flag %v must be speficied", name)
+		log.Fatalf("Flag %v must be specified", name)
 	}
 	return v
 }
