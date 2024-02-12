@@ -33,7 +33,6 @@ import (
 
 	"github.com/transparency-dev/armored-witness-boot/config"
 	"github.com/transparency-dev/armored-witness-common/release/firmware"
-	"github.com/transparency-dev/armored-witness-common/release/firmware/ftlog"
 	"github.com/transparency-dev/armored-witness-common/release/firmware/update"
 	"github.com/transparency-dev/armored-witness/internal/device"
 	"github.com/transparency-dev/armored-witness/internal/fetcher"
@@ -137,19 +136,11 @@ type verifier struct {
 // TODO: this will need updating to fetch a specific version of the image which has
 // been signed for the attached device.
 func (v *verifier) fetchRecoveryFirmware(ctx context.Context) error {
-	bf := fetcher.New(v.binBaseURL)
-	binFetcher := func(ctx context.Context, r ftlog.FirmwareRelease) ([]byte, error) {
-		p, err := update.BinaryPath(r)
-		if err != nil {
-			return nil, fmt.Errorf("BinaryPath: %v", err)
-		}
-		klog.Infof("Fetching %v bin from %q", r.Component, p)
-		return bf(ctx, p)
-	}
-
+	logFetcher := fetcher.New(v.logBaseURL)
+	binFetcher := fetcher.BinaryFetcher(logFetcher)
 	updateFetcher, err := update.NewFetcher(ctx,
 		update.FetcherOpts{
-			LogFetcher:       fetcher.New(v.logBaseURL),
+			LogFetcher:       logFetcher,
 			LogOrigin:        v.logOrigin,
 			LogVerifier:      v.logV,
 			BinaryFetcher:    binFetcher,

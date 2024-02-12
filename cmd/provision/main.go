@@ -34,7 +34,6 @@ import (
 
 	"github.com/transparency-dev/armored-witness-boot/config"
 	"github.com/transparency-dev/armored-witness-common/release/firmware"
-	"github.com/transparency-dev/armored-witness-common/release/firmware/ftlog"
 	"github.com/transparency-dev/armored-witness-common/release/firmware/update"
 	"github.com/transparency-dev/armored-witness/internal/device"
 	"github.com/transparency-dev/armored-witness/internal/fetcher"
@@ -78,6 +77,7 @@ var (
 			"recovery_verifier":     "transparency.dev-aw-recovery-ci+cc699423+AarlJMSl0rbTMf31B5o9bqc6PHorwvF1GbwyJRXArbfg",
 			"os_verifier_1":         "transparency.dev-aw-os1-ci+7a0eaef3+AcsqvmrcKIbs21H2Bm2fWb6oFWn/9MmLGNc6NLJty2eQ",
 			"os_verifier_2":         "transparency.dev-aw-os2-ci+af8e4114+AbBJk5MgxRB+68KhGojhUdSt1ts5GAdRIT1Eq9zEkgQh",
+			"hab_target":            "ci",
 		},
 	}
 )
@@ -95,6 +95,7 @@ var (
 	osVerifier2      = flag.String("os_verifier_2", "", "Verifier key 2 for the OS manifest.")
 	recoveryVerifier = flag.String("recovery_verifier", "", "Verifier key for the recovery manifest.")
 
+	habTarget       = flag.String("hab_target", "", "Device type firmware must be targetting.")
 	blockDeviceGlob = flag.String("blockdevs", "/dev/sd*", "Glob for plausible block devices where the armored witness could appear.")
 
 	runAnyway   = flag.Bool("run_anyway", false, "Let the user override bailing on any potential problems we've detected.")
@@ -208,15 +209,7 @@ func fetchLatestArtefacts(ctx context.Context) (*firmwares, error) {
 	if err != nil {
 		return nil, fmt.Errorf("binaries URL invalid: %v", err)
 	}
-	bf := fetcher.New(binBaseURL)
-	binFetcher := func(ctx context.Context, r ftlog.FirmwareRelease) ([]byte, error) {
-		p, err := update.BinaryPath(r)
-		if err != nil {
-			return nil, fmt.Errorf("BinaryPath: %v", err)
-		}
-		klog.Infof("Fetching %v bin from %q", r.Component, p)
-		return bf(ctx, p)
-	}
+	binFetcher := fetcher.BinaryFetcher(fetcher.New(binBaseURL))
 
 	updateFetcher, err := update.NewFetcher(ctx,
 		update.FetcherOpts{
@@ -228,6 +221,7 @@ func fetchLatestArtefacts(ctx context.Context) (*firmwares, error) {
 			BootVerifier:     bootVerifier,
 			OSVerifiers:      [2]note.Verifier{osVerifier1, osVerifier2},
 			RecoveryVerifier: recoveryVerifier,
+			HABTarget:        *habTarget,
 		})
 	if err != nil {
 		return nil, fmt.Errorf("NewFetcher: %v", err)

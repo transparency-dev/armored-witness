@@ -57,6 +57,8 @@ func init() {
 	createCmd.Flags().String("tamago_version", "", "The version of the Tamago (https://github.com/usbarmory/tamago) used to compile the Trusted Applet.")
 	createCmd.Flags().String("output_file", "", "The file to write the manifest to. If this is not set, then only print the manifest to stdout.")
 	createCmd.Flags().String("firmware_type", "", fmt.Sprintf("One of %v ", maps.Keys(knownFirmwareTypes)))
+	createCmd.Flags().String("hab_target", "", "The devices the --hab_signature is targeting.")
+	createCmd.Flags().String("hab_signature_file", "", "The HAB signature for the firmware file.")
 	createCmd.Flags().Bool("raw", false, "If set, the command only emits the raw manifest JSON, it will not sign and encapsulate into a note")
 	createCmd.Flags().String("private_key_file", "", "The file containing a Note-formatted signer string, used to sign the manifest")
 }
@@ -74,7 +76,6 @@ func create(cmd *cobra.Command, args []string) {
 	if err != nil {
 		log.Fatal(err)
 	}
-
 	firmwareBytes, err := os.ReadFile(firmwareFile)
 	if err != nil {
 		log.Fatalf("Failed to read firmware_file %q: %v", firmwareFile, err)
@@ -95,6 +96,18 @@ func create(cmd *cobra.Command, args []string) {
 		GitCommitFingerprint: gitCommitFingerprint,
 		FirmwareDigestSha256: digestBytes[:],
 		TamagoVersion:        *tamagoVersionName,
+	}
+	if firmwareType == ftlog.ComponentBoot || firmwareType == ftlog.ComponentRecovery {
+		habSigFile := requireFlagString(cmd.Flags(), "hab_signature_file")
+		habSig, err := os.ReadFile(habSigFile)
+		if err != nil {
+			log.Fatalf("Failed to read HAB signature file %q: %v", habSigFile, err)
+		}
+		habSigDigest := sha256.Sum256(habSig)
+		r.HAB = ftlog.HAB{
+			Target:                requireFlagString(cmd.Flags(), "hab_target"),
+			SignatureDigestSha256: habSigDigest[:],
+		}
 	}
 	b, err := json.MarshalIndent(r, "", "  ")
 	if err != nil {
