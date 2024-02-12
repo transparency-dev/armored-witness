@@ -103,9 +103,10 @@ func create(cmd *cobra.Command, args []string) {
 		if err != nil {
 			log.Fatalf("Failed to read HAB signature file %q: %v", habSigFile, err)
 		}
+		habSigDigest := sha256.Sum256(habSig)
 		r.HAB = ftlog.HAB{
-			Target:    requireFlagString(cmd.Flags(), "hab_target"),
-			Signature: habSig,
+			Target:                requireFlagString(cmd.Flags(), "hab_target"),
+			SignatureDigestSha256: habSigDigest[:],
 		}
 	}
 	b, err := json.MarshalIndent(r, "", "  ")
