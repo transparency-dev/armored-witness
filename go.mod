@@ -11,7 +11,7 @@ require (
 	github.com/spf13/cobra v1.8.0
 	github.com/spf13/pflag v1.0.5
 	github.com/transparency-dev/armored-witness-boot v0.0.0-20231011120056-79f8a7e1e0c8
-	github.com/transparency-dev/armored-witness-common v0.0.0-20231031160117-eefcf9dd7f27
+	github.com/transparency-dev/armored-witness-common v0.0.0-20240212125315-835b60b7c617
 	github.com/transparency-dev/armored-witness-os v0.0.0-20231010171114-e1c1c28a17ff
 	github.com/transparency-dev/formats v0.0.0-20230920083814-0f75b1d4e813
 	github.com/transparency-dev/merkle v0.0.2

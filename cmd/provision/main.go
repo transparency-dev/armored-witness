@@ -211,7 +211,7 @@ func fetchLatestArtefacts(ctx context.Context) (*firmwares, error) {
 		return nil, fmt.Errorf("binaries URL invalid: %v", err)
 	}
 	bf := fetcher.New(binBaseURL)
-	binFetcher := func(ctx context.Context, r ftlog.FirmwareRelease) ([]byte, error) {
+	binFetcher := func(ctx context.Context, r ftlog.FirmwareRelease) ([]byte, []byte, error) {
 		p, err := update.BinaryPath(r)
 		if err != nil {
 			return nil, fmt.Errorf("BinaryPath: %v", err)
