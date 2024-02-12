@@ -55,6 +55,8 @@ func (t Tamago) Switch(v semver.Version) error {
 	return nil
 }
 
+// Envs returns the KEY=value environment assigmnents required to be set for this
+// version of tamago to run.
 func (t Tamago) Envs(v semver.Version) []string {
 	vDir := filepath.Join(t.dir, v.String())
 	goPath := filepath.Join(vDir, "bin", "go")
