@@ -13,7 +13,7 @@ locals {
 inputs = merge(
   local.common_vars.locals,
   {
-    env = "ci"
-    hab_revision = 4
+    env = "presubmit"
+    hab_revision = 0
   }
 )
