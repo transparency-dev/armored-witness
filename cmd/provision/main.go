@@ -34,7 +34,6 @@ import (
 
 	"github.com/transparency-dev/armored-witness-boot/config"
 	"github.com/transparency-dev/armored-witness-common/release/firmware"
-	"github.com/transparency-dev/armored-witness-common/release/firmware/ftlog"
 	"github.com/transparency-dev/armored-witness-common/release/firmware/update"
 	"github.com/transparency-dev/armored-witness/internal/device"
 	"github.com/transparency-dev/armored-witness/internal/fetcher"
@@ -210,15 +209,7 @@ func fetchLatestArtefacts(ctx context.Context) (*firmwares, error) {
 	if err != nil {
 		return nil, fmt.Errorf("binaries URL invalid: %v", err)
 	}
-	bf := fetcher.New(binBaseURL)
-	binFetcher := func(ctx context.Context, r ftlog.FirmwareRelease) ([]byte, []byte, error) {
-		p, err := update.BinaryPath(r)
-		if err != nil {
-			return nil, fmt.Errorf("BinaryPath: %v", err)
-		}
-		klog.Infof("Fetching %v bin from %q", r.Component, p)
-		return bf(ctx, p)
-	}
+	binFetcher := fetcher.BinaryFetcher(fetcher.New(binBaseURL))
 
 	updateFetcher, err := update.NewFetcher(ctx,
 		update.FetcherOpts{

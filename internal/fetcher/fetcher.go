@@ -22,6 +22,8 @@ import (
 	"net/url"
 	"os"
 
+	"github.com/transparency-dev/armored-witness-common/release/firmware/ftlog"
+	"github.com/transparency-dev/armored-witness-common/release/firmware/update"
 	"github.com/transparency-dev/serverless-log/client"
 	"k8s.io/klog/v2"
 )
@@ -74,4 +76,28 @@ func readHTTP(ctx context.Context, u *url.URL) ([]byte, error) {
 		}
 	}()
 	return io.ReadAll(resp.Body)
+}
+
+func BinaryFetcher(f client.Fetcher) func(context.Context, ftlog.FirmwareRelease) ([]byte, []byte, error) {
+	return func(ctx context.Context, r ftlog.FirmwareRelease) ([]byte, []byte, error) {
+		p, err := update.BinaryPath(r)
+		if err != nil {
+			return nil, nil, fmt.Errorf("BinaryPath: %v", err)
+		}
+		klog.Infof("Fetching %v bin from %q", r.Component, p)
+		var b, s []byte
+		if b, err = f(ctx, p); err != nil {
+			return nil, nil, fmt.Errorf("failed to get %v binary from %q: %v", r.Component, p, err)
+		}
+		if len(r.HAB.SignatureDigestSha256) != 0 {
+			if p, err = update.HABSignaturePath(r); err != nil {
+				return nil, nil, fmt.Errorf("HABSignaturePath: %v", err)
+			}
+			b, err = f(ctx, p)
+			if err != nil {
+				return nil, nil, fmt.Errorf("failed to get %v HAB signature from %q: %v", r.Component, p, err)
+			}
+		}
+		return b, s, nil
+	}
 }
