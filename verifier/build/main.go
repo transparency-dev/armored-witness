@@ -43,18 +43,20 @@ import (
 )
 
 var (
-	pollInterval        = flag.Duration("poll_interval", 1*time.Minute, "The interval at which the log will be polled for new data")
-	stateFile           = flag.String("state_file", "", "File path for where checkpoints should be stored")
-	distributorURL      = flag.String("distributor_url", "https://api.transparency.dev", "URL identifying the REST distributor")
-	logURL              = flag.String("log_url", "https://api.transparency.dev/armored-witness-firmware/ci/log/0/", "URL identifying the location of the log")
-	binURL              = flag.String("bin_url", "https://api.transparency.dev/armored-witness-firmware/ci/artefacts/0/", "URL identifying the location of the binaries that are logged")
-	logOrigin           = flag.String("log_origin", "transparency.dev/armored-witness/firmware_transparency/ci/0", "The expected first line of checkpoints issued by the log")
-	logPubKey           = flag.String("log_pubkey", "transparency.dev-aw-ftlog-ci+f5479c1e+AR6gW0mycDtL17iM2uvQUThJsoiuSRirstEj9a5AdCCu", "The log's public key")
-	osReleasePubKey1    = flag.String("os_release_pubkey1", "transparency.dev-aw-os1-ci+7a0eaef3+AcsqvmrcKIbs21H2Bm2fWb6oFWn/9MmLGNc6NLJty2eQ", "The first OS release signer's public key")
-	osReleasePubKey2    = flag.String("os_release_pubkey2", "transparency.dev-aw-os2-ci+af8e4114+AbBJk5MgxRB+68KhGojhUdSt1ts5GAdRIT1Eq9zEkgQh", "The second OS release signer's public key")
-	appletReleasePubKey = flag.String("applet_release_pubkey", "transparency.dev-aw-applet-ci+3ff32e2c+AV1fgxtByjXuPjPfi0/7qTbEBlPGGCyxqr6ZlppoLOz3", "The applet release signer's public key")
-	cleanup             = flag.Bool("cleanup", true, "Set to false to keep git checkouts and make artifacts around after verification")
-	startIndex          = flag.Uint64("start_index", 0, "Used for debugging to start verifying leaves from a given index. Only used if there is no prior checkpoint available.")
+	pollInterval          = flag.Duration("poll_interval", 1*time.Minute, "The interval at which the log will be polled for new data")
+	stateFile             = flag.String("state_file", "", "File path for where checkpoints should be stored")
+	distributorURL        = flag.String("distributor_url", "https://api.transparency.dev", "URL identifying the REST distributor")
+	logURL                = flag.String("log_url", "https://api.transparency.dev/armored-witness-firmware/ci/log/1/", "URL identifying the location of the log")
+	binURL                = flag.String("bin_url", "https://api.transparency.dev/armored-witness-firmware/ci/artefacts/1/", "URL identifying the location of the binaries that are logged")
+	logOrigin             = flag.String("log_origin", "transparency.dev/armored-witness/firmware_transparency/ci/1", "The expected first line of checkpoints issued by the log")
+	logPubKey             = flag.String("log_pubkey", "transparency.dev-aw-ftlog-ci+f5479c1e+AR6gW0mycDtL17iM2uvQUThJsoiuSRirstEj9a5AdCCu", "The log's public key")
+	osReleasePubKey1      = flag.String("os_release_pubkey1", "transparency.dev-aw-os1-ci+7a0eaef3+AcsqvmrcKIbs21H2Bm2fWb6oFWn/9MmLGNc6NLJty2eQ", "The first OS release signer's public key")
+	osReleasePubKey2      = flag.String("os_release_pubkey2", "transparency.dev-aw-os2-ci+af8e4114+AbBJk5MgxRB+68KhGojhUdSt1ts5GAdRIT1Eq9zEkgQh", "The second OS release signer's public key")
+	appletReleasePubKey   = flag.String("applet_release_pubkey", "transparency.dev-aw-applet-ci+3ff32e2c+AV1fgxtByjXuPjPfi0/7qTbEBlPGGCyxqr6ZlppoLOz3", "The applet release signer's public key")
+	bootReleasePubKey     = flag.String("boot_release_pubkey", "transparency.dev-aw-boot-ci+9f62b6ac+AbnipFmpRltfRiS9JCxLUcAZsbeH4noBOJXbVD3H5Eg4", "The boot release signer's public key")
+	recoveryReleasePubKey = flag.String("recovery_release_pubkey", "transparency.dev-aw-recovery-ci+cc699423+AarlJMSl0rbTMf31B5o9bqc6PHorwvF1GbwyJRXArbfg", "The recovery release signer's public key")
+	cleanup               = flag.Bool("cleanup", true, "Set to false to keep git checkouts and make artifacts around after verification")
+	startIndex            = flag.Uint64("start_index", 0, "Used for debugging to start verifying leaves from a given index. Only used if there is no prior checkpoint available.")
 )
 
 func main() {
@@ -138,7 +140,15 @@ func newReleaseImplicitMetadata() releaseImplicitMetadata {
 	if err != nil {
 		klog.Exitf("Failed to construct applet release verifier: %v", err)
 	}
-	releaseVerifiers := note.VerifierList(osReleaseVerifier1, osReleaseVerifier2, appletReleaseVerifier)
+	bootReleaseVerifier, err := note.NewVerifier(*bootReleasePubKey)
+	if err != nil {
+		klog.Exitf("Failed to construct boot release verifier: %v", err)
+	}
+	recoveryReleaseVerifier, err := note.NewVerifier(*recoveryReleasePubKey)
+	if err != nil {
+		klog.Exitf("Failed to construct recovery release verifier: %v", err)
+	}
+	releaseVerifiers := note.VerifierList(osReleaseVerifier1, osReleaseVerifier2, appletReleaseVerifier, bootReleaseVerifier, recoveryReleaseVerifier)
 
 	dir, err := os.MkdirTemp("", "armored-witness-build-keys")
 	if err != nil {
