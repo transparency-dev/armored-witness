@@ -31,6 +31,7 @@ const (
 	gitOwner      = "transparency-dev"
 	gitRepoApplet = "armored-witness-applet"
 	gitRepoOS     = "armored-witness-os"
+	gitRepoBoot   = "armored-witness-boot"
 )
 
 // NewReproducibleBuildVerifier returns a ReproducibleBuildVerifier that will delete
@@ -62,6 +63,8 @@ func (v *ReproducibleBuildVerifier) VerifyManifest(ctx context.Context, i uint64
 		cv = appletVerifier{}
 	case ftlog.ComponentOS:
 		cv = osVerifier{}
+	case ftlog.ComponentBoot:
+		cv = bootVerifier{}
 	default:
 		return fmt.Errorf("Unsupported component: %q", r.Component)
 	}
@@ -122,6 +125,7 @@ func (v *ReproducibleBuildVerifier) VerifyManifest(ctx context.Context, i uint64
 	cmd.Env = append(cmd.Env, v.tamago.Envs(r.TamagoVersion)...)
 	cmd.Env = append(cmd.Env, v.sigs.envs...)
 	cmd.Env = append(cmd.Env, fmt.Sprintf("GIT_SEMVER_TAG=%s", r.GitTagName))
+	cmd.Env = append(cmd.Env, r.BuildEnvs...)
 	klog.V(1).Infof("Running %q in %s", cmd.String(), repoRoot)
 	if klog.V(2).Enabled() {
 		for _, e := range cmd.Env {
@@ -162,10 +166,7 @@ func (v appletVerifier) repo() string {
 }
 
 func (v appletVerifier) makeCommand() *exec.Cmd {
-	cmd := exec.Command("/usr/bin/make", "trusted_applet_nosign")
-	// cmd.Env = append(cmd.Env, "DEBUG=1")
-	// cmd.Env = append(cmd.Env, "BEE=1")
-	return cmd
+	return exec.Command("/usr/bin/make", "trusted_applet_nosign")
 }
 
 func (v appletVerifier) binFile() string {
@@ -180,12 +181,24 @@ func (v osVerifier) repo() string {
 }
 
 func (v osVerifier) makeCommand() *exec.Cmd {
-	cmd := exec.Command("/usr/bin/make", "trusted_os_release")
-	// cmd.Env = append(cmd.Env, "DEBUG=1")
-	// cmd.Env = append(cmd.Env, "BEE=1")
-	return cmd
+	return exec.Command("/usr/bin/make", "trusted_os_release")
 }
 
 func (v osVerifier) binFile() string {
 	return "bin/trusted_os.elf"
+}
+
+type bootVerifier struct {
+}
+
+func (v bootVerifier) repo() string {
+	return fmt.Sprintf("https://github.com/%s/%s", gitOwner, gitRepoBoot)
+}
+
+func (v bootVerifier) makeCommand() *exec.Cmd {
+	return exec.Command("/usr/bin/make", "imx")
+}
+
+func (v bootVerifier) binFile() string {
+	return "armored-witness-boot.imx"
 }

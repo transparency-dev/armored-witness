@@ -172,10 +172,12 @@ func newReleaseImplicitMetadata() releaseImplicitMetadata {
 	}
 
 	return releaseImplicitMetadata{
-		osV1: osReleaseVerifier1,
-		osV2: osReleaseVerifier2,
-		appV: appletReleaseVerifier,
-		allV: releaseVerifiers,
+		osV1:      osReleaseVerifier1,
+		osV2:      osReleaseVerifier2,
+		appV:      appletReleaseVerifier,
+		bootV:     bootReleaseVerifier,
+		recoveryV: recoveryReleaseVerifier,
+		allV:      releaseVerifiers,
 		envs: []string{
 			fmt.Sprintf("REST_DISTRIBUTOR_BASE_URL=%s", *distributorURL),
 			fmt.Sprintf("FT_LOG_URL=%s", *logURL),
@@ -200,12 +202,14 @@ func newReleaseImplicitMetadata() releaseImplicitMetadata {
 // up after usage. This cleanup must be done by the owner of this object via the
 // cleanup function.
 type releaseImplicitMetadata struct {
-	osV1    note.Verifier
-	osV2    note.Verifier
-	appV    note.Verifier
-	allV    note.Verifiers
-	envs    []string
-	cleanup func()
+	osV1      note.Verifier
+	osV2      note.Verifier
+	appV      note.Verifier
+	bootV     note.Verifier
+	recoveryV note.Verifier
+	allV      note.Verifiers
+	envs      []string
+	cleanup   func()
 }
 
 // Monitor verifiably checks inclusion of all leaves in a range, and then passes the
@@ -266,6 +270,14 @@ func (m *Monitor) From(ctx context.Context, start uint64) error {
 		case ftlog.ComponentOS:
 			if err := assertSigners(releaseNote, m.sigStore.osV1, m.sigStore.osV2); err != nil {
 				return fmt.Errorf("os sig verification failed: %v", err)
+			}
+		case ftlog.ComponentBoot:
+			if err := assertSigners(releaseNote, m.sigStore.bootV); err != nil {
+				return fmt.Errorf("boot sig verification failed: %v", err)
+			}
+		case ftlog.ComponentRecovery:
+			if err := assertSigners(releaseNote, m.sigStore.recoveryV); err != nil {
+				return fmt.Errorf("recovery sig verification failed: %v", err)
 			}
 		default:
 			// TODO(mhutchinson): support boot and recovery
