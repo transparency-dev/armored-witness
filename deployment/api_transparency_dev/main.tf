@@ -143,7 +143,8 @@ resource "google_compute_url_map" "default" {
     }
     path_rule {
       paths = [
-        "/distributor-ci/*"
+	# match on /distributor/ to prevent /metrics being exposed publicly
+        "/ci/distributor/*"
       ]
       route_action {
         url_rewrite {
