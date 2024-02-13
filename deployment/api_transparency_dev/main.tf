@@ -147,7 +147,7 @@ resource "google_compute_url_map" "default" {
       ]
       route_action {
         url_rewrite {
-          path_prefix_rewrite = "/distributor/"
+          path_prefix_rewrite = "/"
           host_rewrite        = var.distributor_ci_host
         }
       }
