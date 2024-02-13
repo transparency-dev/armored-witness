@@ -110,7 +110,7 @@ func create(cmd *cobra.Command, args []string) {
 			log.Fatalf("Failed to read HAB signature file %q: %v", habSigFile, err)
 		}
 		habSigDigest := sha256.Sum256(habSig)
-		r.HAB = ftlog.HAB{
+		r.HAB = &ftlog.HAB{
 			Target:                requireFlagString(cmd.Flags(), "hab_target"),
 			SignatureDigestSha256: habSigDigest[:],
 		}
