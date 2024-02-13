@@ -143,7 +143,7 @@ resource "google_compute_url_map" "default" {
     }
     path_rule {
       paths = [
-        "/distributor-ci/*"
+        "/ci/*"
       ]
       route_action {
         url_rewrite {
