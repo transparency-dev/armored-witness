@@ -79,11 +79,19 @@ func (v *ReproducibleBuildVerifier) VerifyManifest(ctx context.Context, i uint64
 	if err != nil {
 		return fmt.Errorf("failed to create temp directory: %v", err)
 	}
-	if v.cleanup {
-		defer os.RemoveAll(dir)
-	} else {
-		klog.Infof("Cleanup disabled: %q will not be deleted after use", dir)
-	}
+
+	// Cleanup will occur:
+	//  - if v.cleanup; OR
+	//  - if !v.cleanup AND build succeeds
+	// This means that disabling v.cleanup will only leave failed builds around for forensics.
+	cleanup := v.cleanup
+	defer func() {
+		if cleanup {
+			os.RemoveAll(dir)
+		} else {
+			klog.Infof("🔎 Evidence of failed build: %s (%d: %s@%s)", dir, i, r.Component, r.GitCommitFingerprint)
+		}
+	}()
 
 	klog.V(1).Infof("Cloning repo into %q", dir)
 
@@ -150,6 +158,7 @@ func (v *ReproducibleBuildVerifier) VerifyManifest(ctx context.Context, i uint64
 	}
 
 	klog.Infof("Leaf index %d: ✅ reproduced build %s@%s (%s) => %x", i, r.Component, r.GitTagName, r.GitCommitFingerprint, r.FirmwareDigestSha256)
+	cleanup = true
 	return nil
 }
 
