@@ -278,6 +278,8 @@ func waitAndProvision(ctx context.Context, fw *firmwares) error {
 	klog.Info("Operator, please ensure boot switch is set to USB, and then connect unprovisioned device 🙏")
 
 	recoveryHAB := append(fw.Recovery.Firmware, fw.Recovery.HABSignature...)
+	klog.Infof("Recovery firmware is %d bytes + %d bytes HAB signature", len(fw.Recovery.Firmware), len(fw.Recovery.HABSignature))
+
 	// The device will initially be in HID mode (showing as "RecoveryMode" in the output to lsusb).
 	// So we'll detect it as such:
 	target, bDev, err := device.BootIntoRecovery(ctx, recoveryHAB, *blockDeviceGlob)
@@ -391,6 +393,7 @@ func flashImages(dev string, fw *firmwares) error {
 		return fmt.Errorf("failed to prepare Bootloader config: %v", err)
 	}
 	bootloaderHAB := append(fw.Bootloader.Firmware, fw.Bootloader.HABSignature...)
+	klog.Infof("Bootloader firmware is %d bytes + %d bytes HAB signature", len(fw.Bootloader.Firmware), len(fw.Bootloader.HABSignature))
 
 	for _, p := range []struct {
 		name  string
