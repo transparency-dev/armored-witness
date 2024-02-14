@@ -90,7 +90,7 @@ func BinaryFetcher(f client.Fetcher) func(context.Context, ftlog.FirmwareRelease
 		if bin, err = f(ctx, p); err != nil {
 			return nil, nil, fmt.Errorf("failed to get %v binary from %q: %v", r.Component, p, err)
 		}
-		if len(r.HAB.SignatureDigestSha256) != 0 {
+		if r.HAB != nil && len(r.HAB.SignatureDigestSha256) != 0 {
 			if p, err = update.HABSignaturePath(r); err != nil {
 				return nil, nil, fmt.Errorf("HABSignaturePath: %v", err)
 			}
