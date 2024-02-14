@@ -55,7 +55,7 @@ var (
 	appletReleasePubKey   = flag.String("applet_release_pubkey", "transparency.dev-aw-applet-ci+3ff32e2c+AV1fgxtByjXuPjPfi0/7qTbEBlPGGCyxqr6ZlppoLOz3", "The applet release signer's public key")
 	bootReleasePubKey     = flag.String("boot_release_pubkey", "transparency.dev-aw-boot-ci+9f62b6ac+AbnipFmpRltfRiS9JCxLUcAZsbeH4noBOJXbVD3H5Eg4", "The boot release signer's public key")
 	recoveryReleasePubKey = flag.String("recovery_release_pubkey", "transparency.dev-aw-recovery-ci+cc699423+AarlJMSl0rbTMf31B5o9bqc6PHorwvF1GbwyJRXArbfg", "The recovery release signer's public key")
-	cleanup               = flag.Bool("cleanup", true, "Set to false to keep git checkouts and make artifacts around after verification")
+	cleanup               = flag.Bool("cleanup", true, "Set to false to keep git checkouts and make artifacts around after failed verification")
 	startIndex            = flag.Uint64("start_index", 0, "Used for debugging to start verifying leaves from a given index. Only used if there is no prior checkpoint available.")
 )
 
