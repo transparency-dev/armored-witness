@@ -191,9 +191,11 @@ func (v *verifier) waitAndVerify(ctx context.Context) error {
 	klog.Info("🙏 Operator, please ensure boot switch is set to USB, and then connect unprovisioned device 🙏")
 	klog.Info("----------------------------------------------------------------------------------------------")
 
+	recoveryHAB := append(v.recovery.Firmware, v.recovery.HABSignature...)
+	klog.Infof("Recovery firmware is %d bytes + %d bytes HAB signature", len(v.recovery.Firmware), len(v.recovery.HABSignature))
 	// The device will initially be in HID mode (showing as "RecoveryMode" in the output to lsusb).
 	// So we'll detect it as such:
-	target, bDev, err := device.BootIntoRecovery(ctx, v.recovery.Firmware, *blockDeviceGlob)
+	target, bDev, err := device.BootIntoRecovery(ctx, recoveryHAB, *blockDeviceGlob)
 	if err != nil {
 		return err
 	}
