@@ -130,10 +130,10 @@ func (v *ReproducibleBuildVerifier) VerifyManifest(ctx context.Context, i uint64
 	// Make the elf file
 	cmd = cv.makeCommand()
 	cmd.Dir = repoRoot
-	cmd.Env = append(cmd.Env, v.tamago.Envs(r.TamagoVersion)...)
-	cmd.Env = append(cmd.Env, v.sigs.envs...)
-	cmd.Env = append(cmd.Env, fmt.Sprintf("GIT_SEMVER_TAG=%s", r.GitTagName))
 	cmd.Env = append(cmd.Env, r.BuildEnvs...)
+	cmd.Env = append(cmd.Env, v.sigs.envs...)
+	cmd.Env = append(cmd.Env, v.tamago.Envs(r.TamagoVersion)...)
+	cmd.Env = append(cmd.Env, fmt.Sprintf("GIT_SEMVER_TAG=%s", r.GitTagName))
 	klog.V(1).Infof("Running %q in %s", cmd.String(), repoRoot)
 	if klog.V(2).Enabled() {
 		for _, e := range cmd.Env {

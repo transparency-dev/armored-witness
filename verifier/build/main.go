@@ -45,9 +45,7 @@ import (
 var (
 	pollInterval          = flag.Duration("poll_interval", 1*time.Minute, "The interval at which the log will be polled for new data")
 	stateFile             = flag.String("state_file", "", "File path for where checkpoints should be stored")
-	distributorURL        = flag.String("distributor_url", "https://api.transparency.dev", "URL identifying the REST distributor")
 	logURL                = flag.String("log_url", "https://api.transparency.dev/armored-witness-firmware/ci/log/1/", "URL identifying the location of the log")
-	binURL                = flag.String("bin_url", "https://api.transparency.dev/armored-witness-firmware/ci/artefacts/1/", "URL identifying the location of the binaries that are logged")
 	logOrigin             = flag.String("log_origin", "transparency.dev/armored-witness/firmware_transparency/ci/1", "The expected first line of checkpoints issued by the log")
 	logPubKey             = flag.String("log_pubkey", "transparency.dev-aw-ftlog-ci+f5479c1e+AR6gW0mycDtL17iM2uvQUThJsoiuSRirstEj9a5AdCCu", "The log's public key")
 	osReleasePubKey1      = flag.String("os_release_pubkey1", "transparency.dev-aw-os1-ci+7a0eaef3+AcsqvmrcKIbs21H2Bm2fWb6oFWn/9MmLGNc6NLJty2eQ", "The first OS release signer's public key")
@@ -179,10 +177,6 @@ func newReleaseImplicitMetadata() releaseImplicitMetadata {
 		recoveryV: recoveryReleaseVerifier,
 		allV:      releaseVerifiers,
 		envs: []string{
-			fmt.Sprintf("REST_DISTRIBUTOR_BASE_URL=%s", *distributorURL),
-			fmt.Sprintf("FT_LOG_URL=%s", *logURL),
-			fmt.Sprintf("FT_BIN_URL=%s", *binURL),
-			fmt.Sprintf("LOG_ORIGIN=%s", *logOrigin),
 			fmt.Sprintf("LOG_PUBLIC_KEY=%s", logFile),
 			fmt.Sprintf("APPLET_PUBLIC_KEY=%s", appletFile),
 			fmt.Sprintf("OS_PUBLIC_KEY1=%s", os1File),
