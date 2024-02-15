@@ -65,6 +65,8 @@ func (v *ReproducibleBuildVerifier) VerifyManifest(ctx context.Context, i uint64
 		cv = osVerifier{}
 	case ftlog.ComponentBoot:
 		cv = bootVerifier{}
+	case ftlog.ComponentRecovery:
+		cv = recoveryVerifier{}
 	default:
 		return fmt.Errorf("Unsupported component: %q", r.Component)
 	}
@@ -210,4 +212,20 @@ func (v bootVerifier) makeCommand() *exec.Cmd {
 
 func (v bootVerifier) binFile() string {
 	return "armored-witness-boot.imx"
+}
+
+type recoveryVerifier struct {
+}
+
+func (v recoveryVerifier) repo() string {
+	// https://github.com/transparency-dev/armored-witness-boot/pull/89
+	return "https://github.com/usbarmory/armory-ums"
+}
+
+func (v recoveryVerifier) makeCommand() *exec.Cmd {
+	return exec.Command("/usr/bin/make", "imx")
+}
+
+func (v recoveryVerifier) binFile() string {
+	return "armory-ums.imx"
 }
