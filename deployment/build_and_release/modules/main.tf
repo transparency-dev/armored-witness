@@ -1,9 +1,7 @@
 # Configure remote terraform backend for state.
+# This will be configured by terragrunt when deploying.
 terraform {
-  backend "gcs" {
-    bucket = "armored-witness-bucket-tfstate"
-    prefix = "terraform/build_and_release/state"
-  }
+  backend "gcs" {}
 }
 
 # Project
@@ -115,13 +113,9 @@ resource "google_storage_bucket" "armored_witness_firmware_log_ci_1" {
 }
 
 # KMS key rings & data sources
-resource "google_kms_key_ring" "firmware_release_ci" {
+resource "google_kms_key_ring" "firmware_release" {
   location = var.signing_keyring_location
-  name     = "firmware-release-ci"
-}
-resource "google_kms_key_ring" "firmware_release_prod" {
-  location = var.signing_keyring_location
-  name     = "firmware-release-prod"
+  name     = "firmware-release-${var.env}"
 }
 
 # TODO(jayhou): This configuration cannot be applied right now because of the
