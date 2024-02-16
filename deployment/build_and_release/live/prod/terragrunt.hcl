@@ -14,5 +14,6 @@ inputs = merge(
   local.common_vars.locals,
   {
     env = "prod"
+    bucket_env = ""
   }
 )

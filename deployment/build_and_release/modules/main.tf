@@ -56,58 +56,30 @@ resource "google_project_service" "storage_googleapis_com" {
 
 # GCS buckets
 
-# prod log rev 0
-resource "google_storage_bucket" "armored_witness_firmware" {
+# firmware rev 0
+resource "google_storage_bucket" "firmware" {
   location                    = "EU"
-  name                        = "armored-witness-firmware"
+  name                        = "armored-witness-firmware${var.bucket_env}"
   storage_class               = "STANDARD"
   uniform_bucket_level_access = true
 }
-resource "google_storage_bucket" "armored_witness_firmware_log" {
+resource "google_storage_bucket" "firmware_log" {
   location                    = "US"
-  name                        = "armored-witness-firmware-log"
+  name                        = "armored-witness-firmware-log${var.bucket_env}"
   storage_class               = "STANDARD"
   uniform_bucket_level_access = true
 }
 
-# prod log rev 1
-resource "google_storage_bucket" "armored_witness_firmware_1" {
+# log rev 1
+resource "google_storage_bucket" "firmware_1" {
   location                    = "EU"
-  name                        = "armored-witness-firmware-1"
+  name                        = "armored-witness-firmware${var.bucket_env}-1"
   storage_class               = "STANDARD"
   uniform_bucket_level_access = true
 }
-resource "google_storage_bucket" "armored_witness_firmware_log_1" {
+resource "google_storage_bucket" "firmware_log_1" {
   location                    = "US"
-  name                        = "armored-witness-firmware-log-1"
-  storage_class               = "STANDARD"
-  uniform_bucket_level_access = true
-}
-
-# CI log rev 0
-resource "google_storage_bucket" "armored_witness_firmware_ci" {
-  location                    = "EU"
-  name                        = "armored-witness-firmware-ci"
-  storage_class               = "STANDARD"
-  uniform_bucket_level_access = true
-}
-resource "google_storage_bucket" "armored_witness_firmware_log_ci" {
-  location                    = "US"
-  name                        = "armored-witness-firmware-log-ci"
-  storage_class               = "STANDARD"
-  uniform_bucket_level_access = true
-}
-
-# CI log rev 1
-resource "google_storage_bucket" "armored_witness_firmware_ci_1" {
-  location                    = "EU"
-  name                        = "armored-witness-firmware-ci-1"
-  storage_class               = "STANDARD"
-  uniform_bucket_level_access = true
-}
-resource "google_storage_bucket" "armored_witness_firmware_log_ci_1" {
-  location                    = "US"
-  name                        = "armored-witness-firmware-log-ci-1"
+  name                        = "armored-witness-firmware-log${var.bucket_env}-1"
   storage_class               = "STANDARD"
   uniform_bucket_level_access = true
 }
