@@ -56,30 +56,22 @@ resource "google_project_service" "storage_googleapis_com" {
 
 # GCS buckets
 
-# firmware rev 0
+locals {
+  bucket_revisions = ["", "-1"]
+}
 resource "google_storage_bucket" "firmware" {
+  for_each = toset(local.bucket_revisions)
+
   location                    = "EU"
-  name                        = "armored-witness-firmware${var.bucket_env}"
+  name                        = format("armored-witness-firmware%s%s", var.bucket_env, each.value)
   storage_class               = "STANDARD"
   uniform_bucket_level_access = true
 }
 resource "google_storage_bucket" "firmware_log" {
-  location                    = "US"
-  name                        = "armored-witness-firmware-log${var.bucket_env}"
-  storage_class               = "STANDARD"
-  uniform_bucket_level_access = true
-}
+  for_each = toset(local.bucket_revisions)
 
-# log rev 1
-resource "google_storage_bucket" "firmware_1" {
-  location                    = "EU"
-  name                        = "armored-witness-firmware${var.bucket_env}-1"
-  storage_class               = "STANDARD"
-  uniform_bucket_level_access = true
-}
-resource "google_storage_bucket" "firmware_log_1" {
   location                    = "US"
-  name                        = "armored-witness-firmware-log${var.bucket_env}-1"
+  name                        = format("armored-witness-firmware-log%s%s", var.bucket_env, each.value)
   storage_class               = "STANDARD"
   uniform_bucket_level_access = true
 }
