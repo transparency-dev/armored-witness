@@ -11,7 +11,7 @@ remote_state {
   config = {
     project  = local.project_id
     location = local.tf_state_location
-    bucket   = "armored-witness-bucket-tfstate-${local.env}"
+    bucket   = "${local.project_id}-build-and-release-bucket-tfstate-${local.env}"
     prefix   = "${path_relative_to_include()}/terraform.tfstate"
 
     gcs_bucket_labels = {
