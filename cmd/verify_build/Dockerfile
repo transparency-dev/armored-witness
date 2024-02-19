@@ -1,6 +1,8 @@
 # This Dockerfile builds an image with all the tools needed to
-# build armory-drive. The entrypoint will run a monitor that
-# reproduces the builds from the armory-drive-log.
+# reproduce firmware builds from manifest data for the armored
+# witness.
+# The default entrypoint runs a continuous monitor that attempts
+# to build all firmware artifacts committed to by a log.
 FROM golang:1.21-alpine AS builder
 
 ARG GOFLAGS=""
@@ -19,7 +21,7 @@ RUN go mod download
 COPY . .
 
 # Build the application
-RUN go build -o /build/bin/monitor ./verifier/build
+RUN go build -o /build/bin/verifier ./cmd/verify_build
 
 #
 # Set up the final image
@@ -40,6 +42,6 @@ RUN cd /usr && \
     wget "https://github.com/google/protobuf/releases/download/v3.12.4/protoc-3.12.4-linux-x86_64.zip" && \
     unzip "protoc-3.12.4-linux-x86_64.zip"
 
-COPY --from=builder /build/bin/monitor /bin/monitor
+COPY --from=builder /build/bin/verifier /bin/verifier
 
-ENTRYPOINT ["/bin/monitor", "--alsologtostderr", "--state_file=/tmp/state"]
+ENTRYPOINT ["/bin/verifier", "continuous", "--state_file=/tmp/state", "--cleanup=false"]

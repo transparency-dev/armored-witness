@@ -11,7 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-package main
+package build
 
 import (
 	"bytes"
@@ -37,20 +37,20 @@ const (
 // NewReproducibleBuildVerifier returns a ReproducibleBuildVerifier that will delete
 // any temporary git repositories after use if cleanup is true, or leave them around
 // for further investigation if false.
-func NewReproducibleBuildVerifier(cleanup bool, tamago Tamago, sigs releaseImplicitMetadata) (*ReproducibleBuildVerifier, error) {
+func NewReproducibleBuildVerifier(cleanup bool, tamago Tamago, metadata *ReleaseImplicitMetadata) (*ReproducibleBuildVerifier, error) {
 	return &ReproducibleBuildVerifier{
-		cleanup: cleanup,
-		tamago:  tamago,
-		sigs:    sigs,
+		cleanup:  cleanup,
+		tamago:   tamago,
+		metadata: metadata,
 	}, nil
 }
 
 // ReproducibleBuildVerifier checks out the source code referenced by a manifest and
 // determines whether it can reproduce the final build artifacts.
 type ReproducibleBuildVerifier struct {
-	cleanup bool
-	tamago  Tamago
-	sigs    releaseImplicitMetadata
+	cleanup  bool
+	tamago   Tamago
+	metadata *ReleaseImplicitMetadata
 }
 
 // VerifyManifest attempts to reproduce the FirmwareRelease at index `i` in the log by
@@ -133,7 +133,7 @@ func (v *ReproducibleBuildVerifier) VerifyManifest(ctx context.Context, i uint64
 	cmd = cv.makeCommand()
 	cmd.Dir = repoRoot
 	cmd.Env = append(cmd.Env, r.BuildEnvs...)
-	cmd.Env = append(cmd.Env, v.sigs.envs...)
+	cmd.Env = append(cmd.Env, v.metadata.Envs...)
 	cmd.Env = append(cmd.Env, v.tamago.Envs(r.TamagoVersion)...)
 	cmd.Env = append(cmd.Env, fmt.Sprintf("GIT_SEMVER_TAG=%s", r.GitTagName))
 	klog.V(1).Infof("Running %q in %s", cmd.String(), repoRoot)
