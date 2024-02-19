@@ -29,7 +29,9 @@ func main() {
 	defer klog.Flush()
 	pflag.CommandLine.AddGoFlag(flag.CommandLine.Lookup("v"))
 	pflag.CommandLine.AddGoFlag(flag.CommandLine.Lookup("logtostderr"))
-	pflag.CommandLine.Set("logtostderr", "true")
+	if err := pflag.CommandLine.Set("logtostderr", "true"); err != nil {
+		klog.Exitf("Failed to set logtostderr default value: %v", err)
+	}
 
 	cmd.Execute()
 }
