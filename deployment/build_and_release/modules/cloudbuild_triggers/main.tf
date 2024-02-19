@@ -13,7 +13,7 @@ resource "google_service_account" "builder" {
 
 resource "google_cloudbuild_trigger" "applet_release" {
   location = "global"
-  service_account = google_service_account.builder.id
+  # service_account = google_service_account.builder.id
 
   github {
     owner = "transparency-dev"
