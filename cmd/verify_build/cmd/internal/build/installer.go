@@ -84,7 +84,7 @@ func (t Tamago) install(v semver.Version, dir string) error {
 		return err
 	}
 	// Create the directory and then extract into it
-	if err := os.Mkdir(dir, os.ModeDir); err != nil {
+	if err := os.Mkdir(dir, 0755); err != nil {
 		return err
 	}
 	if err := curl.Run(); err != nil {
