@@ -17,7 +17,6 @@ package cmd
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -29,7 +28,6 @@ import (
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
-	"github.com/transparency-dev/armored-witness-common/release/firmware/ftlog"
 	"github.com/transparency-dev/armored-witness/cmd/verify_build/cmd/internal/build"
 	"github.com/transparency-dev/merkle/proof"
 	"github.com/transparency-dev/merkle/rfc6962"
@@ -50,19 +48,8 @@ var (
 func init() {
 	rootCmd.AddCommand(continuousCmd)
 
-	continuousCmd.Flags().String("log_url", "https://api.transparency.dev/armored-witness-firmware/ci/log/1/", "URL identifying the location of the log.")
-	continuousCmd.Flags().String("log_origin", "transparency.dev/armored-witness/firmware_transparency/ci/1", "The expected first line of checkpoints issued by the log.")
-	continuousCmd.Flags().String("log_pubkey", "transparency.dev-aw-ftlog-ci+f5479c1e+AR6gW0mycDtL17iM2uvQUThJsoiuSRirstEj9a5AdCCu", "The log's public key.")
-	continuousCmd.Flags().String("os_release_pubkey1", "transparency.dev-aw-os1-ci+7a0eaef3+AcsqvmrcKIbs21H2Bm2fWb6oFWn/9MmLGNc6NLJty2eQ", "The first OS release signer's public key.")
-	continuousCmd.Flags().String("os_release_pubkey2", "transparency.dev-aw-os2-ci+af8e4114+AbBJk5MgxRB+68KhGojhUdSt1ts5GAdRIT1Eq9zEkgQh", "The second OS release signer's public key.")
-	continuousCmd.Flags().String("applet_release_pubkey", "transparency.dev-aw-applet-ci+3ff32e2c+AV1fgxtByjXuPjPfi0/7qTbEBlPGGCyxqr6ZlppoLOz3", "The applet release signer's public key.")
-	continuousCmd.Flags().String("boot_release_pubkey", "transparency.dev-aw-boot-ci+9f62b6ac+AbnipFmpRltfRiS9JCxLUcAZsbeH4noBOJXbVD3H5Eg4", "The boot release signer's public key.")
-	continuousCmd.Flags().String("recovery_release_pubkey", "transparency.dev-aw-recovery-ci+cc699423+AarlJMSl0rbTMf31B5o9bqc6PHorwvF1GbwyJRXArbfg", "The recovery release signer's public key.")
-
 	continuousCmd.Flags().Duration("poll_interval", 1*time.Minute, "The interval at which the log will be polled for new data.")
 	continuousCmd.Flags().String("state_file", "", "File path for where checkpoints should be stored")
-	continuousCmd.Flags().Bool("cleanup", true, "Set to false to keep git checkouts and make artifacts around after failed verification.")
-	continuousCmd.Flags().String("tamago_dir", "/usr/local/tamago-go", "Directory in which versions of tamago should be installed to. User must have read/write permission to this directory.")
 	continuousCmd.Flags().Uint64("start_index", 0, "Used for debugging to start verifying leaves from a given index. Only used if there is no prior checkpoint available.")
 }
 
@@ -98,8 +85,7 @@ func continuous(cmd *cobra.Command, args []string) {
 	monitor := Monitor{
 		st:        st,
 		stateFile: requireFlagString(cmd.Flags(), "state_file"),
-		metadata:  metadata,
-		handler:   rbv.VerifyManifest,
+		rbv:       rbv,
 	}
 
 	if isNew {
@@ -144,8 +130,7 @@ func continuous(cmd *cobra.Command, args []string) {
 type Monitor struct {
 	st        client.LogStateTracker
 	stateFile string
-	metadata  *build.ReleaseImplicitMetadata
-	handler   func(context.Context, uint64, ftlog.FirmwareRelease) error
+	rbv       *build.ReproducibleBuildVerifier
 }
 
 // From checks the leaves from `start` up to the checkpoint from the state tracker.
@@ -175,44 +160,7 @@ func (m *Monitor) From(ctx context.Context, start uint64) error {
 			return fmt.Errorf("VerifyInclusionProof() %d: %v", i, err)
 		}
 
-		klog.V(1).Infof("Leaf index %d: parsing", i)
-		releaseNote, err := note.Open([]byte(rawLeaf), m.metadata.AllV)
-		if err != nil {
-			if e, ok := err.(*note.UnverifiedNoteError); ok && len(e.Note.UnverifiedSigs) > 0 {
-				return fmt.Errorf("unknown signer %q for leaf at index %d: %v", e.Note.UnverifiedSigs[0].Name, i, err)
-			}
-			return fmt.Errorf("failed to open leaf note at index %d: %v", i, err)
-		}
-
-		var release ftlog.FirmwareRelease
-		if err := json.Unmarshal([]byte(releaseNote.Text), &release); err != nil {
-			return fmt.Errorf("failed to unmarshal release at index %d: %w", i, err)
-		}
-
-		switch release.Component {
-		case ftlog.ComponentApplet:
-			if err := assertSigners(releaseNote, m.metadata.AppV); err != nil {
-				return fmt.Errorf("applet sig verification failed: %v", err)
-			}
-		case ftlog.ComponentOS:
-			if err := assertSigners(releaseNote, m.metadata.OSV1, m.metadata.OSV2); err != nil {
-				return fmt.Errorf("os sig verification failed: %v", err)
-			}
-		case ftlog.ComponentBoot:
-			if err := assertSigners(releaseNote, m.metadata.BootV); err != nil {
-				return fmt.Errorf("boot sig verification failed: %v", err)
-			}
-		case ftlog.ComponentRecovery:
-			if err := assertSigners(releaseNote, m.metadata.RecoveryV); err != nil {
-				return fmt.Errorf("recovery sig verification failed: %v", err)
-			}
-		default:
-			// TODO(mhutchinson): support boot and recovery
-			return fmt.Errorf("Unsupported component: %q", release.Component)
-		}
-
-		klog.V(1).Infof("Leaf index %d: verifying manifest: %s@%s (%s)", i, release.Component, release.GitTagName, release.GitCommitFingerprint)
-		if err := m.handler(ctx, i, release); err != nil {
+		if err := m.rbv.Verify(ctx, i, rawLeaf); err != nil {
 			resErr = err
 			klog.Errorf("Error verifying index %d: %v", i, err)
 		}
@@ -283,27 +231,6 @@ func newFetcher(root *url.URL) (client.Fetcher, error) {
 		}
 		return body, nil
 	}, nil
-}
-
-func assertSigners(n *note.Note, names ...note.Verifier) error {
-	needed := make(map[string]bool)
-	for _, n := range names {
-		needed[n.Name()] = true
-	}
-	for _, s := range n.Sigs {
-		if !needed[s.Name] {
-			return fmt.Errorf("unexpected sig for %s", s.Name)
-		}
-		delete(needed, s.Name)
-	}
-	if len(needed) > 0 {
-		keys := make([]string, 0, len(needed))
-		for k := range needed {
-			keys = append(keys, k)
-		}
-		return fmt.Errorf("no sigs found for %v", keys)
-	}
-	return nil
 }
 
 func requireFlagString(f *pflag.FlagSet, name string) string {

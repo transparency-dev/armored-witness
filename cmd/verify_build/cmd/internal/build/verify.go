@@ -18,6 +18,7 @@ import (
 	"bytes"
 	"context"
 	"crypto/sha256"
+	"encoding/json"
 	"fmt"
 	"os"
 	"os/exec"
@@ -25,6 +26,7 @@ import (
 	"strings"
 
 	"github.com/transparency-dev/armored-witness-common/release/firmware/ftlog"
+	"golang.org/x/mod/sumdb/note"
 	"k8s.io/klog/v2"
 )
 
@@ -54,10 +56,53 @@ type ReproducibleBuildVerifier struct {
 	metadata *ReleaseImplicitMetadata
 }
 
-// VerifyManifest attempts to reproduce the FirmwareRelease at index `i` in the log by
+// Verify checks everything that can be checked about a manifest in isolation:
+//  1. That it is a valid note signed by the correct release signer
+//  2. That this note contains a valid manifest file
+//  3. That the binary committed to in the manifest file can be reproducibly built
+func (v *ReproducibleBuildVerifier) Verify(ctx context.Context, i uint64, manifest []byte) error {
+	releaseNote, err := note.Open(manifest, v.metadata.AllV)
+	if err != nil {
+		if e, ok := err.(*note.UnverifiedNoteError); ok && len(e.Note.UnverifiedSigs) > 0 {
+			return fmt.Errorf("unknown signer %q for leaf at index %d: %v", e.Note.UnverifiedSigs[0].Name, i, err)
+		}
+		return fmt.Errorf("failed to open leaf note at index %d: %v", i, err)
+	}
+
+	var release ftlog.FirmwareRelease
+	if err := json.Unmarshal([]byte(releaseNote.Text), &release); err != nil {
+		return fmt.Errorf("failed to unmarshal release at index %d: %w", i, err)
+	}
+
+	switch release.Component {
+	case ftlog.ComponentApplet:
+		if err := assertSigners(releaseNote, v.metadata.AppV); err != nil {
+			return fmt.Errorf("applet sig verification failed: %v", err)
+		}
+	case ftlog.ComponentOS:
+		if err := assertSigners(releaseNote, v.metadata.OSV1, v.metadata.OSV2); err != nil {
+			return fmt.Errorf("os sig verification failed: %v", err)
+		}
+	case ftlog.ComponentBoot:
+		if err := assertSigners(releaseNote, v.metadata.BootV); err != nil {
+			return fmt.Errorf("boot sig verification failed: %v", err)
+		}
+	case ftlog.ComponentRecovery:
+		if err := assertSigners(releaseNote, v.metadata.RecoveryV); err != nil {
+			return fmt.Errorf("recovery sig verification failed: %v", err)
+		}
+	default:
+		return fmt.Errorf("Unsupported component: %q", release.Component)
+	}
+
+	klog.V(1).Infof("Leaf index %d: verifying manifest: %s@%s (%s)", i, release.Component, release.GitTagName, release.GitCommitFingerprint)
+	return v.verifyManifest(ctx, i, release)
+}
+
+// verifyManifest attempts to reproduce the FirmwareRelease at index `i` in the log by
 // checking out the code and running the make file.
-func (v *ReproducibleBuildVerifier) VerifyManifest(ctx context.Context, i uint64, r ftlog.FirmwareRelease) error {
-	klog.V(1).Infof("VerifyManifest %d: %s@%s", i, r.Component, r.GitTagName)
+func (v *ReproducibleBuildVerifier) verifyManifest(ctx context.Context, i uint64, r ftlog.FirmwareRelease) error {
+	klog.V(1).Infof("verifyManifest %d: %s@%s", i, r.Component, r.GitTagName)
 	var cv componentVerifier
 	switch r.Component {
 	case ftlog.ComponentApplet:
@@ -229,4 +274,25 @@ func (v recoveryVerifier) makeCommand() *exec.Cmd {
 
 func (v recoveryVerifier) binFile() string {
 	return "armory-ums.imx"
+}
+
+func assertSigners(n *note.Note, names ...note.Verifier) error {
+	needed := make(map[string]bool)
+	for _, n := range names {
+		needed[n.Name()] = true
+	}
+	for _, s := range n.Sigs {
+		if !needed[s.Name] {
+			return fmt.Errorf("unexpected sig for %s", s.Name)
+		}
+		delete(needed, s.Name)
+	}
+	if len(needed) > 0 {
+		keys := make([]string, 0, len(needed))
+		for k := range needed {
+			keys = append(keys, k)
+		}
+		return fmt.Errorf("no sigs found for %v", keys)
+	}
+	return nil
 }

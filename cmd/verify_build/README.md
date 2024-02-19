@@ -10,7 +10,7 @@ For each manifest claim that it hasn't seen before, the following steps are take
  3. The ELF file is compiled from source
  4. The hash for the ELF in the manifest is compared against the locally built version
 
-## Running
+## Running in Continuous Mode
 
 In order to control the environment in which the code will be built,
 a Dockerfile is supplied which will create a compatible environment.
@@ -18,7 +18,7 @@ a Dockerfile is supplied which will create a compatible environment.
 This image can be built and executed using the following commands
 from the root of the repository:
 
-```bash
+```shell
 docker build . -t armored-witness-build-verifier -f ./cmd/verify_build/Dockerfile
 docker run armored-witness-build-verifier
 ```
@@ -40,3 +40,21 @@ Note that in the above, the entire directory from the failed build can be obtain
  3. Copying the directory to somewhere it can be easily inspected using `docker cp $DOCKER_CONTAINER:$EVIDENCE_DIR /tmp/evidence`
 
 To find more information about failed builds (e.g. full commandline, env variables), the verbosity can be increased by passing `--v=2` to the `docker run` command.
+
+## Verifying a Single Manifest
+
+To verify a single manifest, the same Dockerfile as above can be used, but we need to override the entrypoint command.
+The `single` command takes a signed manifest note via stdin.
+
+The example below obtains a leaf entry from the log via `curl` and pipes this directly to the verifier in single mode, running inside docker.
+
+```shell
+docker build . -t armored-witness-build-verifier -f ./cmd/verify_build/Dockerfile
+curl https://api.transparency.dev/armored-witness-firmware/ci/log/1/seq/00/00/00/00/78 | docker run -i --entrypoint "/bin/verifier" armored-witness-build-verifier single
+```
+
+It is possible to run this without using Docker if you are sure you have the correct tooling installed on your machine. Example command:
+
+```shell
+curl https://api.transparency.dev/armored-witness-firmware/ci/log/1/seq/00/00/00/00/78 | go run ./cmd/verify_build single --tamago_dir=$HOME/tamago/
+```
