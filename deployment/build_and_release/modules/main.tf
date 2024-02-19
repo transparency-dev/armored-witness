@@ -1,9 +1,7 @@
 # Configure remote terraform backend for state.
+# This will be configured by terragrunt when deploying.
 terraform {
-  backend "gcs" {
-    bucket = "armored-witness-bucket-tfstate"
-    prefix = "terraform/build_and_release/state"
-  }
+  backend "gcs" {}
 }
 
 # Project
@@ -58,70 +56,30 @@ resource "google_project_service" "storage_googleapis_com" {
 
 # GCS buckets
 
-# prod log rev 0
-resource "google_storage_bucket" "armored_witness_firmware" {
-  location                    = "EU"
-  name                        = "armored-witness-firmware"
-  storage_class               = "STANDARD"
-  uniform_bucket_level_access = true
+locals {
+  bucket_revisions = ["", "-1"]
 }
-resource "google_storage_bucket" "armored_witness_firmware_log" {
-  location                    = "US"
-  name                        = "armored-witness-firmware-log"
-  storage_class               = "STANDARD"
-  uniform_bucket_level_access = true
-}
+resource "google_storage_bucket" "firmware" {
+  for_each = toset(local.bucket_revisions)
 
-# prod log rev 1
-resource "google_storage_bucket" "armored_witness_firmware_1" {
   location                    = "EU"
-  name                        = "armored-witness-firmware-1"
+  name                        = format("armored-witness-firmware%s%s", var.bucket_env, each.value)
   storage_class               = "STANDARD"
   uniform_bucket_level_access = true
 }
-resource "google_storage_bucket" "armored_witness_firmware_log_1" {
-  location                    = "US"
-  name                        = "armored-witness-firmware-log-1"
-  storage_class               = "STANDARD"
-  uniform_bucket_level_access = true
-}
+resource "google_storage_bucket" "firmware_log" {
+  for_each = toset(local.bucket_revisions)
 
-# CI log rev 0
-resource "google_storage_bucket" "armored_witness_firmware_ci" {
-  location                    = "EU"
-  name                        = "armored-witness-firmware-ci"
-  storage_class               = "STANDARD"
-  uniform_bucket_level_access = true
-}
-resource "google_storage_bucket" "armored_witness_firmware_log_ci" {
   location                    = "US"
-  name                        = "armored-witness-firmware-log-ci"
-  storage_class               = "STANDARD"
-  uniform_bucket_level_access = true
-}
-
-# CI log rev 1
-resource "google_storage_bucket" "armored_witness_firmware_ci_1" {
-  location                    = "EU"
-  name                        = "armored-witness-firmware-ci-1"
-  storage_class               = "STANDARD"
-  uniform_bucket_level_access = true
-}
-resource "google_storage_bucket" "armored_witness_firmware_log_ci_1" {
-  location                    = "US"
-  name                        = "armored-witness-firmware-log-ci-1"
+  name                        = format("armored-witness-firmware-log%s%s", var.bucket_env, each.value)
   storage_class               = "STANDARD"
   uniform_bucket_level_access = true
 }
 
 # KMS key rings & data sources
-resource "google_kms_key_ring" "firmware_release_ci" {
+resource "google_kms_key_ring" "firmware_release" {
   location = var.signing_keyring_location
-  name     = "firmware-release-ci"
-}
-resource "google_kms_key_ring" "firmware_release_prod" {
-  location = var.signing_keyring_location
-  name     = "firmware-release-prod"
+  name     = "firmware-release-${var.env}"
 }
 
 # TODO(jayhou): This configuration cannot be applied right now because of the
@@ -227,31 +185,4 @@ resource "google_kms_key_ring" "firmware_release_prod" {
 #  }
 #}
 
-############################################################
-## Terraform state bucket
-############################################################
-
-resource "google_kms_key_ring" "terraform_state" {
-  name     = "armored-witness-bucket-tfstate"
-  location = var.tf_state_location
-}
-
-resource "google_kms_crypto_key" "terraform_state_bucket" {
-  name     = "terraform-state-bucket"
-  key_ring = google_kms_key_ring.terraform_state.id
-}
-
-resource "google_storage_bucket" "terraform_state" {
-  name          = "armored-witness-bucket-tfstate"
-  force_destroy = false
-  location      = var.tf_state_location
-  storage_class = "STANDARD"
-  versioning {
-    enabled = true
-  }
-  encryption {
-    default_kms_key_name = google_kms_crypto_key.terraform_state_bucket.id
-  }
-  uniform_bucket_level_access = true
-}
 # TODO(jayhou): add GCF stuff.
