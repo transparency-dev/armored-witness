@@ -1,9 +1,3 @@
-# Configure remote terraform backend for state.
-# This will be configured by terragrunt when deploying.
-terraform {
-  backend "gcs" {}
-}
-
 # Project
 provider "google" {
   project = var.project_id

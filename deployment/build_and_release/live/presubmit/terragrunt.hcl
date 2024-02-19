@@ -13,7 +13,6 @@ locals {
 inputs = merge(
   local.common_vars.locals,
   {
-    env = "ci"
-    bucket_env = "-ci"
+    env = "presubmit"
   }
 )
