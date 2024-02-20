@@ -110,7 +110,7 @@ func create(cmd *cobra.Command, args []string) {
 		},
 	}
 	if firmwareType == ftlog.ComponentBoot || firmwareType == ftlog.ComponentRecovery {
-		if habTarget := optionalFlagString(cmd.Flags(), "hab_taget"); habTarget != "" {
+		if habTarget := optionalFlagString(cmd.Flags(), "hab_target"); habTarget != "" {
 			habSigFile := requireFlagString(cmd.Flags(), "hab_signature_file")
 			habSig, err := os.ReadFile(habSigFile)
 			if err != nil {
