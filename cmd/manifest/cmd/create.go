@@ -51,6 +51,7 @@ var (
 func init() {
 	rootCmd.AddCommand(createCmd)
 
+	createCmd.Flags().Int("schema_version", 0, "The schema version of the manifest to output.")
 	createCmd.Flags().String("git_tag", "", "The semantic version of the Trusted Applet release.")
 	createCmd.Flags().String("git_commit_fingerprint", "", "Hex-encoded SHA-1 commit hash of the git repository when checked out at the specified git_tag.")
 	createCmd.Flags().String("firmware_file", "", "Path of the firmware ELF file. ")
@@ -65,6 +66,7 @@ func init() {
 }
 
 func create(cmd *cobra.Command, args []string) {
+	schemaVersion := requireFlagInt(cmd.Flags(), "schema_version")
 	gitTag := requireFlagString(cmd.Flags(), "git_tag")
 	gitCommitFingerprint := requireFlagString(cmd.Flags(), "git_commit_fingerprint")
 	firmwareFile := requireFlagString(cmd.Flags(), "firmware_file")
@@ -96,6 +98,7 @@ func create(cmd *cobra.Command, args []string) {
 		log.Fatalf("Failed to parse tamago_version: %v", err)
 	}
 	r := ftlog.FirmwareRelease{
+		SchemaVersion: schemaVersion,
 		Component: firmwareType,
 		Git: ftlog.Git{
 			TagName:           *gitTagName,
@@ -160,6 +163,14 @@ func requireFlagString(f *pflag.FlagSet, name string) string {
 	}
 	if v == "" {
 		log.Fatalf("Flag %v must be specified", name)
+	}
+	return v
+}
+
+func requireFlagInt(f *pflag.FlagSet, name string) int {
+	v, err := f.GetInt(name)
+	if err != nil {
+		log.Fatalf("Getting flag %v: %v", name, err)
 	}
 	return v
 }
