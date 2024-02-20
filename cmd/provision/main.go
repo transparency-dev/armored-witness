@@ -63,6 +63,23 @@ const (
 
 	// Flag template for provisioning CI devices
 	template_ci = "ci"
+
+	fuseWarning = `
+████████████████████████████████████████████████████████████████████████████████
+
+                                **  WARNING  **
+
+Enabling NXP HABv4 secure boot is an irreversible action that permanently fuses
+verification key hashes on the device.
+
+Any errors in the process or loss of the signing PKI will result in a bricked
+device incapable of executing unsigned code. This is a security feature, not a
+bug.
+
+The use of this tool is therefore **at your own risk**.
+
+████████████████████████████████████████████████████████████████████████████████
+`
 )
 
 var (
@@ -108,7 +125,7 @@ var (
 	runAnyway   = flag.Bool("run_anyway", false, "Let the user override bailing on any potential problems we've detected.")
 	wipeWitness = flag.Bool("wipe_witness_state", false, "If true, erase the witness stored data.")
 
-	fuse = flag.Bool("fuse", false, "If set, device with be **permanently** fused to the release environment specified by --hab_target")
+	fuse = flag.Bool("fuse", false, "If set, device will be **permanently** fused to the release environment specified by --hab_target")
 )
 
 func applyFlagTemplate(k string) {
@@ -350,6 +367,11 @@ func waitAndProvision(ctx context.Context, fw *firmwares) error {
 	}
 
 	if *fuse {
+		klog.Warningf("\n%s\n", fuseWarning)
+		for i := 5; i > 0; i-- {
+			klog.Infof(" Fusing in %d", i)
+			<-time.After(time.Second)
+		}
 		if err := device.ActivateHAB(dev); err != nil {
 			return fmt.Errorf("device failed to activate HAB: %v", err)
 		}
