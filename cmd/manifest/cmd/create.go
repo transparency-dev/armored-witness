@@ -110,15 +110,17 @@ func create(cmd *cobra.Command, args []string) {
 		},
 	}
 	if firmwareType == ftlog.ComponentBoot || firmwareType == ftlog.ComponentRecovery {
-		habSigFile := requireFlagString(cmd.Flags(), "hab_signature_file")
-		habSig, err := os.ReadFile(habSigFile)
-		if err != nil {
-			log.Fatalf("Failed to read HAB signature file %q: %v", habSigFile, err)
-		}
-		habSigDigest := sha256.Sum256(habSig)
-		r.HAB = &ftlog.HAB{
-			Target:                requireFlagString(cmd.Flags(), "hab_target"),
-			SignatureDigestSha256: habSigDigest[:],
+		if habTarget := optionalFlagString(cmd.Flags(), "hab_taget"); habTarget != "" {
+			habSigFile := requireFlagString(cmd.Flags(), "hab_signature_file")
+			habSig, err := os.ReadFile(habSigFile)
+			if err != nil {
+				log.Fatalf("Failed to read HAB signature file %q: %v", habSigFile, err)
+			}
+			habSigDigest := sha256.Sum256(habSig)
+			r.HAB = &ftlog.HAB{
+				Target:                habTarget,
+				SignatureDigestSha256: habSigDigest[:],
+			}
 		}
 	}
 	b, err := json.MarshalIndent(r, "", "  ")
@@ -158,6 +160,14 @@ func requireFlagString(f *pflag.FlagSet, name string) string {
 	}
 	if v == "" {
 		log.Fatalf("Flag %v must be specified", name)
+	}
+	return v
+}
+
+func optionalFlagString(f *pflag.FlagSet, name string) string {
+	v, err := f.GetString(name)
+	if err != nil {
+		log.Fatalf("Getting flag %v: %v", name, err)
 	}
 	return v
 }
