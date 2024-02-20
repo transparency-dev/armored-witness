@@ -96,12 +96,18 @@ func create(cmd *cobra.Command, args []string) {
 		log.Fatalf("Failed to parse tamago_version: %v", err)
 	}
 	r := ftlog.FirmwareRelease{
-		Component:            firmwareType,
-		GitTagName:           *gitTagName,
-		GitCommitFingerprint: gitCommitFingerprint,
-		FirmwareDigestSha256: digestBytes[:],
-		TamagoVersion:        *tamagoVersionName,
-		BuildEnvs:            buildEnvs,
+		Component: firmwareType,
+		Git: ftlog.Git{
+			TagName:           *gitTagName,
+			CommitFingerprint: gitCommitFingerprint,
+		},
+		Build: ftlog.Build{
+			TamagoVersion: *tamagoVersionName,
+			Envs:          buildEnvs,
+		},
+		Output: ftlog.Output{
+			FirmwareDigestSha256: digestBytes[:],
+		},
 	}
 	if firmwareType == ftlog.ComponentBoot || firmwareType == ftlog.ComponentRecovery {
 		habSigFile := requireFlagString(cmd.Flags(), "hab_signature_file")
