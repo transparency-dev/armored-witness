@@ -18,6 +18,8 @@
 package device
 
 import (
+	"fmt"
+
 	flynn_hid "github.com/flynn/hid"
 	"github.com/flynn/u2f/u2fhid"
 	"google.golang.org/protobuf/proto"
@@ -59,4 +61,21 @@ func WitnessStatus(dev *u2fhid.Device) (*api.Status, error) {
 	}
 
 	return s, nil
+}
+
+// ActivateHAB issues the HAB command to the armored witness via HID.
+func ActivateHAB(dev *u2fhid.Device) error {
+	buf, err := dev.Command(api.U2FHID_ARMORY_HAB, nil)
+	if err != nil {
+		return err
+	}
+
+	res := &api.Response{}
+	if err := proto.Unmarshal(buf, res); err != nil {
+		return err
+	}
+	if res.Error != api.ErrorCode_NONE {
+		return fmt.Errorf("%v: %s", res.Error, res.Payload)
+	}
+	return nil
 }
