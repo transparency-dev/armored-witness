@@ -32,6 +32,7 @@ locals {
 resource "google_cloudbuild_trigger" "docker" {
   name            = "build-docker-${var.env}"
   location        = var.region
+  # TODO(mhutchinson): this should be configured with a service account
 
   github {
     owner = "transparency-dev"
@@ -63,34 +64,5 @@ resource "google_cloudbuild_trigger" "docker" {
       logging = "CLOUD_LOGGING_ONLY"
     }
   }
-}
-
-resource "google_service_account" "cloudbuild_service_account" {
-  account_id   = "cloudbuild-docker-${var.env}-sa"
-  display_name = "Service Account for Docker CloudBuild (${var.env})"
-}
-
-resource "google_project_iam_member" "act_as" {
-  project = var.project_id
-  role    = "roles/iam.serviceAccountUser"
-  member  = "serviceAccount:${google_service_account.cloudbuild_service_account.email}"
-}
-
-resource "google_project_iam_member" "service_agent" {
-  project = var.project_id
-  role    = "roles/cloudbuild.serviceAgent"
-  member  = "serviceAccount:${google_service_account.cloudbuild_service_account.email}"
-}
-
-resource "google_project_iam_member" "logs_writer" {
-  project = var.project_id
-  role    = "roles/logging.logWriter"
-  member  = "serviceAccount:${google_service_account.cloudbuild_service_account.email}"
-}
-
-resource "google_project_iam_member" "artifact_registry_writer" {
-  project = var.project_id
-  role    = "roles/artifactregistry.writer"
-  member  = "serviceAccount:${google_service_account.cloudbuild_service_account.email}"
 }
 
