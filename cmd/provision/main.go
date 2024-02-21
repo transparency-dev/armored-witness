@@ -63,6 +63,23 @@ const (
 
 	// Flag template for provisioning CI devices
 	template_ci = "ci"
+
+	fuseWarning = `
+████████████████████████████████████████████████████████████████████████████████
+
+                                **  WARNING  **
+
+Enabling NXP HABv4 secure boot is an irreversible action that permanently fuses
+verification key hashes on the device.
+
+Any errors in the process or loss of the signing PKI will result in a bricked
+device incapable of executing unsigned code. This is a security feature, not a
+bug.
+
+The use of this tool is therefore **at your own risk**.
+
+████████████████████████████████████████████████████████████████████████████████
+`
 )
 
 var (
@@ -79,6 +96,13 @@ var (
 			"os_verifier_2":         "transparency.dev-aw-os2-ci+af8e4114+AbBJk5MgxRB+68KhGojhUdSt1ts5GAdRIT1Eq9zEkgQh",
 			"hab_target":            "ci",
 		},
+	}
+
+	// expectedSRKHashes maps known SRK hash values to the release environment they came from.
+	// These values MUST NOT be changed unless you really know what you're doing!
+	expectedSRKHashes = map[string]string{
+		// ci: From https://github.com/transparency-dev/armored-witness-os/blob/main/release/cloudbuild_ci.yaml#L188-L191C18
+		"b8ba457320663bf006accd3c57e06720e63b21ce5351cb91b4650690bb08d85a": "ci",
 	}
 )
 
@@ -100,6 +124,8 @@ var (
 
 	runAnyway   = flag.Bool("run_anyway", false, "Let the user override bailing on any potential problems we've detected.")
 	wipeWitness = flag.Bool("wipe_witness_state", false, "If true, erase the witness stored data.")
+
+	fuse = flag.Bool("fuse", false, "If set, device will be **permanently** fused to the release environment specified by --hab_target")
 )
 
 func applyFlagTemplate(k string) {
@@ -332,9 +358,28 @@ func waitAndProvision(ctx context.Context, fw *firmwares) error {
 	}
 	klog.Infof("✅ Witness serial number %s is not HAB fused", s.Serial)
 
-	// TODO: Set fuses.
+	srkEnv, ok := expectedSRKHashes[s.SRKHash]
+	if !ok {
+		return fmt.Errorf("witness OS reports UNKNOWN SRK Hash '%x', not fusing.", s.SRKHash)
+	}
+	if srkEnv != *habTarget {
+		return fmt.Errorf("witness OS reports SRK Hash (%x) for unexpected release environment %q - we're set to %q, not fusing.", s.SRKHash, srkEnv, *habTarget)
+	}
+
+	if *fuse {
+		klog.Warningf("\n%s\n", fuseWarning)
+		for i := 5; i > 0; i-- {
+			klog.Infof(" Fusing in %d", i)
+			<-time.After(time.Second)
+		}
+		if err := device.ActivateHAB(dev); err != nil {
+			return fmt.Errorf("device failed to activate HAB: %v", err)
+		}
+	}
 
 	// TODO: Reboot device.
+	klog.Info("Operator, please reboot device 🙏")
+	klog.Info("Waiting for device to boot...")
 
 	// TODO: Use HID to access witness public keys from device and store somewhere durable.
 
