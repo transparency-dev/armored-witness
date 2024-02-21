@@ -1,5 +1,6 @@
 variable "project_id" {
   description = "The project ID to host the cluster in"
+  type        = string
 }
 
 variable "env" {
@@ -14,8 +15,25 @@ variable "bucket_env" {
 
 variable "signing_keyring_location" {
   description = "The GCP location to create the signing keyring"
+  type        = string
 }
 
 variable "tf_state_location" {
   description = "The GCP location to store Terraform remote state"
+  type        = string
+}
+
+variable "cloudbuild_path" {
+  description = "The path of the Cloud Build config in the Github repo"
+  type        = string
+}
+
+variable "cloudbuild_tag" {
+  description = "TODO"
+  type        = string
+}
+
+variable "cloudbuild_branch" {
+  description = "TODO"
+  type        = string
 }

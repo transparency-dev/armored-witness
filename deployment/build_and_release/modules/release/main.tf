@@ -1,3 +1,7 @@
+terraform {
+  backend "gcs" {}
+}
+
 # Project
 provider "google" {
   project = var.project_id
@@ -178,5 +182,27 @@ resource "google_kms_key_ring" "firmware_release" {
 #    protection_level = "SOFTWARE"
 #  }
 #}
+
+resource "google_service_account" "builder" {
+  account_id   = "cloudbuild-${var.env}"
+  display_name = "Armored Witness ${var.env} Builder Service Account"
+}
+
+resource "google_cloudbuild_trigger" "applet_release" {
+  location = "global"
+  # service_account = google_service_account.builder.id
+
+  github {
+    owner = "transparency-dev"
+    name  = "armored-witness-applet"
+
+    push {
+      branch = var.cloudbuild_branch != "" ? var.cloudbuild_branch : null
+      tag = var.cloudbuild_tag != "" ? var.cloudbuild_tag : null
+    }
+  }
+ 
+  filename = var.cloudbuild_path
+}
 
 # TODO(jayhou): add GCF stuff.

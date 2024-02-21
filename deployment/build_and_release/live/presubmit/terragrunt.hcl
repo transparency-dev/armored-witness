@@ -3,7 +3,7 @@ include {
 }
 
 terraform {
-  source = "."
+  source = "${get_path_to_repo_root()}/deployment/build_and_release/modules/presubmit_cloudbuild_triggers"
 }
 
 locals {
@@ -14,5 +14,6 @@ inputs = merge(
   local.common_vars.locals,
   {
     env = "presubmit"
+    cloudbuild_path = "release/cloudbuild_presubmit.yaml"
   }
 )

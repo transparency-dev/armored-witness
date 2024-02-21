@@ -3,7 +3,7 @@ include {
 }
 
 terraform {
-  source = "."
+  source = "${get_path_to_repo_root()}/deployment/build_and_release/modules/release"
 }
 
 locals {
@@ -15,5 +15,8 @@ inputs = merge(
   {
     env = "ci"
     bucket_env = "-ci"
+    cloudbuild_path = "release/cloudbuild_ci.yaml"
+    cloudbuild_branch = "^main$"
+    cloudbuild_tag = ""
   }
 )
