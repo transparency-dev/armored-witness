@@ -360,10 +360,10 @@ func waitAndProvision(ctx context.Context, fw *firmwares) error {
 
 	srkEnv, ok := expectedSRKHashes[s.SRKHash]
 	if !ok {
-		return fmt.Errorf("witness OS reports UNKNOWN SRK Hash '%x', not fusing.", s.SRKHash)
+		return fmt.Errorf("witness OS reports UNKNOWN SRK Hash '%s', not fusing.", s.SRKHash)
 	}
 	if srkEnv != *habTarget {
-		return fmt.Errorf("witness OS reports SRK Hash (%x) for unexpected release environment %q - we're set to %q, not fusing.", s.SRKHash, srkEnv, *habTarget)
+		return fmt.Errorf("witness OS reports SRK Hash (%s) for unexpected release environment %q - we're set to %q, not fusing.", s.SRKHash, srkEnv, *habTarget)
 	}
 
 	if *fuse {
