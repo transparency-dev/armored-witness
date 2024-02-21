@@ -15,8 +15,13 @@ inputs = merge(
   {
     env = "ci"
     bucket_env = "-ci"
-    cloudbuild_path = "release/cloudbuild_ci.yaml"
-    cloudbuild_branch = "^main$"
-    cloudbuild_tag = ""
+
+    cloudbuild_trigger_branch = "^main$"
+    build_components = {
+      applet = {
+        repo = "armored-witness-applet"
+        cloudbuild_path = "release/cloudbuild_ci.yaml"
+      }
+    }
   }
 )

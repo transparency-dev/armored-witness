@@ -5,4 +5,4 @@
 /build
 
 .terraform/
-/deployment/**/.terragrunt-cache
+.terragrunt-cache/

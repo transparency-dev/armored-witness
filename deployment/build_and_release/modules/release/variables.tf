@@ -23,17 +23,27 @@ variable "tf_state_location" {
   type        = string
 }
 
-variable "cloudbuild_path" {
-  description = "The path of the Cloud Build config in the Github repo"
-  type        = string
+variable "build_components" {
+  type = map(object({
+    repo            = string
+    cloudbuild_path = string
+  }))
 }
 
-variable "cloudbuild_tag" {
-  description = "TODO"
+variable "cloudbuild_trigger_tag" {
+  description = <<EOH
+    Specifies how the build will be triggered. Exactly one of cloudbuild_trigger_branch or cloudbuild_trigger_tag should be specified.
+    See more: https://cloud.google.com/build/docs/api/reference/rest/v1/projects.locations.triggers#BuildTrigger.PushFilter.
+  EOH
   type        = string
+  default     = ""
 }
 
-variable "cloudbuild_branch" {
-  description = "TODO"
+variable "cloudbuild_trigger_branch" {
+  description = <<EOH
+    Specifies how the build will be triggered. Exactly one of cloudbuild_trigger_branch or cloudbuild_trigger_tag should be specified.
+    See more: https://cloud.google.com/build/docs/api/reference/rest/v1/projects.locations.triggers#BuildTrigger.PushFilter.
+  EOH
   type        = string
+  default     = ""
 }

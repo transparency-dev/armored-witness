@@ -1,3 +1,5 @@
+# Configure remote terraform backend for state.
+# This will be configured by terragrunt when deploying.
 terraform {
   backend "gcs" {}
 }
@@ -188,21 +190,24 @@ resource "google_service_account" "builder" {
   display_name = "Armored Witness ${var.env} Builder Service Account"
 }
 
-resource "google_cloudbuild_trigger" "applet_release" {
+resource "google_cloudbuild_trigger" "release" {
+  for_each = var.build_components
+
   location = "global"
+  # TODO(jayhou): uncomment this once the service account is created and permissions are granted.
   # service_account = google_service_account.builder.id
 
   github {
     owner = "transparency-dev"
-    name  = "armored-witness-applet"
+    name  = "${each.value.repo}"
 
     push {
-      branch = var.cloudbuild_branch != "" ? var.cloudbuild_branch : null
-      tag = var.cloudbuild_tag != "" ? var.cloudbuild_tag : null
+      branch = var.cloudbuild_trigger_branch != "" ? var.cloudbuild_trigger_branch : null
+      tag = var.cloudbuild_trigger_tag != "" ? var.cloudbuild_trigger_tag : null
     }
   }
  
-  filename = var.cloudbuild_path
+  filename = "${each.value.cloudbuild_path}"
 }
 
 # TODO(jayhou): add GCF stuff.

@@ -11,7 +11,9 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-package main
+
+// Package build contains the internal components used to implement the verifier.
+package build
 
 import (
 	"fmt"
@@ -23,7 +25,7 @@ import (
 	"k8s.io/klog/v2"
 )
 
-func newTamago(dir string) (Tamago, error) {
+func NewTamago(dir string) (Tamago, error) {
 	if _, err := os.Stat(dir); os.IsNotExist(err) {
 		klog.V(1).Infof("Creating new tamago install directory at %s", dir)
 		if err := os.Mkdir(dir, os.ModeDir); err != nil {
@@ -82,7 +84,7 @@ func (t Tamago) install(v semver.Version, dir string) error {
 		return err
 	}
 	// Create the directory and then extract into it
-	if err := os.Mkdir(dir, os.ModeDir); err != nil {
+	if err := os.Mkdir(dir, 0755); err != nil {
 		return err
 	}
 	if err := curl.Run(); err != nil {

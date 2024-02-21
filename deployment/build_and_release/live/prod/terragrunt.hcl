@@ -15,8 +15,13 @@ inputs = merge(
   {
     env = "prod"
     bucket_env = ""
-    cloudbuild_path = "release/cloudbuild.yaml"
-    cloudbuild_branch = ""
-    cloudbuild_tag = ".*"
+
+    cloudbuild_trigger_tag = ".*"
+    build_components = {
+      applet = {
+        repo = "armored-witness-applet"
+        cloudbuild_path = "release/cloudbuild.yaml"
+      }
+    }
   }
 )

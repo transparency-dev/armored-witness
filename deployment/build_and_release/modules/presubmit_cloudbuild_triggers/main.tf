@@ -7,13 +7,16 @@ resource "google_service_account" "builder" {
   display_name = "Armored Witness ${var.env} Builder Service Account"
 }
 
-resource "google_cloudbuild_trigger" "applet_release" {
+resource "google_cloudbuild_trigger" "release" {
+  for_each = var.build_components
+
   location = "global"
+  # TODO(jayhou): uncomment this once the service account is created and permissions are granted.
   # service_account = google_service_account.builder.id
 
   github {
     owner = "transparency-dev"
-    name  = "armored-witness-applet"
+    name  = "${each.value.repo}"
 
     pull_request {
       branch          = ".*"
@@ -21,6 +24,6 @@ resource "google_cloudbuild_trigger" "applet_release" {
     }
   }
  
-  filename = var.cloudbuild_path
+  filename = "${each.value.cloudbuild_path}"
 }
 

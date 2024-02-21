@@ -51,6 +51,7 @@ var (
 func init() {
 	rootCmd.AddCommand(createCmd)
 
+	createCmd.Flags().Int("schema_version", 0, "The schema version of the manifest to output.")
 	createCmd.Flags().String("git_tag", "", "The semantic version of the Trusted Applet release.")
 	createCmd.Flags().String("git_commit_fingerprint", "", "Hex-encoded SHA-1 commit hash of the git repository when checked out at the specified git_tag.")
 	createCmd.Flags().String("firmware_file", "", "Path of the firmware ELF file. ")
@@ -65,6 +66,7 @@ func init() {
 }
 
 func create(cmd *cobra.Command, args []string) {
+	schemaVersion := requireFlagInt(cmd.Flags(), "schema_version")
 	gitTag := requireFlagString(cmd.Flags(), "git_tag")
 	gitCommitFingerprint := requireFlagString(cmd.Flags(), "git_commit_fingerprint")
 	firmwareFile := requireFlagString(cmd.Flags(), "firmware_file")
@@ -96,23 +98,32 @@ func create(cmd *cobra.Command, args []string) {
 		log.Fatalf("Failed to parse tamago_version: %v", err)
 	}
 	r := ftlog.FirmwareRelease{
-		Component:            firmwareType,
-		GitTagName:           *gitTagName,
-		GitCommitFingerprint: gitCommitFingerprint,
-		FirmwareDigestSha256: digestBytes[:],
-		TamagoVersion:        *tamagoVersionName,
-		BuildEnvs:            buildEnvs,
+		SchemaVersion: schemaVersion,
+		Component: firmwareType,
+		Git: ftlog.Git{
+			TagName:           *gitTagName,
+			CommitFingerprint: gitCommitFingerprint,
+		},
+		Build: ftlog.Build{
+			TamagoVersion: *tamagoVersionName,
+			Envs:          buildEnvs,
+		},
+		Output: ftlog.Output{
+			FirmwareDigestSha256: digestBytes[:],
+		},
 	}
 	if firmwareType == ftlog.ComponentBoot || firmwareType == ftlog.ComponentRecovery {
-		habSigFile := requireFlagString(cmd.Flags(), "hab_signature_file")
-		habSig, err := os.ReadFile(habSigFile)
-		if err != nil {
-			log.Fatalf("Failed to read HAB signature file %q: %v", habSigFile, err)
-		}
-		habSigDigest := sha256.Sum256(habSig)
-		r.HAB = &ftlog.HAB{
-			Target:                requireFlagString(cmd.Flags(), "hab_target"),
-			SignatureDigestSha256: habSigDigest[:],
+		if habTarget := optionalFlagString(cmd.Flags(), "hab_target"); habTarget != "" {
+			habSigFile := requireFlagString(cmd.Flags(), "hab_signature_file")
+			habSig, err := os.ReadFile(habSigFile)
+			if err != nil {
+				log.Fatalf("Failed to read HAB signature file %q: %v", habSigFile, err)
+			}
+			habSigDigest := sha256.Sum256(habSig)
+			r.HAB = &ftlog.HAB{
+				Target:                habTarget,
+				SignatureDigestSha256: habSigDigest[:],
+			}
 		}
 	}
 	b, err := json.MarshalIndent(r, "", "  ")
@@ -152,6 +163,22 @@ func requireFlagString(f *pflag.FlagSet, name string) string {
 	}
 	if v == "" {
 		log.Fatalf("Flag %v must be specified", name)
+	}
+	return v
+}
+
+func requireFlagInt(f *pflag.FlagSet, name string) int {
+	v, err := f.GetInt(name)
+	if err != nil {
+		log.Fatalf("Getting flag %v: %v", name, err)
+	}
+	return v
+}
+
+func optionalFlagString(f *pflag.FlagSet, name string) string {
+	v, err := f.GetString(name)
+	if err != nil {
+		log.Fatalf("Getting flag %v: %v", name, err)
 	}
 	return v
 }

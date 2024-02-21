@@ -14,6 +14,12 @@ inputs = merge(
   local.common_vars.locals,
   {
     env = "presubmit"
-    cloudbuild_path = "release/cloudbuild_presubmit.yaml"
+
+    build_components = {
+      applet = {
+        repo = "armored-witness-applet"
+        cloudbuild_path = "release/cloudbuild_presubmit.yaml"
+      }
+    }
   }
 )

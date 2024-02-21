@@ -3,8 +3,10 @@ variable "env" {
   type        = string
 }
 
-variable "cloudbuild_path" {
-  description = "The path of the Cloud Build config in the Github repo"
-  type        = string
+variable "build_components" {
+  type = map(object({
+    repo            = string
+    cloudbuild_path = string
+  }))
 }
 

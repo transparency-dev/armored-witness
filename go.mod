@@ -1,6 +1,6 @@
 module github.com/transparency-dev/armored-witness
 
-go 1.20
+go 1.21.5
 
 require (
 	cloud.google.com/go/kms v1.15.7
@@ -11,11 +11,11 @@ require (
 	github.com/spf13/cobra v1.8.0
 	github.com/spf13/pflag v1.0.5
 	github.com/transparency-dev/armored-witness-boot v0.0.0-20231011120056-79f8a7e1e0c8
-	github.com/transparency-dev/armored-witness-common v0.0.0-20240213103302-b71051a8c4c0
-	github.com/transparency-dev/armored-witness-os v0.0.0-20231010171114-e1c1c28a17ff
+	github.com/transparency-dev/armored-witness-common v0.0.0-20240220112235-78461719cb5e
+	github.com/transparency-dev/armored-witness-os v0.0.0-20240221101142-11fd91adf0bb
 	github.com/transparency-dev/formats v0.0.0-20230920083814-0f75b1d4e813
 	github.com/transparency-dev/merkle v0.0.2
-	github.com/transparency-dev/serverless-log v0.0.0-20231215100646-e8c7edc4f3d4
+	github.com/transparency-dev/serverless-log v0.0.0-20231215122707-66f68a7705f5
 	github.com/usbarmory/armory-boot v0.0.0-20230922092524-e66d926bc36c
 	github.com/usbarmory/hid v0.0.0-20210318233634-85ced88a1ffe
 	golang.org/x/exp v0.0.0-20230905200255-921286631fa9
@@ -44,11 +44,11 @@ require (
 	go.opentelemetry.io/otel v1.22.0 // indirect
 	go.opentelemetry.io/otel/metric v1.22.0 // indirect
 	go.opentelemetry.io/otel/trace v1.22.0 // indirect
-	golang.org/x/crypto v0.18.0 // indirect
+	golang.org/x/crypto v0.19.0 // indirect
 	golang.org/x/net v0.20.0 // indirect
 	golang.org/x/oauth2 v0.16.0 // indirect
 	golang.org/x/sync v0.6.0 // indirect
-	golang.org/x/sys v0.16.0 // indirect
+	golang.org/x/sys v0.17.0 // indirect
 	golang.org/x/text v0.14.0 // indirect
 	golang.org/x/time v0.5.0 // indirect
 	google.golang.org/api v0.162.0 // indirect
