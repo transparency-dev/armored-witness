@@ -15,5 +15,6 @@ inputs = merge(
   {
     env = "wave0"
     hab_revision = 0
+    hab_leaf_revision = 0
   }
 )

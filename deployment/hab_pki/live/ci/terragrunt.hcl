@@ -15,5 +15,6 @@ inputs = merge(
   {
     env = "ci"
     hab_revision = 4
+    hab_leaf_revision = 0
   }
 )

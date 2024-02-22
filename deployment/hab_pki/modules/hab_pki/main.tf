@@ -235,7 +235,7 @@ resource "google_privateca_certificate_authority" "hab_srk" {
 resource "google_privateca_certificate" "hab_csf" {
   for_each = google_privateca_certificate_authority.hab_srk
 
-  name                  = format("hab-csf%s-rev%d-%s", each.key, var.hab_revision, var.env)
+  name                  = format("hab-csf%s-rev%d-%d-%s", each.key, var.hab_revision, var.hab_leaf_revision, var.env)
   location              = var.region
   pool                  = each.value.pool
   certificate_authority = each.value.certificate_authority_id
@@ -271,7 +271,7 @@ resource "google_privateca_certificate" "hab_csf" {
 resource "google_privateca_certificate" "hab_img" {
   for_each = google_privateca_certificate_authority.hab_srk
 
-  name                  = format("hab-img%s-rev%d-%s", each.key, var.hab_revision, var.env)
+  name                  = format("hab-img%s-rev%d-%d-%s", each.key, var.hab_revision, var.hab_leaf_revision, var.env)
   location              = var.region
   pool                  = each.value.pool
   certificate_authority = each.value.certificate_authority_id
