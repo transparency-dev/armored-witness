@@ -129,13 +129,9 @@ resource "google_privateca_ca_pool" "hab" {
   issuance_policy {
     baseline_values {
       ca_options {
-        is_ca = true
       }
       key_usage {
         base_key_usage {
-          cert_sign         = true
-          crl_sign          = true
-          digital_signature = true
         }
         extended_key_usage {
         }
