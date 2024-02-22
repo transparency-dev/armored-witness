@@ -8,8 +8,8 @@ variable "env" {
   type        = string
 }
 
-variable "log_count" {
-  description = "The number of logs to create."
+variable "bucket_count" {
+  description = "The number of log and firmware buckets to create (each)."
   type        = number
 }
 

@@ -14,7 +14,7 @@ inputs = merge(
   local.common_vars.locals,
   {
     env = "ci"
-    log_count = 1
+    bucket_count = 1
 
     cloudbuild_trigger_branch = "^main$"
     build_components = {

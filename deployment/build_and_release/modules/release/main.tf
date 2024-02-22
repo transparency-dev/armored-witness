@@ -56,7 +56,7 @@ resource "google_project_service" "storage_googleapis_com" {
 
 # GCS buckets
 resource "google_storage_bucket" "firmware" {
-  count = var.log_count
+  count = var.bucket_count
 
   location                    = "EU"
   name                        = "armored-witness-firmware-${var.env}-${count.index}"
@@ -64,7 +64,7 @@ resource "google_storage_bucket" "firmware" {
   uniform_bucket_level_access = true
 }
 resource "google_storage_bucket" "firmware_log" {
-  count = var.log_count
+  count = var.bucket_count
 
   location                    = "US"
   name                        = "armored-witness-firmware-log-${var.env}-${count.index}"
