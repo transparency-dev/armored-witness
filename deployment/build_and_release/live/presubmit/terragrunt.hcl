@@ -3,7 +3,7 @@ include {
 }
 
 terraform {
-  source = "${get_path_to_repo_root()}/deployment/build_and_release/modules/release"
+  source = "${get_path_to_repo_root()}/deployment/build_and_release/modules/presubmit_cloudbuild_triggers"
 }
 
 locals {
@@ -13,14 +13,12 @@ locals {
 inputs = merge(
   local.common_vars.locals,
   {
-    env = "prod"
-    bucket_env = ""
+    env = "presubmit"
 
-    cloudbuild_trigger_tag = ".*"
     build_components = {
       applet = {
         repo = "armored-witness-applet"
-        cloudbuild_path = "release/cloudbuild.yaml"
+        cloudbuild_path = "release/cloudbuild_presubmit.yaml"
       }
     }
   }

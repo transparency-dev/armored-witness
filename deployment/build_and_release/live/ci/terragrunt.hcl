@@ -3,7 +3,7 @@ include {
 }
 
 terraform {
-  source = "${get_path_to_repo_root()}/deployment/build_and_release/modules"
+  source = "${get_path_to_repo_root()}/deployment/build_and_release/modules/release"
 }
 
 locals {
@@ -15,5 +15,13 @@ inputs = merge(
   {
     env = "ci"
     bucket_env = "-ci"
+
+    cloudbuild_trigger_branch = "^main$"
+    build_components = {
+      applet = {
+        repo = "armored-witness-applet"
+        cloudbuild_path = "release/cloudbuild_ci.yaml"
+      }
+    }
   }
 )
