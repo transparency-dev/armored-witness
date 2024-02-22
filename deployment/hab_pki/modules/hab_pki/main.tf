@@ -251,6 +251,7 @@ resource "google_privateca_certificate" "hab_csf" {
     x509_config {
       ca_options {
         is_ca = false
+        non_ca = true
       }
       key_usage {
         base_key_usage {
@@ -287,6 +288,7 @@ resource "google_privateca_certificate" "hab_img" {
     x509_config {
       ca_options {
         is_ca = false
+        non_ca = true
       }
       key_usage {
         base_key_usage {
