@@ -18,11 +18,6 @@ variable "signing_keyring_location" {
   type        = string
 }
 
-variable "tf_state_location" {
-  description = "The GCP location to store Terraform remote state"
-  type        = string
-}
-
 variable "build_components" {
   type = map(object({
     repo            = string
