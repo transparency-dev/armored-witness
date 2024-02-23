@@ -260,13 +260,13 @@ resource "google_compute_url_map" "default" {
 resource "google_compute_backend_bucket" "firmware_log_ci" {
   name        = "firmware-log-ci-backend"
   description = "Contains CI firmware transparency log"
-  bucket_name = "armored-witness-firmware-log-ci" # google_storage_bucket.armored_witness_firmware_log_ci.name
+  bucket_name = "armored-witness-firmware-log-ci-0" # google_storage_bucket.armored_witness_firmware_log_ci.name
   enable_cdn  = false
 }
 resource "google_compute_backend_bucket" "firmware_artefacts_ci" {
   name        = "firmware-artefacts-ci-backend"
   description = "Contains CI firmware artefacts for FT log"
-  bucket_name = "armored-witness-firmware-ci" # google_storage_bucket.armored_witness_firmware_ci.name
+  bucket_name = "armored-witness-firmware-ci-0" # google_storage_bucket.armored_witness_firmware_ci.name
   enable_cdn  = false
 }
 
@@ -288,29 +288,28 @@ resource "google_compute_backend_bucket" "firmware_artefacts_ci_1" {
 resource "google_compute_backend_bucket" "firmware_log_prod_0" {
   name        = "firmware-log-prod-backend-0"
   description = "Contains prod firmware transparency log 0"
-  bucket_name = "armored-witness-firmware-log"
+  bucket_name = "armored-witness-firmware-log-prod-0"
   enable_cdn  = false
 }
 resource "google_compute_backend_bucket" "firmware_artefacts_prod_0" {
   name        = "firmware-artefacts-prod-backend-0"
   description = "Contains prod firmware artefacts for FT log 0"
-  bucket_name = "armored-witness-firmware"
+  bucket_name = "armored-witness-firmware-prod-0"
   enable_cdn  = false
 }
 # Prod log 1
 resource "google_compute_backend_bucket" "firmware_log_prod_1" {
   name        = "firmware-log-prod-backend-1"
   description = "Contains prod firmware transparency log 1"
-  bucket_name = "armored-witness-firmware-log-1"
+  bucket_name = "armored-witness-firmware-log-prod-1"
   enable_cdn  = false
 }
 resource "google_compute_backend_bucket" "firmware_artefacts_prod_1" {
   name        = "firmware-artefacts-prod-backend-1"
   description = "Contains prod firmware artefacts for FT log 1"
-  bucket_name = "armored-witness-firmware-1"
+  bucket_name = "armored-witness-firmware-prod-1"
   enable_cdn  = false
 }
-
 
 resource "google_compute_global_network_endpoint_group" "distributor_prod" {
   name                  = "distributor-prod"
