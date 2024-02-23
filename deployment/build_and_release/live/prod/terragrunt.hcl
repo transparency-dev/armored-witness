@@ -14,7 +14,7 @@ inputs = merge(
   local.common_vars.locals,
   {
     env = "prod"
-    bucket_count = 1
+    bucket_count = 2
 
     cloudbuild_trigger_tag = ".*"
     build_components = {
