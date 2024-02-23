@@ -65,7 +65,7 @@ const (
 	template_ci = "ci"
 
 	fuseWarning = `
-████████████████████████████████████████████████████████████████████████████████
+
 
                                 **  WARNING  **
 
@@ -78,16 +78,16 @@ bug.
 
 The use of this tool is therefore **at your own risk**.
 
-████████████████████████████████████████████████████████████████████████████████
+
 `
 )
 
 var (
 	templates = map[string]map[string]string{
 		template_ci: {
-			"binaries_url":          "https://api.transparency.dev/armored-witness-firmware/ci/artefacts/1/",
-			"firmware_log_url":      "https://api.transparency.dev/armored-witness-firmware/ci/log/1/",
-			"firmware_log_origin":   "transparency.dev/armored-witness/firmware_transparency/ci/1",
+			"binaries_url":          "https://api.transparency.dev/armored-witness-firmware/ci/artefacts/0/",
+			"firmware_log_url":      "https://api.transparency.dev/armored-witness-firmware/ci/log/0/",
+			"firmware_log_origin":   "transparency.dev/armored-witness/firmware_transparency/ci/0",
 			"firmware_log_verifier": "transparency.dev-aw-ftlog-ci+f5479c1e+AR6gW0mycDtL17iM2uvQUThJsoiuSRirstEj9a5AdCCu",
 			"applet_verifier":       "transparency.dev-aw-applet-ci+3ff32e2c+AV1fgxtByjXuPjPfi0/7qTbEBlPGGCyxqr6ZlppoLOz3",
 			"boot_verifier":         "transparency.dev-aw-boot-ci+9f62b6ac+AbnipFmpRltfRiS9JCxLUcAZsbeH4noBOJXbVD3H5Eg4",
