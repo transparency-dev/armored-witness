@@ -55,23 +55,19 @@ resource "google_project_service" "storage_googleapis_com" {
 }
 
 # GCS buckets
-
-locals {
-  bucket_revisions = ["", "-1"]
-}
 resource "google_storage_bucket" "firmware" {
-  for_each = toset(local.bucket_revisions)
+  count = var.bucket_count
 
   location                    = "EU"
-  name                        = format("armored-witness-firmware%s%s", var.bucket_env, each.value)
+  name                        = "armored-witness-firmware-${var.env}-${count.index}"
   storage_class               = "STANDARD"
   uniform_bucket_level_access = true
 }
 resource "google_storage_bucket" "firmware_log" {
-  for_each = toset(local.bucket_revisions)
+  count = var.bucket_count
 
   location                    = "US"
-  name                        = format("armored-witness-firmware-log%s%s", var.bucket_env, each.value)
+  name                        = "armored-witness-firmware-log-${var.env}-${count.index}"
   storage_class               = "STANDARD"
   uniform_bucket_level_access = true
 }

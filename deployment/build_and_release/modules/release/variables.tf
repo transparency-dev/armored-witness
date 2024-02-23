@@ -8,9 +8,9 @@ variable "env" {
   type        = string
 }
 
-variable "bucket_env" {
-  description = "Identifier for the env to use for existing buckets, e.g. '-ci' or ''. TODO: migrate/rename these resources."
-  type        = string
+variable "bucket_count" {
+  description = "The number of log and firmware buckets to create (each)."
+  type        = number
 }
 
 variable "signing_keyring_location" {
