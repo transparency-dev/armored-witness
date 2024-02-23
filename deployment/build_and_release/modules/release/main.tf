@@ -63,6 +63,21 @@ resource "google_storage_bucket" "firmware" {
   storage_class               = "STANDARD"
   uniform_bucket_level_access = true
 }
+resource "google_storage_bucket_iam_member" "firmware_object_reader" {
+  count = var.bucket_count
+
+  bucket = google_storage_bucket.firmware["${count.index}"].name
+  role    = "roles/storage.legacyObjectReader"
+  member  = "allUsers"
+}
+resource "google_storage_bucket_iam_member" "firmware_bucket_reader" {
+  count = var.bucket_count
+
+  bucket = google_storage_bucket.firmware["${count.index}"].name
+  role    = "roles/storage.legacyBucketReader"
+  member  = "allUsers"
+}
+
 resource "google_storage_bucket" "firmware_log" {
   count = var.bucket_count
 
@@ -70,6 +85,20 @@ resource "google_storage_bucket" "firmware_log" {
   name                        = "armored-witness-firmware-log-${var.env}-${count.index}"
   storage_class               = "STANDARD"
   uniform_bucket_level_access = true
+}
+resource "google_storage_bucket_iam_member" "firmware_log_object_reader" {
+  count = var.bucket_count
+
+  bucket = google_storage_bucket.firmware_log["${count.index}"].name
+  role    = "roles/storage.legacyObjectReader"
+  member  = "allUsers"
+}
+resource "google_storage_bucket_iam_member" "firmware_log_bucket_reader" {
+  count = var.bucket_count
+
+  bucket = google_storage_bucket.firmware_log["${count.index}"].name
+  role    = "roles/storage.legacyBucketReader"
+  member  = "allUsers"
 }
 
 # KMS key rings & data sources
