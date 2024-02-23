@@ -129,13 +129,9 @@ resource "google_privateca_ca_pool" "hab" {
   issuance_policy {
     baseline_values {
       ca_options {
-        is_ca = true
       }
       key_usage {
         base_key_usage {
-          cert_sign         = true
-          crl_sign          = true
-          digital_signature = true
         }
         extended_key_usage {
         }
@@ -235,7 +231,7 @@ resource "google_privateca_certificate_authority" "hab_srk" {
 resource "google_privateca_certificate" "hab_csf" {
   for_each = google_privateca_certificate_authority.hab_srk
 
-  name                  = format("hab-csf%s-rev%d-%s", each.key, var.hab_revision, var.env)
+  name                  = format("hab-csf%s-rev%d%s-%s", each.key, var.hab_revision, var.hab_leaf_minor, var.env)
   location              = var.region
   pool                  = each.value.pool
   certificate_authority = each.value.certificate_authority_id
@@ -249,9 +245,6 @@ resource "google_privateca_certificate" "hab_csf" {
       }
     }
     x509_config {
-      ca_options {
-        is_ca = false
-      }
       key_usage {
         base_key_usage {
           digital_signature = true
@@ -271,7 +264,7 @@ resource "google_privateca_certificate" "hab_csf" {
 resource "google_privateca_certificate" "hab_img" {
   for_each = google_privateca_certificate_authority.hab_srk
 
-  name                  = format("hab-img%s-rev%d-%s", each.key, var.hab_revision, var.env)
+  name                  = format("hab-img%s-rev%d%s-%s", each.key, var.hab_revision, var.hab_leaf_minor, var.env)
   location              = var.region
   pool                  = each.value.pool
   certificate_authority = each.value.certificate_authority_id
@@ -285,9 +278,6 @@ resource "google_privateca_certificate" "hab_img" {
       }
     }
     x509_config {
-      ca_options {
-        is_ca = false
-      }
       key_usage {
         base_key_usage {
           digital_signature = true
