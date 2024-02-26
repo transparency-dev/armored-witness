@@ -62,8 +62,8 @@ const (
 	appletDataNumBlocks = 0x400000
 
 	// Flag template for provisioning CI devices
-	template_ci = "ci"
-	template_prod = "prod"
+	template_ci    = "ci"
+	template_wave0 = "wave0"
 
 	fuseWarning = `
 ████████████████████████████████████████████████████████████████████████████████
@@ -97,7 +97,7 @@ var (
 			"os_verifier_2":         "transparency.dev-aw-os2-ci+af8e4114+AbBJk5MgxRB+68KhGojhUdSt1ts5GAdRIT1Eq9zEkgQh",
 			"hab_target":            "ci",
 		},
-		template_prod: {
+		template_wave0: {
 			"binaries_url":          "https://api.transparency.dev/armored-witness-firmware/prod/artefacts/0/",
 			"firmware_log_url":      "https://api.transparency.dev/armored-witness-firmware/prod/log/0/",
 			"firmware_log_origin":   "transparency.dev/armored-witness/firmware_transparency/prod/0",
