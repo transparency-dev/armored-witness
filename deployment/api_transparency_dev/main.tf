@@ -205,6 +205,31 @@ resource "google_compute_url_map" "default" {
       service = google_compute_backend_bucket.firmware_artefacts_ci[1].id
     }
 
+    # CI log rev 2
+    path_rule {
+      paths = [
+        "/armored-witness-firmware/ci/log/2/*"
+      ]
+      route_action {
+        url_rewrite {
+          path_prefix_rewrite = "/"
+        }
+      }
+      service = google_compute_backend_bucket.firmware_log_ci[2].id
+    }
+    path_rule {
+      paths = [
+        "/armored-witness-firmware/ci/artefacts/2/*"
+      ]
+      route_action {
+        url_rewrite {
+          path_prefix_rewrite = "/"
+        }
+      }
+      service = google_compute_backend_bucket.firmware_artefacts_ci[2].id
+    }
+
+
     # Prod log rev 0 (wave 0 devices)
     path_rule {
       paths = [
