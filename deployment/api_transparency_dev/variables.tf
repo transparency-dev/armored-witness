@@ -35,6 +35,15 @@ variable "distributor_ci_port" {
   type        = number
 }
 
+variable "ci_bucket_count" {
+  description = "The number of log and firmware buckets in CI (each)"
+  type        = number
+}
+variable "prod_bucket_count" {
+  description = "The number of log and firmware buckets in prod (each)"
+  type        = number
+}
+
 variable "lb_name" {
   description = "Name of the load balancer"
 }

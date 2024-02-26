@@ -1,4 +1,4 @@
-# Configure remote terraform backend for state.
+# configure remote terraform backend for state.
 terraform {
   backend "gcs" {
     bucket = "armored-witness-bucket-tfstate"
@@ -167,7 +167,7 @@ resource "google_compute_url_map" "default" {
           path_prefix_rewrite = "/"
         }
       }
-      service = google_compute_backend_bucket.firmware_log_ci.id
+      service = google_compute_backend_bucket.firmware_log_ci[0].id
     }
     path_rule {
       paths = [
@@ -178,7 +178,7 @@ resource "google_compute_url_map" "default" {
           path_prefix_rewrite = "/"
         }
       }
-      service = google_compute_backend_bucket.firmware_artefacts_ci.id
+      service = google_compute_backend_bucket.firmware_artefacts_ci[0].id
     }
 
     # CI log rev 1
@@ -191,7 +191,7 @@ resource "google_compute_url_map" "default" {
           path_prefix_rewrite = "/"
         }
       }
-      service = google_compute_backend_bucket.firmware_log_ci_1.id
+      service = google_compute_backend_bucket.firmware_log_ci[1].id
     }
     path_rule {
       paths = [
@@ -202,7 +202,7 @@ resource "google_compute_url_map" "default" {
           path_prefix_rewrite = "/"
         }
       }
-      service = google_compute_backend_bucket.firmware_artefacts_ci_1.id
+      service = google_compute_backend_bucket.firmware_artefacts_ci[1].id
     }
 
     # Prod log rev 0 (wave 0 devices)
@@ -215,7 +215,7 @@ resource "google_compute_url_map" "default" {
           path_prefix_rewrite = "/"
         }
       }
-      service = google_compute_backend_bucket.firmware_log_prod_0.id
+      service = google_compute_backend_bucket.firmware_log_prod[0].id
     }
     path_rule {
       paths = [
@@ -226,7 +226,7 @@ resource "google_compute_url_map" "default" {
           path_prefix_rewrite = "/"
         }
       }
-      service = google_compute_backend_bucket.firmware_artefacts_prod_0.id
+      service = google_compute_backend_bucket.firmware_artefacts_prod[0].id
     }
 
     # Prod log rev 1
@@ -239,7 +239,7 @@ resource "google_compute_url_map" "default" {
           path_prefix_rewrite = "/"
         }
       }
-      service = google_compute_backend_bucket.firmware_log_prod_1.id
+      service = google_compute_backend_bucket.firmware_log_prod[1].id
     }
     path_rule {
       paths = [
@@ -250,64 +250,45 @@ resource "google_compute_url_map" "default" {
           path_prefix_rewrite = "/"
         }
       }
-      service = google_compute_backend_bucket.firmware_artefacts_prod_1.id
+      service = google_compute_backend_bucket.firmware_artefacts_prod[1].id
     }
   }
 }
 
 ## Corresponding load balancer backend buckets.
-# CI log rev 0
+# CI logs
 resource "google_compute_backend_bucket" "firmware_log_ci" {
-  name        = "firmware-log-ci-backend"
-  description = "Contains CI firmware transparency log"
-  bucket_name = "armored-witness-firmware-log-ci-0" # google_storage_bucket.armored_witness_firmware_log_ci.name
+  count = var.ci_bucket_count
+
+  name        = "firmware-log-ci-backend-${count.index}"
+  description = "Contains CI firmware transparency log ${count.index}"
+  bucket_name = "armored-witness-firmware-log-ci-${count.index}" # google_storage_bucket.armored_witness_firmware_log_ci.name
   enable_cdn  = false
 }
 resource "google_compute_backend_bucket" "firmware_artefacts_ci" {
-  name        = "firmware-artefacts-ci-backend"
-  description = "Contains CI firmware artefacts for FT log"
-  bucket_name = "armored-witness-firmware-ci-0" # google_storage_bucket.armored_witness_firmware_ci.name
+  count = var.ci_bucket_count
+
+  name        = "firmware-artefacts-ci-backend-${count.index}"
+  description = "Contains CI firmware artefacts for FT log ${count.index}"
+  bucket_name = "armored-witness-firmware-ci-${count.index}" # google_storage_bucket.armored_witness_firmware_ci.name
   enable_cdn  = false
 }
 
-# CI log rev 1
-resource "google_compute_backend_bucket" "firmware_log_ci_1" {
-  name        = "firmware-log-ci-backend-1"
-  description = "Contains CI firmware transparency log 1"
-  bucket_name = "armored-witness-firmware-log-ci-1" # google_storage_bucket.armored_witness_firmware_log_ci_1.name
-  enable_cdn  = false
-}
-resource "google_compute_backend_bucket" "firmware_artefacts_ci_1" {
-  name        = "firmware-artefacts-ci-backend-1"
-  description = "Contains CI firmware artefacts for FT log 1"
-  bucket_name = "armored-witness-firmware-ci-1" # google_storage_bucket.armored_witness_firmware_ci_1.name
-  enable_cdn  = false
-}
+# Prod logs (Q1 2024 - wave 0 devices)
+resource "google_compute_backend_bucket" "firmware_log_prod" {
+  count = var.prod_bucket_count
 
-# Prod log 0 (Q1 2024 - wave 0 devices)
-resource "google_compute_backend_bucket" "firmware_log_prod_0" {
-  name        = "firmware-log-prod-backend-0"
-  description = "Contains prod firmware transparency log 0"
-  bucket_name = "armored-witness-firmware-log-prod-0"
+  name        = "firmware-log-prod-backend-${count.index}"
+  description = "Contains prod firmware transparency log ${count.index}"
+  bucket_name = "armored-witness-firmware-log-prod-${count.index}"
   enable_cdn  = false
 }
-resource "google_compute_backend_bucket" "firmware_artefacts_prod_0" {
-  name        = "firmware-artefacts-prod-backend-0"
-  description = "Contains prod firmware artefacts for FT log 0"
-  bucket_name = "armored-witness-firmware-prod-0"
-  enable_cdn  = false
-}
-# Prod log 1
-resource "google_compute_backend_bucket" "firmware_log_prod_1" {
-  name        = "firmware-log-prod-backend-1"
-  description = "Contains prod firmware transparency log 1"
-  bucket_name = "armored-witness-firmware-log-prod-1"
-  enable_cdn  = false
-}
-resource "google_compute_backend_bucket" "firmware_artefacts_prod_1" {
-  name        = "firmware-artefacts-prod-backend-1"
-  description = "Contains prod firmware artefacts for FT log 1"
-  bucket_name = "armored-witness-firmware-prod-1"
+resource "google_compute_backend_bucket" "firmware_artefacts_prod" {
+  count = var.prod_bucket_count
+
+  name        = "firmware-artefacts-prod-backend-${count.index}"
+  description = "Contains prod firmware artefacts for FT log ${count.index}"
+  bucket_name = "armored-witness-firmware-prod-${count.index}"
   enable_cdn  = false
 }
 
@@ -362,3 +343,4 @@ resource "google_compute_global_network_endpoint" "distributor_ci" {
 #  }
 #  uniform_bucket_level_access = true
 #}
+
