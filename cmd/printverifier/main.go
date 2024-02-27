@@ -34,7 +34,7 @@ import (
 
 var (
 	keyResource = flag.String("key", "", "GCP Resource ID for the public key to use")
-	keyName     = flag.String("name", "", "Template for verifier name, use %%d to include keyRevision")
+	keyName     = flag.String("name", "", "Template for created note verifier's name, use %%d to include keyRevision")
 )
 
 func main() {
