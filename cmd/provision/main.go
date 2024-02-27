@@ -89,7 +89,7 @@ var (
 			"binaries_url":          "https://api.transparency.dev/armored-witness-firmware/ci/artefacts/2/",
 			"firmware_log_url":      "https://api.transparency.dev/armored-witness-firmware/ci/log/2/",
 			"firmware_log_origin":   "transparency.dev/armored-witness/firmware_transparency/ci/2",
-			"firmware_log_verifier": "transparency.dev-aw-ftlog-ci+f5479c1e+AR6gW0mycDtL17iM2uvQUThJsoiuSRirstEj9a5AdCCu",
+			"firmware_log_verifier": "transparency.dev-aw-ftlog-ci-2+f77c6276+AZXqiaARpwF4MoNOxx46kuiIRjrML0PDTm+c7BLaAMt6",
 			"applet_verifier":       "transparency.dev-aw-applet-ci+3ff32e2c+AV1fgxtByjXuPjPfi0/7qTbEBlPGGCyxqr6ZlppoLOz3",
 			"boot_verifier":         "transparency.dev-aw-boot-ci+9f62b6ac+AbnipFmpRltfRiS9JCxLUcAZsbeH4noBOJXbVD3H5Eg4",
 			"recovery_verifier":     "transparency.dev-aw-recovery-ci+cc699423+AarlJMSl0rbTMf31B5o9bqc6PHorwvF1GbwyJRXArbfg",
