@@ -42,3 +42,23 @@ variable "cloudbuild_trigger_branch" {
   type        = string
   default     = ""
 }
+
+variable "build_substitutions" {
+  type = object({
+    firmware_bucket = string
+    tamago_version = string
+    entries_dir = string
+    key_version = number
+    origin = string
+    log_name = string
+    log_public_key = string
+    applet_public_key = string
+    os_public_key1 = string
+    os_public_key2 = string
+    bee = string
+    debug = string
+    checkpoint_cache = string
+    srk_hash = string
+  })
+}
+

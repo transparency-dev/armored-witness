@@ -235,4 +235,204 @@ resource "google_cloudbuild_trigger" "release" {
   filename = "${each.value.cloudbuild_path}"
 }
 
+resource "google_cloudbuild_trigger" "build" {
+  name = "jayhou-applet-tf"
+  location = "global"
+
+  github {
+    owner = "transparency-dev"
+    name  = "armored-witness-os"
+
+    push {
+      branch = var.cloudbuild_trigger_branch != "" ? var.cloudbuild_trigger_branch : null
+      tag = var.cloudbuild_trigger_tag != "" ? var.cloudbuild_trigger_tag : null
+    }
+  }
+
+  build {
+    step {
+      name = "bash"
+      script = <<EOT
+        date +'0.3.%s-incompatible' > /workspace/fake_tag
+        cat /workspace/fake_tag
+      EOT
+    }
+    step {
+      name = "gcr.io/cloud-builders/docker"
+      entrypoint = "bash"
+      args = [
+        "-c",
+        <<EOT
+        docker build \
+          --build-arg=TAMAGO_VERSION=${var.build_substitutions.tamago_version} \
+          --build-arg=GIT_SEMVER_TAG=$(cat /workspace/fake_tag) \
+          --build-arg=LOG_ORIGIN=${var.build_substitutions.origin} \
+          --build-arg=LOG_PUBLIC_KEY=${var.build_substitutions.log_public_key} \
+          --build-arg=APPLET_PUBLIC_KEY=${var.build_substitutions.applet_public_key} \
+          --build-arg=OS_PUBLIC_KEY1=${var.build_substitutions.os_public_key1} \
+          --build-arg=OS_PUBLIC_KEY2=${var.build_substitutions.os_public_key2} \
+          --build-arg=BEE=${var.build_substitutions.bee} \
+          --build-arg=DEBUG=${var.build_substitutions.debug} \
+          --build-arg=SRK_HASH=${var.build_substitutions.srk_hash} \
+          -t builder-image \
+          .
+       EOT
+      ]
+    }
+    step {
+      name = "gcr.io/cloud-builders/docker"
+      args = [
+        "create",
+        "--name",
+        "builder_scratch",
+        "builder-image",
+      ]
+    }
+    step {
+      name = "gcr.io/cloud-builders/docker"
+      args = [
+       "cp",
+       "builder_scratch:/build/bin",
+       "output",
+      ]
+    }
+    step {
+      name = "bash"
+      script = "ls output"
+    }
+    step {
+      name = "gcr.io/cloud-builders/gcloud"
+      entrypoint = "bash"
+      args = [
+        "-c",
+        <<EOT
+        gcloud storage cp \
+          output/trusted_os.elf \
+          gs://${var.build_substitutions.firmware_bucket}/$(sha256sum output/trusted_os.elf | cut -f1 -d" ")
+        EOT
+      ]
+    }
+    step {
+      name = "golang"
+      entrypoint = "bash"
+      args = [
+        "-c",
+        <<EOT
+        go run github.com/transparency-dev/armored-witness/cmd/manifest@main \
+          create \
+          --git_tag=$(cat /workspace/fake_tag) \
+          --git_commit_fingerprint=$COMMIT_SHA \
+          --firmware_file=output/trusted_os.elf \
+          --firmware_type=TRUSTED_OS \
+          --tamago_version=${var.build_substitutions.tamago_version} \
+          --build_env="LOG_ORIGIN=${var.build_substitutions.origin}" \
+          --build_env="LOG_PUBLIC_KEY=${var.build_substitutions.log_public_key}" \
+          --build_env="APPLET_PUBLIC_KEY=${var.build_substitutions.applet_public_key}" \
+          --build_env="OS_PUBLIC_KEY1=${var.build_substitutions.os_public_key1}" \
+          --build_env="OS_PUBLIC_KEY2=${var.build_substitutions.os_public_key2}" \
+          --build_env="BEE=${var.build_substitutions.bee}" \
+          --build_env="DEBUG=${var.build_substitutions.debug}" \
+          --build_env="SRK_HASH=${var.build_substitutions.srk_hash}" \
+          --raw \
+          --output_file=output/trusted_os_manifest_unsigned.json
+        EOT
+      ]
+    }
+    step {
+      name = "golang"
+      args = [
+        "go",
+        "run",
+        "github.com/transparency-dev/armored-witness/cmd/sign@main",
+        "--project_name=$PROJECT_ID",
+        "--release=ci",
+        "--artefact=os1",
+        "--manifest_file=output/trusted_os_manifest_unsigned.json",
+        "--output_file=output/trusted_os_manifest_transparency_dev",
+      ]
+    }
+    step {
+      name = "golang"
+      args = [
+        "go",
+        "run",
+        "github.com/transparency-dev/armored-witness/cmd/sign@main",
+        "--project_name=$PROJECT_ID",
+        "--release=ci",
+        "--artefact=os2",
+        "--note_file=output/trusted_os_manifest_transparency_dev",
+        "--note_verifier=${var.build_substitutions.os_public_key1}",
+        "--output_file=output/trusted_os_manifest_both",
+      ]
+    }
+    step {
+      name = "bash"
+      script = "cat output/trusted_os_manifest_both"
+    }
+    step {
+      name = "gcr.io/cloud-builders/gcloud"
+      entrypoint = "bash"
+      args = [
+        "-c",
+        <<EOT
+        gcloud storage cp output/trusted_os_manifest_both \
+        gs://${var.build_substitutions.log_name}/${var.build_substitutions.entries_dir}/$(sha256sum output/trusted_os_manifest_both | cut -f1 -d" ")/trusted_os_manifest_both
+        EOT
+      ]
+    }
+    step {
+      name = "gcr.io/cloud-builders/gcloud"
+      entrypoint = "bash"
+      args = [
+        "-c",
+        <<EOT
+        gcloud functions call sequence \
+        --data="{
+          \"entriesDir\": \"${var.build_substitutions.entries_dir}/$(sha256sum output/trusted_os_manifest_both | cut -f1 -d" ")\",
+          \"origin\": \"${var.build_substitutions.origin}\",
+          \"bucket\": \"${var.build_substitutions.log_name}\",
+          \"kmsKeyName\": \"ft-log-ci\",
+          \"kmsKeyRing\": \"firmware-release-ci\",
+          \"kmsKeyVersion\": ${var.build_substitutions.key_version},
+          \"kmsKeyLocation\": \"global\",
+          \"noteKeyName\": \"transparency.dev-aw-ftlog-ci-${var.build_substitutions.key_version}\",
+          \"checkpointCacheControl\": \"${var.build_substitutions.checkpoint_cache}\"
+        }"
+        EOT
+      ]
+    }
+    step {
+      name = "gcr.io/cloud-builders/gcloud"
+      entrypoint = "bash"
+      args = [
+        "-c",
+        <<EOT
+        gcloud functions call integrate \
+        --data='{
+          "origin": "${var.build_substitutions.origin}",
+          "bucket": "${var.build_substitutions.log_name}",
+          "kmsKeyName": "ft-log-ci",
+          "kmsKeyRing": "firmware-release-ci",
+          "kmsKeyVersion": ${var.build_substitutions.key_version},
+          "kmsKeyLocation": "global",
+          "noteKeyName": "transparency.dev-aw-ftlog-ci-${var.build_substitutions.key_version}",
+          "checkpointCacheControl": "${var.build_substitutions.checkpoint_cache}"
+        }'
+        EOT
+      ]
+    }
+    step {
+      name = "gcr.io/cloud-builders/gcloud"
+      entrypoint = "bash"
+      args = [
+        "-c",
+        <<EOT
+        gcloud storage rm \
+        gs://${var.build_substitutions.log_name}/${var.build_substitutions.entries_dir}/$(sha256sum output/trusted_os_manifest_both | cut -f1 -d" ")/trusted_os_manifest_both
+        EOT
+      ]
+    }
+  }
+}
+
 # TODO(jayhou): add GCF stuff.
