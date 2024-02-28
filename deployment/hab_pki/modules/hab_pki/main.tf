@@ -145,8 +145,8 @@ resource "google_privateca_certificate_authority" "hab_root" {
   pool                     = google_privateca_ca_pool.hab.name
   certificate_authority_id = format("hab-root-rev%d-%s", var.hab_revision, var.env)
   location                 = var.region
-  lifetime = format("%ds", var.hab_pki_lifetime)
-  deletion_protection                    = true
+  lifetime                 = format("%ds", var.hab_pki_lifetime)
+  deletion_protection      = true
 
   type = "SELF_SIGNED"
   config {
@@ -176,6 +176,12 @@ resource "google_privateca_certificate_authority" "hab_root" {
   key_spec {
     algorithm = format("RSA_PKCS1_%d_SHA256", var.hab_keylength)
   }
+  lifecycle {
+    ignore_changes = [
+      lifetime,
+    ]
+    prevent_destroy = true
+  }
 }
 
 locals {
@@ -191,8 +197,8 @@ resource "google_privateca_certificate_authority" "hab_srk" {
   pool                     = google_privateca_ca_pool.hab.name
   certificate_authority_id = format("hab-srk%s-rev%d-%s", each.value, var.hab_revision, var.env)
   location                 = var.region
-  lifetime = format("%ds", var.hab_pki_lifetime)
-  deletion_protection = "true"
+  lifetime                 = format("%ds", var.hab_pki_lifetime)
+  deletion_protection      = "true"
 
   type = "SUBORDINATE"
   subordinate_config {
@@ -224,6 +230,12 @@ resource "google_privateca_certificate_authority" "hab_srk" {
   }
   key_spec {
     algorithm = format("RSA_PKCS1_%d_SHA256", var.hab_keylength)
+  }
+  lifecycle {
+    ignore_changes = [
+      lifetime,
+    ]
+    prevent_destroy = true
   }
 }
 
@@ -258,6 +270,11 @@ resource "google_privateca_certificate" "hab_csf" {
       key    = base64encode(data.google_kms_crypto_key_version.hab_csf[each.key].public_key[0].pem)
     }
   }
+  lifecycle {
+    ignore_changes = [
+      lifetime,
+    ]
+  }
 }
 
 # HAB IMG cert for each of the SRK intermediates above.
@@ -290,5 +307,10 @@ resource "google_privateca_certificate" "hab_img" {
       format = "PEM"
       key    = base64encode(data.google_kms_crypto_key_version.hab_img[each.key].public_key[0].pem)
     }
+  }
+  lifecycle {
+    ignore_changes = [
+      lifetime,
+    ]
   }
 }
