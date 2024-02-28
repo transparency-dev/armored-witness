@@ -13,7 +13,7 @@ locals {
 inputs = merge(
   local.common_vars.locals,
   {
-    env = "wave0"
+    env = "prod"
     hab_revision = 0
   }
 )
