@@ -273,6 +273,7 @@ resource "google_privateca_certificate" "hab_csf" {
   lifecycle {
     ignore_changes = [
       lifetime,
+      config[0].x509_config[0].ca_options,
     ]
   }
 }
@@ -311,6 +312,7 @@ resource "google_privateca_certificate" "hab_img" {
   lifecycle {
     ignore_changes = [
       lifetime,
+      config[0].x509_config[0].ca_options,
     ]
   }
 }
