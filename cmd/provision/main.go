@@ -345,16 +345,19 @@ func waitAndProvision(ctx context.Context, fw *firmwares) error {
 		return fmt.Errorf("failed to generate ephemeral key: %v", err)
 	}
 
-	for i := 5; i > 0; i-- {
-		klog.Infof("  Flashing in %d", i)
-		<-time.After(time.Second)
-	}
-
 	klog.Infof("Flashing images...")
-	if err := flashImages(bDev, fw); err != nil {
+	flashStages := []firmwares{*fw}
+	if *fuse {
+		// If we need to fuse the device, we'll install the applet later on.
+		// This is ensure there's no unexpected CPU load on the device when
+		// we attempt to set fuses as this has been known to be timing sensitive.
+		flashStages = append(flashStages, firmwares{TrustedApplet: fw.TrustedApplet})
+		flashStages[0].TrustedApplet = nil
+	}
+	if err := flashImages(bDev, &flashStages[0]); err != nil {
 		return fmt.Errorf("error while flashing images: %v", err)
 	}
-	klog.Info("✅ Flashed all images")
+	klog.Info("✅ Flashed images")
 
 	if *wipeWitness {
 		if err := wipeAppletData(bDev); err != nil {
@@ -377,10 +380,10 @@ func waitAndProvision(ctx context.Context, fw *firmwares) error {
 	}
 	klog.Infof("✅ Witness serial number %s found", s.Serial)
 	if s.HAB {
-		if *fuse {
+		if *fuse && !*runAnyway {
 			return fmt.Errorf("witness serial number %s has HAB fuse set!", s.Serial)
 		}
-		klog.Infof("⚠️ Witness serial number %s is already HAB fused, but continuing since --fuse is not set", s.Serial)
+		klog.Infof("⚠️ Witness serial number %s is already HAB fused", s.Serial)
 	} else {
 		klog.Infof("✅ Witness serial number %s is not HAB fused", s.Serial)
 	}
@@ -411,6 +414,39 @@ func waitAndProvision(ctx context.Context, fw *firmwares) error {
 		if err := device.ActivateHAB(dev); err != nil {
 			return fmt.Errorf("device failed to activate HAB: %v", err)
 		}
+
+		klog.Info("Operator, please change boot switch to USB, and then reboot device 🙏")
+		klog.Info("Waiting for device to boot...")
+		// The device will initially be in HID mode (showing as "RecoveryMode" in the output to lsusb).
+		// So we'll detect it as such:
+		target, bDev, err := device.BootIntoRecovery(ctx, recoveryHAB, *blockDeviceGlob)
+		if err != nil {
+			return err
+		}
+		klog.Infof("✅ Detected device %q", target.DeviceInfo.Path)
+		klog.Infof("✅ Detected blockdevice %v", bDev)
+
+		klog.Infof("Flashing Applet image...")
+		if err := flashImages(bDev, &flashStages[1]); err != nil {
+			return fmt.Errorf("error while flashing Applet image: %v", err)
+		}
+		klog.Info("✅ Flashed Applet image")
+
+		klog.Info("Operator, please change boot switch to MMC, and then reboot device 🙏")
+		klog.Info("Waiting for device to boot...")
+
+		p, dev, err := waitForU2FDevice(ctx)
+		if err != nil {
+			return fmt.Errorf("failed to find armored witness device: %v", err)
+		}
+		defer dev.Close()
+
+		klog.Infof("✅ Detected device %q", p)
+		s, err = device.WitnessStatus(dev)
+		if err != nil {
+			return fmt.Errorf("failed to fetch witness status: %v", err)
+		}
+
 	}
 
 	// TODO: Reboot device.
@@ -456,6 +492,11 @@ type namedJob struct {
 
 // flashImages writes all the images in fw to the specified block device.
 func flashImages(dev string, firmwares *firmwares) error {
+	for i := 5; i > 0; i-- {
+		klog.Infof("  Flashing in %d", i)
+		<-time.After(time.Second)
+	}
+
 	f, err := os.OpenFile(dev, os.O_RDWR|os.O_SYNC, 0o600)
 	if err != nil {
 		return fmt.Errorf("error opening %v: %v", dev, err)
