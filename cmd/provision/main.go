@@ -366,9 +366,13 @@ func waitAndProvision(ctx context.Context, fw *firmwares) error {
 
 	klog.Infof("✅ Witness serial number %s found", s.Serial)
 	if s.HAB {
-		return fmt.Errorf("witness serial number %s has HAB fuse set!", s.Serial)
+		if *fuse {
+			return fmt.Errorf("witness serial number %s has HAB fuse set!", s.Serial)
+		}
+		klog.Infof("⚠️ Witness serial number %s is already HAB fused, but continuing since --fuse is not set", s.Serial)
+	} else {
+		klog.Infof("✅ Witness serial number %s is not HAB fused", s.Serial)
 	}
-	klog.Infof("✅ Witness serial number %s is not HAB fused", s.Serial)
 
 	srkEnv, ok := expectedSRKHashes[s.SRKHash]
 	if !ok {
