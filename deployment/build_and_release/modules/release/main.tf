@@ -236,7 +236,7 @@ resource "google_cloudbuild_trigger" "release" {
 }
 
 resource "google_cloudbuild_trigger" "build" {
-  name = "jayhou-applet-tf"
+  name = "jayhou-os"
   location = "global"
 
   github {
@@ -250,6 +250,10 @@ resource "google_cloudbuild_trigger" "build" {
   }
 
   build {
+    # First create a fake tag we'll use throughout the CI build process below.
+    # Unfortunately, GCB has no concept of dynamically creating substitutions or
+    # passing ENV vars between steps, so the best we can do is to create a file
+    # containing our tag in the shared workspace which other steps can inspect.
     step {
       name = "bash"
       script = <<EOT
@@ -257,6 +261,10 @@ resource "google_cloudbuild_trigger" "build" {
         cat /workspace/fake_tag
       EOT
     }
+    ### Build the Trusted OS and upload it to GCS.
+    # Build an image containing the Trusted OS artifacts with the Dockerfile.
+    # This step needs to be a bash script in order to substitute fake tag into a
+    # build arg.
     step {
       name = "gcr.io/cloud-builders/docker"
       entrypoint = "bash"
@@ -279,6 +287,7 @@ resource "google_cloudbuild_trigger" "build" {
        EOT
       ]
     }
+    # Prepare a container with a copy of the artifacts.
     step {
       name = "gcr.io/cloud-builders/docker"
       args = [
@@ -288,6 +297,7 @@ resource "google_cloudbuild_trigger" "build" {
         "builder-image",
       ]
     }
+    # Copy the artifacts from the container to the Cloud Build VM.
     step {
       name = "gcr.io/cloud-builders/docker"
       args = [
@@ -296,10 +306,12 @@ resource "google_cloudbuild_trigger" "build" {
        "output",
       ]
     }
+    # List the artifacts.
     step {
       name = "bash"
       script = "ls output"
     }
+    # Copy the artifacts from the Cloud Build VM to GCS.
     step {
       name = "gcr.io/cloud-builders/gcloud"
       entrypoint = "bash"
@@ -312,6 +324,9 @@ resource "google_cloudbuild_trigger" "build" {
         EOT
       ]
     }
+    ### Construct log entry / Claimant Model statement.
+    # This step needs to be a bash script in order to substitute the fake tag
+    # in the command args.
     step {
       name = "golang"
       entrypoint = "bash"
@@ -338,6 +353,7 @@ resource "google_cloudbuild_trigger" "build" {
         EOT
       ]
     }
+    # Sign the log entry.
     step {
       name = "golang"
       args = [
@@ -351,6 +367,7 @@ resource "google_cloudbuild_trigger" "build" {
         "--output_file=output/trusted_os_manifest_transparency_dev",
       ]
     }
+    # Countersign the log entry with a second key.
     step {
       name = "golang"
       args = [
@@ -365,10 +382,16 @@ resource "google_cloudbuild_trigger" "build" {
         "--output_file=output/trusted_os_manifest_both",
       ]
     }
+     # Print the content of the signed manifest.
     step {
       name = "bash"
       script = "cat output/trusted_os_manifest_both"
     }
+    ### Write the firmware release to the CI transparency log.
+    # Copy the signed note to the sequence bucket, preparing to write to log.
+    #
+    # Use the SHA256 of the manifest as the name of the manifest. This allows
+    # multiple triggers to run without colliding.
     step {
       name = "gcr.io/cloud-builders/gcloud"
       entrypoint = "bash"
@@ -380,6 +403,7 @@ resource "google_cloudbuild_trigger" "build" {
         EOT
       ]
     }
+    # Sequence log entry.
     step {
       name = "gcr.io/cloud-builders/gcloud"
       entrypoint = "bash"
@@ -401,6 +425,7 @@ resource "google_cloudbuild_trigger" "build" {
         EOT
       ]
     }
+    # Integrate log entry.
     step {
       name = "gcr.io/cloud-builders/gcloud"
       entrypoint = "bash"
@@ -421,6 +446,8 @@ resource "google_cloudbuild_trigger" "build" {
         EOT
       ]
     }
+    # Clean up the file we added to the _ENTRIES_DIR bucket now that it's been
+    # integrated to the log.
     step {
       name = "gcr.io/cloud-builders/gcloud"
       entrypoint = "bash"

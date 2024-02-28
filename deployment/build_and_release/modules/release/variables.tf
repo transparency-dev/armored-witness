@@ -45,12 +45,14 @@ variable "cloudbuild_trigger_branch" {
 
 variable "build_substitutions" {
   type = object({
+    log_name = string
     firmware_bucket = string
     tamago_version = string
     entries_dir = string
+    # This must correspond with the trailing number on the firmware_bucket,
+    # origin, log_name values.
     key_version = number
     origin = string
-    log_name = string
     log_public_key = string
     applet_public_key = string
     os_public_key1 = string
@@ -58,6 +60,11 @@ variable "build_substitutions" {
     bee = string
     debug = string
     checkpoint_cache = string
+    # Pinned CI SRK hash
+    # This MUST be identical to the _PINNED_SRK_HASH in
+    # https://github.com/transparency-dev/armored-witness-boot/blob/main/release/cloudbuild_ci.yaml#L223-L224
+    # and MUST NOT be changed unless you know very well what you're doing,
+    # otherwise devices will be bricked!
     srk_hash = string
   })
 }

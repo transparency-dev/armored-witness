@@ -25,14 +25,14 @@ inputs = merge(
     }
 
     build_substitutions = {
-      firmware_bucket = "jayhou-firmware"
-      # firmware_bucket = "armored-witness-firmware-ci-2"
-      tamago_version = "1.21.5"
-      entries_dir = "firmware-log-sequence"
-      key_version = "2"
-      origin = "transparency.dev/armored-witness/firmware_transparency/ci/2"
       # log_name = "armored-witness-firmware-log-ci-2"
       log_name = "jayhou-log"
+      # firmware_bucket = "armored-witness-firmware-ci-2"
+      firmware_bucket = "jayhou-firmware"
+      tamago_version = "1.21.5"
+      entries_dir = "firmware-log-sequence"
+      key_version = 2
+      origin = "transparency.dev/armored-witness/firmware_transparency/ci/2"
       log_public_key = "transparency.dev-aw-ftlog-ci-2+f77c6276+AZXqiaARpwF4MoNOxx46kuiIRjrML0PDTm+c7BLaAMt6"
       applet_public_key = "transparency.dev-aw-applet-ci+3ff32e2c+AV1fgxtByjXuPjPfi0/7qTbEBlPGGCyxqr6ZlppoLOz3"
       os_public_key1 = "transparency.dev-aw-os1-ci+7a0eaef3+AcsqvmrcKIbs21H2Bm2fWb6oFWn/9MmLGNc6NLJty2eQ"
