@@ -245,7 +245,7 @@ resource "google_cloudbuild_trigger" "os_build" {
 
     push {
       branch = var.cloudbuild_trigger_branch != "" ? var.cloudbuild_trigger_branch : null
-      tag = var.cloudbuilgit add d_trigger_tag != "" ? var.cloudbuild_trigger_tag : null
+      tag = var.cloudbuild_trigger_tag != "" ? var.cloudbuild_trigger_tag : null
     }
   }
 
@@ -271,18 +271,18 @@ resource "google_cloudbuild_trigger" "os_build" {
       entrypoint = "bash"
       args = [
         "-c",
-        <<EOT
+        <<-EOT
         docker build \
-          --build-arg=TAMAGO_VERSION=${var.build_substitutions.tamago_version} \
+          --build-arg=TAMAGO_VERSION=${var.tamago_version} \
           --build-arg=GIT_SEMVER_TAG=$(cat /workspace/git_tag) \
-          --build-arg=LOG_ORIGIN=${var.build_substitutions.origin} \
-          --build-arg=LOG_PUBLIC_KEY=${var.build_substitutions.log_public_key} \
-          --build-arg=APPLET_PUBLIC_KEY=${var.build_substitutions.applet_public_key} \
-          --build-arg=OS_PUBLIC_KEY1=${var.build_substitutions.os_public_key1} \
-          --build-arg=OS_PUBLIC_KEY2=${var.build_substitutions.os_public_key2} \
-          --build-arg=BEE=${var.build_substitutions.bee} \
-          --build-arg=DEBUG=${var.build_substitutions.debug} \
-          --build-arg=SRK_HASH=${var.build_substitutions.srk_hash} \
+          --build-arg=LOG_ORIGIN=${var.origin_prefix}/${var.log_shard} \
+          --build-arg=LOG_PUBLIC_KEY=${var.log_public_key} \
+          --build-arg=APPLET_PUBLIC_KEY=${var.applet_public_key} \
+          --build-arg=OS_PUBLIC_KEY1=${var.os_public_key1} \
+          --build-arg=OS_PUBLIC_KEY2=${var.os_public_key2} \
+          --build-arg=BEE=${var.bee} \
+          --build-arg=DEBUG=${var.debug} \
+          --build-arg=SRK_HASH=${var.srk_hash} \
           -t builder-image \
           .
        EOT
@@ -318,10 +318,10 @@ resource "google_cloudbuild_trigger" "os_build" {
       entrypoint = "bash"
       args = [
         "-c",
-        <<EOT
+        <<-EOT
         gcloud storage cp \
           output/trusted_os.elf \
-          gs://${var.build_substitutions.firmware_bucket}/$(sha256sum output/trusted_os.elf | cut -f1 -d" ")
+          gs://${var.firmware_bucket_prefix}-${var.log_shard}/$(sha256sum output/trusted_os.elf | cut -f1 -d" ")
         EOT
       ]
     }
@@ -333,22 +333,22 @@ resource "google_cloudbuild_trigger" "os_build" {
       entrypoint = "bash"
       args = [
         "-c",
-        <<EOT
+        <<-EOT
         go run github.com/transparency-dev/armored-witness/cmd/manifest@main \
           create \
           --git_tag=$(cat /workspace/git_tag) \
           --git_commit_fingerprint=$COMMIT_SHA \
           --firmware_file=output/trusted_os.elf \
           --firmware_type=TRUSTED_OS \
-          --tamago_version=${var.build_substitutions.tamago_version} \
-          --build_env="LOG_ORIGIN=${var.build_substitutions.origin}" \
-          --build_env="LOG_PUBLIC_KEY=${var.build_substitutions.log_public_key}" \
-          --build_env="APPLET_PUBLIC_KEY=${var.build_substitutions.applet_public_key}" \
-          --build_env="OS_PUBLIC_KEY1=${var.build_substitutions.os_public_key1}" \
-          --build_env="OS_PUBLIC_KEY2=${var.build_substitutions.os_public_key2}" \
-          --build_env="BEE=${var.build_substitutions.bee}" \
-          --build_env="DEBUG=${var.build_substitutions.debug}" \
-          --build_env="SRK_HASH=${var.build_substitutions.srk_hash}" \
+          --tamago_version=${var.tamago_version} \
+          --build_env="LOG_ORIGIN=${var.origin_prefix}/${var.log_shard}" \
+          --build_env="LOG_PUBLIC_KEY=${var.log_public_key}" \
+          --build_env="APPLET_PUBLIC_KEY=${var.applet_public_key}" \
+          --build_env="OS_PUBLIC_KEY1=${var.os_public_key1}" \
+          --build_env="OS_PUBLIC_KEY2=${var.os_public_key2}" \
+          --build_env="BEE=${var.bee}" \
+          --build_env="DEBUG=${var.debug}" \
+          --build_env="SRK_HASH=${var.srk_hash}" \
           --raw \
           --output_file=output/trusted_os_manifest_unsigned.json
         EOT
@@ -379,7 +379,7 @@ resource "google_cloudbuild_trigger" "os_build" {
         "--release=ci",
         "--artefact=os2",
         "--note_file=output/trusted_os_manifest_transparency_dev",
-        "--note_verifier=${var.build_substitutions.os_public_key1}",
+        "--note_verifier=${var.os_public_key1}",
         "--output_file=output/trusted_os_manifest_both",
       ]
     }
@@ -398,9 +398,9 @@ resource "google_cloudbuild_trigger" "os_build" {
       entrypoint = "bash"
       args = [
         "-c",
-        <<EOT
+        <<-EOT
         gcloud storage cp output/trusted_os_manifest_both \
-        gs://${var.build_substitutions.log_name}/${var.build_substitutions.entries_dir}/$(sha256sum output/trusted_os_manifest_both | cut -f1 -d" ")/trusted_os_manifest_both
+        gs://${var.log_name_prefix}-${var.log_shard}/${var.entries_dir}/$(sha256sum output/trusted_os_manifest_both | cut -f1 -d" ")/trusted_os_manifest_both
         EOT
       ]
     }
@@ -410,18 +410,18 @@ resource "google_cloudbuild_trigger" "os_build" {
       entrypoint = "bash"
       args = [
         "-c",
-        <<EOT
+        <<-EOT
         gcloud functions call sequence \
         --data="{
-          \"entriesDir\": \"${var.build_substitutions.entries_dir}/$(sha256sum output/trusted_os_manifest_both | cut -f1 -d" ")\",
-          \"origin\": \"${var.build_substitutions.origin}\",
-          \"bucket\": \"${var.build_substitutions.log_name}\",
+          \"entriesDir\": \"${var.entries_dir}/$(sha256sum output/trusted_os_manifest_both | cut -f1 -d" ")\",
+          \"origin\": \"${var.origin_prefix}/${var.log_shard}\",
+          \"bucket\": \"${var.log_name_prefix}-${var.log_shard}\",
           \"kmsKeyName\": \"ft-log-${var.env}\",
           \"kmsKeyRing\": \"firmware-release-${var.env}\",
-          \"kmsKeyVersion\": ${var.build_substitutions.key_version},
+          \"kmsKeyVersion\": ${var.log_shard},
           \"kmsKeyLocation\": \"global\",
-          \"noteKeyName\": \"transparency.dev-aw-ftlog-${var.env}-${var.build_substitutions.key_version}\",
-          \"checkpointCacheControl\": \"${var.build_substitutions.checkpoint_cache}\"
+          \"noteKeyName\": \"transparency.dev-aw-ftlog-${var.env}-${var.log_shard}\",
+          \"checkpointCacheControl\": \"${var.checkpoint_cache}\"
         }"
         EOT
       ]
@@ -432,17 +432,17 @@ resource "google_cloudbuild_trigger" "os_build" {
       entrypoint = "bash"
       args = [
         "-c",
-        <<EOT
+        <<-EOT
         gcloud functions call integrate \
         --data='{
-          "origin": "${var.build_substitutions.origin}",
-          "bucket": "${var.build_substitutions.log_name}",
+          "origin": "${var.origin_prefix}/${var.log_shard}",
+          "bucket": "${var.log_name_prefix}-${var.log_shard}",
           "kmsKeyName": "ft-log-${var.env}",
           "kmsKeyRing": "firmware-release-${var.env}",
-          "kmsKeyVersion": ${var.build_substitutions.key_version},
+          "kmsKeyVersion": ${var.log_shard},
           "kmsKeyLocation": "global",
-          "noteKeyName": "transparency.dev-aw-ftlog-${var.env}-${var.build_substitutions.key_version}",
-          "checkpointCacheControl": "${var.build_substitutions.checkpoint_cache}"
+          "noteKeyName": "transparency.dev-aw-ftlog-${var.env}-${var.log_shard}",
+          "checkpointCacheControl": "${var.checkpoint_cache}"
         }'
         EOT
       ]
@@ -454,9 +454,9 @@ resource "google_cloudbuild_trigger" "os_build" {
       entrypoint = "bash"
       args = [
         "-c",
-        <<EOT
+        <<-EOT
         gcloud storage rm \
-        gs://${var.build_substitutions.log_name}/${var.build_substitutions.entries_dir}/$(sha256sum output/trusted_os_manifest_both | cut -f1 -d" ")/trusted_os_manifest_both
+        gs://${var.log_name_prefix}-${var.log_shard}/${var.entries_dir}/$(sha256sum output/trusted_os_manifest_both | cut -f1 -d" ")/trusted_os_manifest_both
         EOT
       ]
     }

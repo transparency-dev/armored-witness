@@ -43,29 +43,90 @@ variable "cloudbuild_trigger_branch" {
   default     = ""
 }
 
-variable "build_substitutions" {
-  type = object({
-    log_name = string
-    firmware_bucket = string
-    tamago_version = string
-    entries_dir = string
-    # This must correspond with the trailing number on the firmware_bucket,
-    # origin, log_name values.
-    key_version = number
-    origin = string
-    log_public_key = string
-    applet_public_key = string
-    os_public_key1 = string
-    os_public_key2 = string
-    bee = string
-    debug = string
-    checkpoint_cache = string
-    # Pinned CI SRK hash
-    # This MUST be identical to the _PINNED_SRK_HASH in
-    # https://github.com/transparency-dev/armored-witness-boot/blob/main/release/cloudbuild_ci.yaml#L223-L224
-    # and MUST NOT be changed unless you know very well what you're doing,
-    # otherwise devices will be bricked!
-    srk_hash = string
-  })
+variable "log_shard" {
+  type        = number
+  description = "The shard number of the active log. Also corresponds to the KMS crypto key version to use."
 }
 
+variable "origin_prefix" {
+  type        = string
+  description = "Identifier for the log identity. Will be concatenated with the log_shard for the full name."
+}
+
+variable "log_name_prefix" {
+  type        = string
+  description = "The GCS bucket name for the transparency log. Will be concatenated with the log_shard for the full name."
+}
+
+variable "firmware_bucket_prefix" {
+  type        = string
+  description = "The GCS bucket name for the firmware. Will be concatenated with the log_shard for the full name."
+}
+
+variable "tamago_version" {
+  type        = string
+  description = "TamaGo version to compile with"
+}
+
+variable "entries_dir" {
+  type        = string
+  description = "Specifies where the to-be-sequenced entries are"
+}
+
+variable "log_public_key" {
+  type        = string
+  description = <<-EOT
+    [Note verifier string](https://pkg.go.dev/golang.org/x/mod/sumdb/note#hdr-Verifying_Notes)
+    for the log
+  EOT
+}
+
+variable "applet_public_key" {
+  type        = string
+  description = <<-EOT
+    [Note verifier string](https://pkg.go.dev/golang.org/x/mod/sumdb/note#hdr-Verifying_Notes)
+    for the applet
+  EOT
+}
+
+variable "os_public_key1" {
+  type        = string
+  description = <<-EOT
+    First [note verifier string](https://pkg.go.dev/golang.org/x/mod/sumdb/note#hdr-Verifying_Notes)
+    for the OS
+  EOT
+}
+
+variable "os_public_key2" {
+  type        = string
+  description = <<-EOT
+    Second [Note verifier string](https://pkg.go.dev/golang.org/x/mod/sumdb/note#hdr-Verifying_Notes)
+    for the OS
+  EOT
+}
+
+variable "bee" {
+  type        = string
+  description = "If '1', compile with BEE flag"
+}
+
+variable "debug" {
+  type        = string
+  description = "If '1', compile with DEBUG flag"
+}
+
+variable "checkpoint_cache" {
+  type        = string
+  description = "Cache-Control header for checkpoint objects"
+}
+
+variable "srk_hash" {
+  type        = string
+  description = <<-EOT
+    Pinned CI SRK hash
+    This MUST be identical to the _PINNED_SRK_HASH in
+    https://github.com/transparency-dev/armored-witness-boot/blob/main/release/cloudbuild_ci.yaml#L223-L224
+    and MUST NOT be changed unless you know very well what you're doing,
+    otherwise devices will be bricked!
+  EOT
+}
