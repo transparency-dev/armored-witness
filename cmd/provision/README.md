@@ -12,11 +12,11 @@ Note that because of the level of access this tool requires, you
 must either run it via `sudo`, or configure `udev` rules etc. to allow
 it to inspect & write to appropriate `/dev` files etc.
 
-## Flashing CI Builds
+## Flashing CI or Prod Builds
 
-A device can be configured with builds from the CI pipeline without needing much
-of the tooling in the advanced section of this doc. The first step is to install
-the provision tool:
+A device can be configured with builds from the `ci` and `prod` pipelines without
+needing much of the tooling in the advanced section of this doc. The first step
+is to install the provision tool:
 
 ```shell
 go install github.com/transparency-dev/armored-witness/cmd/provision@main
@@ -27,13 +27,21 @@ the latest builds of each of the components onto the device:
 
 ```shell
 sudo $(which provision) \
-  --template=ci \
+  --template=${TEMPLATE} \
   --wipe_witness_state
 ```
 
-# Provisioning Dev Builds
+where `TEMPLATE` is one of `ci` or `prod`.
 
-## Prerequisites
+Look out for and follow the *"Operator, please do something 🙏"* requests as the provision
+process executes.
+
+To **permanently** lock the device to either the `ci` or `prod` releases, add the `--fuse` flag
+to the above command.
+
+## Provisioning Dev Builds
+
+### Prerequisites
 
 One of the first things the tool will attempt to do is examine
 the firmware transparency (FT) log for the latest available versions of the
@@ -71,7 +79,7 @@ helpful to have [`uhubctl`](https://github.com/mvp/uhubctl) installed, and
 have access to a compatible USB hub - this will enable you to power-cycle/reboot
 the device without having to keep unplugging it.
 
-## Usage
+### Usage
 
 First, build the tool (commands assume PWD is the root of the repo):
 
