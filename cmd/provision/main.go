@@ -468,6 +468,7 @@ func waitAndProvision(ctx context.Context, fw *firmwares) error {
 			}
 			klog.Warningf("⚠️ %s, continuing anyway", err.Error())
 		}
+		klog.Infof("%d remaining firmware(s) to install", len(flashStages[1]))
 
 		klog.Info("Operator, please change boot switch to USB, and then reboot device 🙏")
 		klog.Info("Waiting for device to boot...")
