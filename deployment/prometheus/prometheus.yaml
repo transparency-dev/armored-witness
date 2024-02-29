@@ -1,0 +1,9 @@
+# prometheus config for pulling metrics from armored witness running on local network
+global:
+  scrape_interval: 1m
+
+scrape_configs:
+  - job_name: "armored_witness"
+
+    static_configs:
+      - targets: ["192.168.0.221:8081"]
