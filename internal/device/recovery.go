@@ -92,7 +92,7 @@ func waitForBlockDevice(ctx context.Context, glob string, f func() error) (strin
 	}()
 
 	// Set up the watcher to look for events in /dev only.
-	if err := watcher.Add("/dev"); err != nil {
+	if err := watcher.Add("/dev/disk/by-id"); err != nil {
 		return "", fmt.Errorf("failed to add /dev to fs watcher: %v", err)
 	}
 
@@ -113,6 +113,10 @@ func waitForBlockDevice(ctx context.Context, glob string, f func() error) (strin
 				klog.Exitf("error testing filename %q against glob %q: %v", e.Name, glob, err)
 			}
 			if matched && e.Has(fsnotify.Create) {
+				// At least on linux, it takes a while for the device to become usable
+				// TODO: can we detect when it's usable directly?
+				klog.Info("Waiting for block device to settle...")
+				time.Sleep(5 * time.Second)
 				return e.Name, nil
 			}
 		}

@@ -132,7 +132,7 @@ var (
 	recoveryVerifier = flag.String("recovery_verifier", "", "Verifier key for the recovery manifest.")
 
 	habTarget       = flag.String("hab_target", "", "Device type firmware must be targetting.")
-	blockDeviceGlob = flag.String("blockdevs", "/dev/sd*", "Glob for plausible block devices where the armored witness could appear.")
+	blockDeviceGlob = flag.String("blockdevs", "/dev/disk/by-id/usb-F-Secure_USB_*", "Glob for plausible block devices where the armored witness could appear.")
 
 	runAnyway   = flag.Bool("run_anyway", false, "Let the user override bailing on any potential problems we've detected.")
 	wipeWitness = flag.Bool("wipe_witness_state", false, "If true, erase the witness stored data.")
@@ -356,14 +356,12 @@ func waitAndProvision(ctx context.Context, fw *firmwares) error {
 	if err != nil {
 		return fmt.Errorf("failed to find armored witness device: %v", err)
 	}
-	defer dev.Close()
 
 	klog.Infof("✅ Detected device %q", p)
 	s, err := device.WitnessStatus(dev)
 	if err != nil {
 		return fmt.Errorf("failed to fetch witness status: %v", err)
 	}
-
 	klog.Infof("✅ Witness serial number %s found", s.Serial)
 	if s.HAB {
 		if *fuse {
@@ -373,6 +371,7 @@ func waitAndProvision(ctx context.Context, fw *firmwares) error {
 	} else {
 		klog.Infof("✅ Witness serial number %s is not HAB fused", s.Serial)
 	}
+	dev.Close()
 
 	srkEnv, ok := expectedSRKHashes[s.SRKHash]
 	if !ok {
