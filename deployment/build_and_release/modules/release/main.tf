@@ -235,8 +235,8 @@ resource "google_cloudbuild_trigger" "release" {
   filename = "${each.value.cloudbuild_path}"
 }
 
-resource "google_cloudbuild_trigger" "build" {
-  name = "jayhou-os"
+resource "google_cloudbuild_trigger" "os_build" {
+  name = "os-build-${var.env}"
   location = "global"
 
   github {
@@ -245,26 +245,27 @@ resource "google_cloudbuild_trigger" "build" {
 
     push {
       branch = var.cloudbuild_trigger_branch != "" ? var.cloudbuild_trigger_branch : null
-      tag = var.cloudbuild_trigger_tag != "" ? var.cloudbuild_trigger_tag : null
+      tag = var.cloudbuilgit add d_trigger_tag != "" ? var.cloudbuild_trigger_tag : null
     }
   }
 
   build {
-    # First create a fake tag we'll use throughout the CI build process below.
+    # If the trigger is not based on `tag`, create a fake one.
+    #
     # Unfortunately, GCB has no concept of dynamically creating substitutions or
     # passing ENV vars between steps, so the best we can do is to create a file
     # containing our tag in the shared workspace which other steps can inspect.
     step {
       name = "bash"
-      script = <<EOT
-        date +'0.3.%s-incompatible' > /workspace/fake_tag
-        cat /workspace/fake_tag
-      EOT
+      script = (
+        var.cloudbuild_trigger_tag != "" ?
+        "$TAG_NAME > /workspace/git_tag && cat /workspace/git_tag" :
+        "date +'0.3.%s-incompatible' > /workspace/git_tag && cat /workspace/git_tag"
+      )
     }
     ### Build the Trusted OS and upload it to GCS.
     # Build an image containing the Trusted OS artifacts with the Dockerfile.
-    # This step needs to be a bash script in order to substitute fake tag into a
-    # build arg.
+    # This step needs to be a bash script in order to read the tag content from file.
     step {
       name = "gcr.io/cloud-builders/docker"
       entrypoint = "bash"
@@ -273,7 +274,7 @@ resource "google_cloudbuild_trigger" "build" {
         <<EOT
         docker build \
           --build-arg=TAMAGO_VERSION=${var.build_substitutions.tamago_version} \
-          --build-arg=GIT_SEMVER_TAG=$(cat /workspace/fake_tag) \
+          --build-arg=GIT_SEMVER_TAG=$(cat /workspace/git_tag) \
           --build-arg=LOG_ORIGIN=${var.build_substitutions.origin} \
           --build-arg=LOG_PUBLIC_KEY=${var.build_substitutions.log_public_key} \
           --build-arg=APPLET_PUBLIC_KEY=${var.build_substitutions.applet_public_key} \
@@ -325,8 +326,8 @@ resource "google_cloudbuild_trigger" "build" {
       ]
     }
     ### Construct log entry / Claimant Model statement.
-    # This step needs to be a bash script in order to substitute the fake tag
-    # in the command args.
+    # This step needs to be a bash script in order to read the tag content
+    # from file.
     step {
       name = "golang"
       entrypoint = "bash"
@@ -335,7 +336,7 @@ resource "google_cloudbuild_trigger" "build" {
         <<EOT
         go run github.com/transparency-dev/armored-witness/cmd/manifest@main \
           create \
-          --git_tag=$(cat /workspace/fake_tag) \
+          --git_tag=$(cat /workspace/git_tag) \
           --git_commit_fingerprint=$COMMIT_SHA \
           --firmware_file=output/trusted_os.elf \
           --firmware_type=TRUSTED_OS \
@@ -415,11 +416,11 @@ resource "google_cloudbuild_trigger" "build" {
           \"entriesDir\": \"${var.build_substitutions.entries_dir}/$(sha256sum output/trusted_os_manifest_both | cut -f1 -d" ")\",
           \"origin\": \"${var.build_substitutions.origin}\",
           \"bucket\": \"${var.build_substitutions.log_name}\",
-          \"kmsKeyName\": \"ft-log-ci\",
-          \"kmsKeyRing\": \"firmware-release-ci\",
+          \"kmsKeyName\": \"ft-log-${var.env}\",
+          \"kmsKeyRing\": \"firmware-release-${var.env}\",
           \"kmsKeyVersion\": ${var.build_substitutions.key_version},
           \"kmsKeyLocation\": \"global\",
-          \"noteKeyName\": \"transparency.dev-aw-ftlog-ci-${var.build_substitutions.key_version}\",
+          \"noteKeyName\": \"transparency.dev-aw-ftlog-${var.env}-${var.build_substitutions.key_version}\",
           \"checkpointCacheControl\": \"${var.build_substitutions.checkpoint_cache}\"
         }"
         EOT
@@ -436,11 +437,11 @@ resource "google_cloudbuild_trigger" "build" {
         --data='{
           "origin": "${var.build_substitutions.origin}",
           "bucket": "${var.build_substitutions.log_name}",
-          "kmsKeyName": "ft-log-ci",
-          "kmsKeyRing": "firmware-release-ci",
+          "kmsKeyName": "ft-log-${var.env}",
+          "kmsKeyRing": "firmware-release-${var.env}",
           "kmsKeyVersion": ${var.build_substitutions.key_version},
           "kmsKeyLocation": "global",
-          "noteKeyName": "transparency.dev-aw-ftlog-ci-${var.build_substitutions.key_version}",
+          "noteKeyName": "transparency.dev-aw-ftlog-${var.env}-${var.build_substitutions.key_version}",
           "checkpointCacheControl": "${var.build_substitutions.checkpoint_cache}"
         }'
         EOT

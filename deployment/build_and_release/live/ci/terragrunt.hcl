@@ -25,10 +25,8 @@ inputs = merge(
     }
 
     build_substitutions = {
-      # log_name = "armored-witness-firmware-log-ci-2"
-      log_name = "jayhou-log"
-      # firmware_bucket = "armored-witness-firmware-ci-2"
-      firmware_bucket = "jayhou-firmware"
+      log_name = "armored-witness-firmware-log-ci-2"
+      firmware_bucket = "armored-witness-firmware-ci-2"
       tamago_version = "1.21.5"
       entries_dir = "firmware-log-sequence"
       key_version = 2
