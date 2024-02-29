@@ -462,7 +462,11 @@ func waitAndProvision(ctx context.Context, fw *firmwares) error {
 			<-time.After(time.Second)
 		}
 		if err := device.ActivateHAB(dev); err != nil {
-			return fmt.Errorf("device failed to activate HAB: %v", err)
+			err = fmt.Errorf("device failed to activate HAB: %v", err)
+			if !*runAnyway {
+				return err
+			}
+			klog.Warningf("⚠️ %s, continuing anyway", err.Error())
 		}
 
 		klog.Info("Operator, please change boot switch to USB, and then reboot device 🙏")
