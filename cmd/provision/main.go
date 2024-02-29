@@ -195,26 +195,26 @@ func main() {
 
 // Firmware represents a single firmware image to be be installed on a device.
 type fw struct {
-	// Bundle is the firmware bundle to be installed
-	Bundle firmware.Bundle
-	// Block is the location on MMC where the firmware should be installed.
-	Block int64
-	// ConfigBlock is an optional location on the MMC where the loader config block should be
+	// bundle is the firmware bundle to be installed
+	bundle firmware.Bundle
+	// block is the location on MMC where the firmware should be installed.
+	block int64
+	// bonfigBlock is an optional location on the MMC where the loader config block should be
 	// stored. This is only currently used for the bootloader firmware due to location constraints.
-	ConfigBlock int64
+	bonfigBlock int64
 }
 
 // firmwares respresents the collection of firmware and related artefacts which must be
 // flashed onto the device.
 type firmwares struct {
-	// Bootloader holds the regular bootloader firmware bundle.
-	Bootloader *fw
-	// Recovery holds the recovery-boot image as an unsigned IMX.
-	Recovery *fw
-	// TrustedOS holds the trusted OS firmware bundle.
-	TrustedOS *fw
-	// TrustedApplet holds the witness applet firmware bundle.
-	TrustedApplet *fw
+	// bootloader holds the regular bootloader firmware bundle.
+	bootloader *fw
+	// recovery holds the recovery-boot image as an unsigned IMX.
+	recovery *fw
+	// trustedOS holds the trusted OS firmware bundle.
+	trustedOS *fw
+	// trustedApplet holds the witness applet firmware bundle.
+	trustedApplet *fw
 }
 
 func fetchLatestArtefacts(ctx context.Context) (*firmwares, error) {
@@ -288,9 +288,9 @@ func fetchLatestArtefacts(ctx context.Context) (*firmwares, error) {
 		return nil, fmt.Errorf("GetOS: %v", err)
 	}
 	klog.Infof("Found OS bundle @ %d", osFW.Index)
-	firmwares.TrustedOS = &fw{
-		Bundle: osFW,
-		Block:  osBlock,
+	firmwares.trustedOS = &fw{
+		bundle: osFW,
+		block:  osBlock,
 	}
 
 	appletFW, err := updateFetcher.GetApplet(ctx)
@@ -298,9 +298,9 @@ func fetchLatestArtefacts(ctx context.Context) (*firmwares, error) {
 		return nil, fmt.Errorf("GetApplet: %v", err)
 	}
 	klog.Infof("Found Applet bundle @ %d", appletFW.Index)
-	firmwares.TrustedApplet = &fw{
-		Bundle: appletFW,
-		Block:  appletBlock,
+	firmwares.trustedApplet = &fw{
+		bundle: appletFW,
+		block:  appletBlock,
 	}
 
 	bootFW, err := updateFetcher.GetBoot(ctx)
@@ -308,10 +308,10 @@ func fetchLatestArtefacts(ctx context.Context) (*firmwares, error) {
 		return nil, fmt.Errorf("GetBoot: %v", err)
 	}
 	klog.Infof("Found Bootloader bundle @ %d", bootFW.Index)
-	firmwares.Bootloader = &fw{
-		Bundle:      bootFW,
-		Block:       bootloaderBlock,
-		ConfigBlock: bootloaderConfigBlock,
+	firmwares.bootloader = &fw{
+		bundle:      bootFW,
+		block:       bootloaderBlock,
+		bonfigBlock: bootloaderConfigBlock,
 	}
 
 	recoveryFW, err := updateFetcher.GetRecovery(ctx)
@@ -319,8 +319,8 @@ func fetchLatestArtefacts(ctx context.Context) (*firmwares, error) {
 		return nil, fmt.Errorf("GetRecovery: %v", err)
 	}
 	klog.Infof("Found Recovery bundle @ %d", recoveryFW.Index)
-	firmwares.Recovery = &fw{
-		Bundle: recoveryFW,
+	firmwares.recovery = &fw{
+		bundle: recoveryFW,
 	}
 
 	klog.Info("Loaded firmware artefacts.")
@@ -329,31 +329,31 @@ func fetchLatestArtefacts(ctx context.Context) (*firmwares, error) {
 
 func prepareFlashJobs(firmwares *firmwares) (map[string]flashJob, error) {
 	jobs := make(map[string]flashJob)
-	if firmwares.TrustedOS != nil {
+	if firmwares.trustedOS != nil {
 		// OS and Applet need prepending with config structures.
-		osAndConfig, err := prepareELF(firmwares.TrustedOS.Bundle, firmwares.TrustedOS.Block)
+		osAndConfig, err := prepareELF(firmwares.trustedOS.bundle, firmwares.trustedOS.block)
 		if err != nil {
 			return nil, fmt.Errorf("failed to prepare TrustedOS: %v", err)
 		}
-		jobs[OS] = flashJob{name: OS, img: osAndConfig, block: firmwares.TrustedOS.Block}
+		jobs[OS] = flashJob{name: OS, img: osAndConfig, block: firmwares.trustedOS.block}
 	}
-	if firmwares.TrustedApplet != nil {
-		appletAndConfig, err := prepareELF(firmwares.TrustedApplet.Bundle, firmwares.TrustedApplet.Block)
+	if firmwares.trustedApplet != nil {
+		appletAndConfig, err := prepareELF(firmwares.trustedApplet.bundle, firmwares.trustedApplet.block)
 		if err != nil {
 			return nil, fmt.Errorf("failed to prepare TrustedApplet: %v", err)
 		}
-		jobs[Applet] = flashJob{name: Applet, img: appletAndConfig, block: firmwares.TrustedApplet.Block}
+		jobs[Applet] = flashJob{name: Applet, img: appletAndConfig, block: firmwares.trustedApplet.block}
 	}
-	if firmwares.Bootloader != nil {
-		bootloaderConfig, err := configFromBundle(firmwares.Bootloader.Bundle, firmwares.Bootloader.Block*mmcBlockSize)
+	if firmwares.bootloader != nil {
+		bootloaderConfig, err := configFromBundle(firmwares.bootloader.bundle, firmwares.bootloader.block*mmcBlockSize)
 		if err != nil {
 			return nil, fmt.Errorf("failed to prepare Bootloader config: %v", err)
 		}
-		jobs[BootloaderConfig] = flashJob{name: BootloaderConfig, img: bootloaderConfig, block: firmwares.Bootloader.ConfigBlock}
+		jobs[BootloaderConfig] = flashJob{name: BootloaderConfig, img: bootloaderConfig, block: firmwares.bootloader.bonfigBlock}
 
-		bootloaderHAB := append(firmwares.Bootloader.Bundle.Firmware, firmwares.Bootloader.Bundle.HABSignature...)
-		klog.Infof("Bootloader firmware is %d bytes + %d bytes HAB signature", len(firmwares.Bootloader.Bundle.Firmware), len(firmwares.Bootloader.Bundle.HABSignature))
-		jobs[Bootloader] = flashJob{name: Bootloader, img: bootloaderHAB, block: firmwares.Bootloader.Block}
+		bootloaderHAB := append(firmwares.bootloader.bundle.Firmware, firmwares.bootloader.bundle.HABSignature...)
+		klog.Infof("Bootloader firmware is %d bytes + %d bytes HAB signature", len(firmwares.bootloader.bundle.Firmware), len(firmwares.bootloader.bundle.HABSignature))
+		jobs[Bootloader] = flashJob{name: Bootloader, img: bootloaderHAB, block: firmwares.bootloader.block}
 	}
 	return jobs, nil
 }
@@ -366,8 +366,8 @@ func waitAndProvision(ctx context.Context, fw *firmwares) error {
 
 	klog.Info("Operator, please ensure boot switch is set to USB, and then connect unprovisioned device 🙏")
 
-	recoveryHAB := append(fw.Recovery.Bundle.Firmware, fw.Recovery.Bundle.HABSignature...)
-	klog.Infof("Recovery firmware is %d bytes + %d bytes HAB signature", len(fw.Recovery.Bundle.Firmware), len(fw.Recovery.Bundle.HABSignature))
+	recoveryHAB := append(fw.recovery.bundle.Firmware, fw.recovery.bundle.HABSignature...)
+	klog.Infof("Recovery firmware is %d bytes + %d bytes HAB signature", len(fw.recovery.bundle.Firmware), len(fw.recovery.bundle.HABSignature))
 
 	// The device will initially be in HID mode (showing as "RecoveryMode" in the output to lsusb).
 	// So we'll detect it as such:
