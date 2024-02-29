@@ -213,7 +213,6 @@ type firmwares struct {
 type firmwareJobs struct {
 	bootloader       flashJob
 	bootloaderConfig flashJob
-	recovery         flashJob
 	trustedOS        flashJob
 	trustedApplet    flashJob
 }
