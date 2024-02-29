@@ -352,7 +352,7 @@ func waitAndProvision(ctx context.Context, fw *firmwares) error {
 		// This is ensure there's no unexpected CPU load on the device when
 		// we attempt to set fuses as this has been known to be timing sensitive.
 		flashStages = append(flashStages, firmwares{TrustedApplet: fw.TrustedApplet})
-		flashStages[0].TrustedApplet = nil
+		flashStages[0].TrustedApplet.Bundle.Firmware = []byte{}
 	}
 	if err := flashImages(bDev, &flashStages[0]); err != nil {
 		return fmt.Errorf("error while flashing images: %v", err)
