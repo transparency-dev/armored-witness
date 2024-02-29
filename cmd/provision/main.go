@@ -140,6 +140,13 @@ var (
 	fuse = flag.Bool("fuse", false, "If set, device will be **permanently** fused to the release environment specified by --hab_target")
 )
 
+const (
+	Applet           = "APPLET"
+	OS               = "OS"
+	Bootloader       = "BOOTLOADER"
+	BootloaderConfig = "BOOTLOADER_CONFIG"
+)
+
 func applyFlagTemplate(k string) {
 	t, ok := templates[k]
 	if !ok {
@@ -320,6 +327,37 @@ func fetchLatestArtefacts(ctx context.Context) (*firmwares, error) {
 	return firmwares, nil
 }
 
+func prepareFlashJobs(firmwares *firmwares) (map[string]flashJob, error) {
+	jobs := make(map[string]flashJob)
+	if firmwares.TrustedOS != nil {
+		// OS and Applet need prepending with config structures.
+		osAndConfig, err := prepareELF(firmwares.TrustedOS.Bundle, firmwares.TrustedOS.Block)
+		if err != nil {
+			return nil, fmt.Errorf("failed to prepare TrustedOS: %v", err)
+		}
+		jobs[OS] = flashJob{name: OS, img: osAndConfig, block: firmwares.TrustedOS.Block}
+	}
+	if firmwares.TrustedApplet != nil {
+		appletAndConfig, err := prepareELF(firmwares.TrustedApplet.Bundle, firmwares.TrustedApplet.Block)
+		if err != nil {
+			return nil, fmt.Errorf("failed to prepare TrustedApplet: %v", err)
+		}
+		jobs[Applet] = flashJob{name: Applet, img: appletAndConfig, block: firmwares.TrustedApplet.Block}
+	}
+	if firmwares.Bootloader != nil {
+		bootloaderConfig, err := configFromBundle(firmwares.Bootloader.Bundle, firmwares.Bootloader.Block*mmcBlockSize)
+		if err != nil {
+			return nil, fmt.Errorf("failed to prepare Bootloader config: %v", err)
+		}
+		jobs[BootloaderConfig] = flashJob{name: BootloaderConfig, img: bootloaderConfig, block: firmwares.Bootloader.ConfigBlock}
+
+		bootloaderHAB := append(firmwares.Bootloader.Bundle.Firmware, firmwares.Bootloader.Bundle.HABSignature...)
+		klog.Infof("Bootloader firmware is %d bytes + %d bytes HAB signature", len(firmwares.Bootloader.Bundle.Firmware), len(firmwares.Bootloader.Bundle.HABSignature))
+		jobs[Bootloader] = flashJob{name: Bootloader, img: bootloaderHAB, block: firmwares.Bootloader.Block}
+	}
+	return jobs, nil
+}
+
 // waitAndProvision waits for a fresh armored witness device to be detected, and then provisions it.
 func waitAndProvision(ctx context.Context, fw *firmwares) error {
 	// Per-device prep:
@@ -345,16 +383,28 @@ func waitAndProvision(ctx context.Context, fw *firmwares) error {
 		return fmt.Errorf("failed to generate ephemeral key: %v", err)
 	}
 
-	klog.Infof("Flashing images...")
-	flashStages := []firmwares{*fw}
+	jobs, err := prepareFlashJobs(fw)
+	if err != nil {
+		return fmt.Errorf("failed to prepare flash jobs: %v", err)
+	}
+
+	flashStages := [][]flashJob{{jobs[OS], jobs[Bootloader], jobs[BootloaderConfig]}}
 	if *fuse {
 		// If we need to fuse the device, we'll install the applet later on.
 		// This is ensure there's no unexpected CPU load on the device when
 		// we attempt to set fuses as this has been known to be timing sensitive.
-		flashStages = append(flashStages, firmwares{TrustedApplet: fw.TrustedApplet})
-		flashStages[0].TrustedApplet.Bundle.Firmware = []byte{}
+		appletJob := jobs[Applet]
+		// Add an extra job into the first stage to destroy any pre-existing applet installed on the device.
+		flashStages[0] = append(flashStages[0], flashJob{name: "DUMMY_APPLET", img: make([]byte, len(appletJob.img)), block: appletJob.block})
+		// Then create a second stage job to install the real applet
+		flashStages = append(flashStages, []flashJob{appletJob})
+	} else {
+		// We're not fusing, so can just install everything in the first stage.
+		flashStages[0] = append(flashStages[0], jobs[Applet])
+
 	}
-	if err := flashImages(bDev, &flashStages[0]); err != nil {
+	klog.Infof("Flashing images...")
+	if err := flashImages(bDev, flashStages[0]); err != nil {
 		return fmt.Errorf("error while flashing images: %v", err)
 	}
 	klog.Info("✅ Flashed images")
@@ -427,7 +477,7 @@ func waitAndProvision(ctx context.Context, fw *firmwares) error {
 		klog.Infof("✅ Detected blockdevice %v", bDev)
 
 		klog.Infof("Flashing Applet image...")
-		if err := flashImages(bDev, &flashStages[1]); err != nil {
+		if err := flashImages(bDev, flashStages[1]); err != nil {
 			return fmt.Errorf("error while flashing Applet image: %v", err)
 		}
 		klog.Info("✅ Flashed Applet image")
@@ -484,14 +534,14 @@ func waitForU2FDevice(ctx context.Context) (string, *u2fhid.Device, error) {
 	}
 }
 
-type namedJob struct {
+type flashJob struct {
 	name  string
 	img   []byte
 	block int64
 }
 
 // flashImages writes all the images in fw to the specified block device.
-func flashImages(dev string, firmwares *firmwares) error {
+func flashImages(dev string, jobs []flashJob) error {
 	for i := 5; i > 0; i-- {
 		klog.Infof("  Flashing in %d", i)
 		<-time.After(time.Second)
@@ -506,34 +556,6 @@ func flashImages(dev string, firmwares *firmwares) error {
 			klog.Errorf("Error closing %v: %v", dev, err)
 		}
 	}()
-
-	jobs := []namedJob{}
-	if firmwares.TrustedOS != nil {
-		// OS and Applet need prepending with config structures.
-		osAndConfig, err := prepareELF(firmwares.TrustedOS.Bundle, firmwares.TrustedOS.Block)
-		if err != nil {
-			return fmt.Errorf("failed to prepare TrustedOS: %v", err)
-		}
-		jobs = append(jobs, namedJob{name: "OS", img: osAndConfig, block: firmwares.TrustedOS.Block})
-	}
-	if firmwares.TrustedApplet != nil {
-		appletAndConfig, err := prepareELF(firmwares.TrustedApplet.Bundle, firmwares.TrustedApplet.Block)
-		if err != nil {
-			return fmt.Errorf("failed to prepare TrustedApplet: %v", err)
-		}
-		jobs = append(jobs, namedJob{name: "Applet", img: appletAndConfig, block: firmwares.TrustedApplet.Block})
-	}
-	if firmwares.Bootloader != nil {
-		bootloaderConfig, err := configFromBundle(firmwares.Bootloader.Bundle, firmwares.Bootloader.Block*mmcBlockSize)
-		if err != nil {
-			return fmt.Errorf("failed to prepare Bootloader config: %v", err)
-		}
-		jobs = append(jobs, namedJob{name: "Bootloader Config", img: bootloaderConfig, block: firmwares.Bootloader.ConfigBlock})
-
-		bootloaderHAB := append(firmwares.Bootloader.Bundle.Firmware, firmwares.Bootloader.Bundle.HABSignature...)
-		klog.Infof("Bootloader firmware is %d bytes + %d bytes HAB signature", len(firmwares.Bootloader.Bundle.Firmware), len(firmwares.Bootloader.Bundle.HABSignature))
-		jobs = append(jobs, namedJob{name: "Bootloader", img: bootloaderHAB, block: firmwares.Bootloader.Block})
-	}
 
 	for _, p := range jobs {
 		if err := flashImage(p.img, f, p.block); err != nil {
