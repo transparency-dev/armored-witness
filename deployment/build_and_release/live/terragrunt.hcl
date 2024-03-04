@@ -3,6 +3,8 @@ locals {
   tf_state_location        = "europe-west2"
   signing_keyring_location = "global"
   env                      = path_relative_to_include()
+  rest_distributor_base_url = "https://api.transparency.dev"
+  firmware_base_url = "https://api.transparency.dev/armored-witness-firmware"
 }
 
 remote_state {

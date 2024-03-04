@@ -156,3 +156,13 @@ variable "hab_leaf_minor" {
   type        = string
   default     = ""
 }
+
+variable "firmware_base_url" {
+  description = "Base URL used to construct the log and firmware bucket URLs"
+  type = string
+}
+
+variable "rest_distributor_base_url" {
+  description = "Base URL for the checkpoint distributor"
+  type = string
+}
