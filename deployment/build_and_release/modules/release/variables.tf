@@ -68,6 +68,11 @@ variable "tamago_version" {
   description = "TamaGo version to compile with"
 }
 
+variable "armory_ums_version" {
+  type        = string
+  description = "Full git commit hash for the armory-ums repo to use when building the recovery image"
+}
+
 variable "entries_dir" {
   type        = string
   description = "Specifies where the to-be-sequenced entries are"
@@ -129,4 +134,9 @@ variable "srk_hash" {
     and MUST NOT be changed unless you know very well what you're doing,
     otherwise devices will be bricked!
   EOT
+}
+
+variable "hab_key_version" {
+  type        = number
+  description = "Key version of the keys to sign CSF and IMG payloads"
 }
