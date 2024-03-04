@@ -140,3 +140,13 @@ variable "hab_key_version" {
   type        = number
   description = "Key version of the keys to sign CSF and IMG payloads"
 }
+
+variable "hab_revision" {
+  description = "Revision count for HAB PKI certs. This must be incremented if these certs are regenerated for any reason"
+}
+
+variable "hab_leaf_minor" {
+  description = "Revision count for CSF and IMG certs. This allows us to optionally regenerate these certs, while leaving the SRK ones in place."
+  type = string
+  default = ""
+}

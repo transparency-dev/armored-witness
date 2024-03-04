@@ -556,12 +556,12 @@ resource "google_cloudbuild_trigger" "build_recovery" {
         <<-EOT
           go run github.com/usbarmory/crucible/cmd/habtool@c77ff4b67b3cd86b4328ecbcad23394d54638ddc \
           -z gcp \
-          -1 projects/armored-witness/locations/us-central1/caPools/aw-hab-ca-pool-rev0-${var.env}/certificateAuthorities/hab-srk1-rev4-${var.env} \
-          -2 projects/armored-witness/locations/us-central1/caPools/aw-hab-ca-pool-rev0-${var.env}/certificateAuthorities/hab-srk2-rev4-${var.env} \
-          -3 projects/armored-witness/locations/us-central1/caPools/aw-hab-ca-pool-rev0-${var.env}/certificateAuthorities/hab-srk3-rev4-${var.env} \
-          -4 projects/armored-witness/locations/us-central1/caPools/aw-hab-ca-pool-rev0-${var.env}/certificateAuthorities/hab-srk4-rev4-${var.env} \
-          -o output/gcp_hab_rev4_${var.env}_srk.hash \
-          -t output/gcp_hab_rev4_${var.env}_srk.srk
+          -1 projects/armored-witness/locations/us-central1/caPools/aw-hab-ca-pool-rev0-${var.env}/certificateAuthorities/hab-srk1-rev${var.hab_revision}-${var.env} \
+          -2 projects/armored-witness/locations/us-central1/caPools/aw-hab-ca-pool-rev0-${var.env}/certificateAuthorities/hab-srk2-rev${var.hab_revision}-${var.env} \
+          -3 projects/armored-witness/locations/us-central1/caPools/aw-hab-ca-pool-rev0-${var.env}/certificateAuthorities/hab-srk3-rev${var.hab_revision}-${var.env} \
+          -4 projects/armored-witness/locations/us-central1/caPools/aw-hab-ca-pool-rev0-${var.env}/certificateAuthorities/hab-srk4-rev${var.hab_revision}-${var.env} \
+          -o output/gcp_hab_rev${var.hab_revision}_${var.env}_srk.hash \
+          -t output/gcp_hab_rev${var.hab_revision}_${var.env}_srk.srk
         EOT
       ]
     }
@@ -573,7 +573,7 @@ resource "google_cloudbuild_trigger" "build_recovery" {
         "-c",
         <<-EOT
         if [ -n "${var.srk_hash}"]; then \
-          echo "$(od -An -tx1 output/gcp_hab_rev4_${var.env}_srk.hash | tr -d ' \n')" >> /workspace/got_srk_hash; \
+          echo "$(od -An -tx1 output/gcp_hab_rev${var.hab_revision}_${var.env}_srk.hash | tr -d ' \n')" >> /workspace/got_srk_hash; \
           if [ "${var.srk_hash}" != $(cat /workspace/got_srk_hash) ]; then \
             echo "Got SRK hash \"$(cat /workspace/got_srk_hash)\""; \
             echo "Expected SRK hash '${var.srk_hash}'"; \
@@ -591,13 +591,13 @@ resource "google_cloudbuild_trigger" "build_recovery" {
         <<-EOT
         go run github.com/usbarmory/crucible/cmd/habtool@c77ff4b67b3cd86b4328ecbcad23394d54638ddc \
           -z gcp \
-          -a projects/1071548024491/locations/us-central1/caPools/aw-hab-ca-pool-rev0-${var.env}/certificates/hab-csf1-rev4-2-${var.env} \
-          -A projects/armored-witness/locations/global/keyRings/hab-${var.env}/cryptoKeys/hab-csf1-rev4-${var.env}/cryptoKeyVersions/${var.hab_key_version} \
-          -b projects/1071548024491/locations/us-central1/caPools/aw-hab-ca-pool-rev0-${var.env}/certificates/hab-img1-rev4-2-${var.env} \
-          -B projects/armored-witness/locations/global/keyRings/hab-${var.env}/cryptoKeys/hab-img1-rev4-${var.env}/cryptoKeyVersions/${var.hab_key_version} \
+          -a projects/1071548024491/locations/us-central1/caPools/aw-hab-ca-pool-rev0-${var.env}/certificates/hab-csf1-rev${var.hab_revision}${var.hab_leaf_minor}-${var.env} \
+          -A projects/armored-witness/locations/global/keyRings/hab-${var.env}/cryptoKeys/hab-csf1-rev${var.hab_revision}-${var.env}/cryptoKeyVersions/${var.hab_key_version} \
+          -b projects/1071548024491/locations/us-central1/caPools/aw-hab-ca-pool-rev0-${var.env}/certificates/hab-img1-rev${var.hab_revision}${var.hab_leaf_minor}-${var.env} \
+          -B projects/armored-witness/locations/global/keyRings/hab-${var.env}/cryptoKeys/hab-img1-rev${var.hab_revision}-${var.env}/cryptoKeyVersions/${var.hab_key_version} \
           -x 1 \
           -s \
-          -t output/gcp_hab_rev4_${var.env}_srk.srk \
+          -t output/gcp_hab_rev${var.hab_revision}_${var.env}_srk.srk \
           -i output/armory-ums.imx \
           -o output/armory-ums.csf
         EOT
