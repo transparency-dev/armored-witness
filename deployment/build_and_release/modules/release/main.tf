@@ -275,8 +275,8 @@ resource "google_cloudbuild_trigger" "applet_build" {
         docker build \
           --build-arg=TAMAGO_VERSION=${var.tamago_version} \
           --build-arg=GIT_SEMVER_TAG=$(cat /workspace/git_tag) \
-          --build-arg=FT_LOG_URL=${var.transparencydev_base_url}/${var.env}/log/${var.log_shard} \
-          --build-arg=FT_BIN_URL=${var.transparencydev_base_url}/${var.env}/artefacts/${var.log_shard} \
+          --build-arg=FT_LOG_URL=${var.firmware_base_url}/${var.env}/log/${var.log_shard} \
+          --build-arg=FT_BIN_URL=${var.firmware_base_url}/${var.env}/artefacts/${var.log_shard} \
           --build-arg=LOG_ORIGIN=${var.origin_prefix}/${var.log_shard} \
           --build-arg=LOG_PUBLIC_KEY=${var.log_public_key} \
           --build-arg=APPLET_PUBLIC_KEY=${var.applet_public_key} \
@@ -343,8 +343,8 @@ resource "google_cloudbuild_trigger" "applet_build" {
           --firmware_file=output/trusted_applet.elf \
           --firmware_type=TRUSTED_APPLET \
           --tamago_version=${var.tamago_version} \
-          --build_env="FT_LOG_URL=${var.transparencydev_base_url}/${var.env}/log/${var.log_shard}" \
-          --build_env="FT_BIN_URL=${var.transparencydev_base_url}/${var.env}/artefacts/${var.log_shard}" \
+          --build_env="FT_LOG_URL=${var.firmware_base_url}/${var.env}/log/${var.log_shard}" \
+          --build_env="FT_BIN_URL=${var.firmware_base_url}/${var.env}/artefacts/${var.log_shard}" \
           --build_env="LOG_ORIGIN=${var.origin_prefix}/${var.log_shard}" \
           --build_env="LOG_PUBLIC_KEY=${var.log_public_key}" \
           --build_env="APPLET_PUBLIC_KEY=${var.applet_public_key}" \

@@ -157,8 +157,8 @@ variable "hab_leaf_minor" {
   default     = ""
 }
 
-variable "transparencydev_base_url" {
-  description = "Base transparency.dev URL used to construct the log and firmware bucket URLs"
+variable "firmware_base_url" {
+  description = "Base URL used to construct the log and firmware bucket URLs"
   type = string
 }
 
