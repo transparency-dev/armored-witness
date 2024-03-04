@@ -733,4 +733,286 @@ resource "google_cloudbuild_trigger" "build_recovery" {
   }
 }
 
+resource "google_cloudbuild_trigger" "build_boot" {
+  name = "boot-build-${var.env}"
+  location = "global"
+
+  github {
+    owner = "transparency-dev"
+    name  = "armored-witness-boot"
+
+    push {
+      branch = var.cloudbuild_trigger_branch != "" ? var.cloudbuild_trigger_branch : null
+      tag = var.cloudbuild_trigger_tag != "" ? var.cloudbuild_trigger_tag : null
+    }
+  }
+
+  build {
+    # If the trigger is not based on `tag`, create a fake one.
+    #
+    # Unfortunately, GCB has no concept of dynamically creating substitutions or
+    # passing ENV vars between steps, so the best we can do is to create a file
+    # containing our tag in the shared workspace which other steps can inspect.
+    step {
+      name = "bash"
+      script = (
+        var.cloudbuild_trigger_tag != "" ?
+        "$TAG_NAME > /workspace/git_tag && cat /workspace/git_tag" :
+        "date +'0.0.%s-incompatible' > /workspace/git_tag && cat /workspace/git_tag"
+      )
+    }
+    ### Build the bootloader binary and upload it to GCS.
+    # Use the dockerfile to build an image containing the bootloader artifact.
+    step {
+      name = "gcr.io/cloud-builders/docker"
+      entrypoint = "bash"
+      args = [
+        "-c",
+        <<-EOT
+        docker build \
+          --build-arg=TAMAGO_VERSION=${var.tamago_version} \
+          --build-arg=GIT_SEMVER_TAG=$(cat /workspace/fake_tag) \
+          --build-arg=LOG_ORIGIN=${var.origin_prefix}/${var.log_shard} \
+          --build-arg=LOG_PUBLIC_KEY=${var.log_public_key} \
+          --build-arg=OS_PUBLIC_KEY1=${var.os_public_key1} \
+          --build-arg=OS_PUBLIC_KEY2=${var.os_public_key1} \
+          --build-arg=BEE=${var.bee} \
+          --build-arg=CONSOLE=${var.console} \
+          -t builder-image \
+          .
+        EOT
+      ]
+    }
+    # Prepare a container with a copy of the artifacts.
+    step {
+      name = "gcr.io/cloud-builders/docker"
+      args = [
+        "create",
+        "--name",
+        "builder_scratch",
+        "builder-image",
+      ]
+    }
+    # Copy the artifacts from the container to the Cloud Build VM.
+    step {
+      name = "gcr.io/cloud-builders/docker"
+      args = [
+       "cp",
+       "builder_scratch:/build",
+       "output",
+      ]
+    }
+    # List the artifacts.
+    step {
+      name = "bash"
+      script = "ls output"
+    }
+    # Copy the artifacts from the Cloud Build VM to GCS.
+    step {
+      name = "gcr.io/cloud-builders/gcloud"
+      entrypoint = "bash"
+      args = [
+        "-c",
+        <<-EOT
+        gcloud storage cp \
+          output/armored-witness-boot.imx \
+          gs://${var.firmware_bucket_prefix}-${var.log_shard}/$(sha256sum output/armored-witness-boot.imx | cut -f1 -d" ")
+        EOT
+      ]
+    }
+    # HAB: Create SRK table & hash
+    # TODO(al): we should probably store the generated SRK/hash in a GCS bucket
+    # and then compare each time to ensure that nothing bad has happened with
+    # our PKI.
+    step {
+      name = "golang"
+      entrypoint = "bash"
+      args = [
+        "-c",
+        <<-EOT
+          go run github.com/usbarmory/crucible/cmd/habtool@c77ff4b67b3cd86b4328ecbcad23394d54638ddc \
+          -z gcp \
+          -1 projects/armored-witness/locations/us-central1/caPools/aw-hab-ca-pool-rev0-${var.env}/certificateAuthorities/hab-srk1-rev${var.hab_revision}-${var.env} \
+          -2 projects/armored-witness/locations/us-central1/caPools/aw-hab-ca-pool-rev0-${var.env}/certificateAuthorities/hab-srk2-rev${var.hab_revision}-${var.env} \
+          -3 projects/armored-witness/locations/us-central1/caPools/aw-hab-ca-pool-rev0-${var.env}/certificateAuthorities/hab-srk3-rev${var.hab_revision}-${var.env} \
+          -4 projects/armored-witness/locations/us-central1/caPools/aw-hab-ca-pool-rev0-${var.env}/certificateAuthorities/hab-srk4-rev${var.hab_revision}-${var.env} \
+          -o output/gcp_hab_rev${var.hab_revision}_${var.env}_srk.hash \
+          -t output/gcp_hab_rev${var.hab_revision}_${var.env}_srk.srk
+        EOT
+      ]
+    }
+    # Assert SRK hash value
+    step {
+      name = "golang"
+      entrypoint = "bash"
+      args = [
+        "-c",
+        <<-EOT
+        if [ -n "${var.srk_hash}"]; then \
+          echo "$(od -An -tx1 output/gcp_hab_rev${var.hab_revision}_${var.env}_srk.hash | tr -d ' \n')" >> /workspace/got_srk_hash; \
+          if [ "${var.srk_hash}" != $(cat /workspace/got_srk_hash) ]; then \
+            echo "Got SRK hash \"$(cat /workspace/got_srk_hash)\""; \
+            echo "Expected SRK hash '${var.srk_hash}'"; \
+            exit 1; \
+          fi; \
+        fi
+        EOT
+      ]
+    }
+    step {
+      name = "golang"
+      entrypoint = "bash"
+      args = [
+        "-c",
+        <<-EOT
+        go run github.com/usbarmory/crucible/cmd/habtool@c77ff4b67b3cd86b4328ecbcad23394d54638ddc \
+          -z gcp \
+          -a projects/1071548024491/locations/us-central1/caPools/aw-hab-ca-pool-rev0-${var.env}/certificates/hab-csf1-rev${var.hab_revision}${var.hab_leaf_minor}-${var.env} \
+          -A projects/armored-witness/locations/global/keyRings/hab-${var.env}/cryptoKeys/hab-csf1-rev${var.hab_revision}-${var.env}/cryptoKeyVersions/${var.hab_key_version} \
+          -b projects/1071548024491/locations/us-central1/caPools/aw-hab-ca-pool-rev0-${var.env}/certificates/hab-img1-rev${var.hab_revision}${var.hab_leaf_minor}-${var.env} \
+          -B projects/armored-witness/locations/global/keyRings/hab-${var.env}/cryptoKeys/hab-img1-rev${var.hab_revision}-${var.env}/cryptoKeyVersions/${var.hab_key_version} \
+          -x 1 \
+          -s \
+          -t output/gcp_hab_rev${var.hab_revision}_${var.env}_srk.srk \
+          -i output/armored-witness-boot.imx \
+          -o output/armored-witness-boot.csf
+        EOT
+      ]
+    }
+    # Copy the HAB signature into the CAS
+    step {
+      name = "gcr.io/cloud-builders/gcloud"
+      entrypoint = "bash"
+      args = [
+        "-c",
+        <<-EOT
+        gcloud storage cp \
+          output/armored-witness-boot.csf \
+          gs://${var.firmware_bucket_prefix}-${var.log_shard}/$(sha256sum output/armored-witness-boot.csf | cut -f1 -d" ")
+        EOT
+      ]
+    }
+    ### Construct log entry / Claimant Model statement.
+    # This step needs to be a bash script in order to read the tag content
+    # from file.
+    step {
+      name = "golang"
+      entrypoint = "bash"
+      args = [
+        "-c",
+        <<-EOT
+        go run github.com/transparency-dev/armored-witness/cmd/manifest@main \
+          create \
+          --git_tag=$(cat /workspace/git_tag) \
+          --git_commit_fingerprint=$COMMIT_SHA \
+          --firmware_file=output/armored-witness-boot.imx \
+          --firmware_type=BOOTLOADER \
+          --tamago_version=${var.tamago_version} \
+          --build_env="LOG_ORIGIN=${var.origin_prefix}/${var.log_shard}" \
+          --build_env="LOG_PUBLIC_KEY=${var.log_public_key}" \
+          --build_env="OS_PUBLIC_KEY1=${var.os_public_key1}" \
+          --build_env="OS_PUBLIC_KEY2=${var.os_public_key2}" \
+          --build_env="BEE=${var.bee}" \
+          --build_env="CONSOLE=${var.console}" \
+          --hab_signature_file=output/armored-witness-boot.csf \
+          --hab_target=${var.env} \
+          --raw \
+          --output_file=output/boot_manifest_unsigned.json
+        EOT
+      ]
+    }
+    # Sign the log entry.
+    step {
+      name = "golang"
+      args = [
+        "go",
+        "run",
+        "github.com/transparency-dev/armored-witness/cmd/sign@main",
+        "--project_name=$PROJECT_ID",
+        "--release=${var.env}",
+        "--artefact=boot",
+        "--manifest_file=output/boot_manifest_unsigned.json",
+        "--output_file=output/boot_manifest",
+      ]
+    }
+     # Print the content of the signed manifest.
+    step {
+      name = "bash"
+      script = "cat output/boot_manifest"
+    }
+    ### Write the firmware release to the CI transparency log.
+    # Copy the signed note to the sequence bucket, preparing to write to log.
+    #
+    # Use the SHA256 of the manifest as the name of the manifest. This allows
+    # multiple triggers to run without colliding.
+    step {
+      name = "gcr.io/cloud-builders/gcloud"
+      entrypoint = "bash"
+      args = [
+        "-c",
+        <<-EOT
+        gcloud storage cp output/boot_manifest \
+        gs://${var.log_name_prefix}-${var.log_shard}/${var.entries_dir}/$(sha256sum output/boot_manifest | cut -f1 -d" ")/trusted_os_manifest_both
+        EOT
+      ]
+    }
+    # Sequence log entry.
+    step {
+      name = "gcr.io/cloud-builders/gcloud"
+      entrypoint = "bash"
+      args = [
+        "-c",
+        <<-EOT
+        gcloud functions call sequence \
+        --data="{
+          \"entriesDir\": \"${var.entries_dir}/$(sha256sum output/boot_manifest | cut -f1 -d" ")\",
+          \"origin\": \"${var.origin_prefix}/${var.log_shard}\",
+          \"bucket\": \"${var.log_name_prefix}-${var.log_shard}\",
+          \"kmsKeyName\": \"ft-log-${var.env}\",
+          \"kmsKeyRing\": \"firmware-release-${var.env}\",
+          \"kmsKeyVersion\": ${var.log_shard},
+          \"kmsKeyLocation\": \"global\",
+          \"noteKeyName\": \"transparency.dev-aw-ftlog-${var.env}-${var.log_shard}\",
+          \"checkpointCacheControl\": \"${var.checkpoint_cache}\"
+        }"
+        EOT
+      ]
+    }
+    # Integrate log entry.
+    step {
+      name = "gcr.io/cloud-builders/gcloud"
+      entrypoint = "bash"
+      args = [
+        "-c",
+        <<-EOT
+        gcloud functions call integrate \
+        --data='{
+          "origin": "${var.origin_prefix}/${var.log_shard}",
+          "bucket": "${var.log_name_prefix}-${var.log_shard}",
+          "kmsKeyName": "ft-log-${var.env}",
+          "kmsKeyRing": "firmware-release-${var.env}",
+          "kmsKeyVersion": ${var.log_shard},
+          "kmsKeyLocation": "global",
+          "noteKeyName": "transparency.dev-aw-ftlog-${var.env}-${var.log_shard}",
+          "checkpointCacheControl": "${var.checkpoint_cache}"
+        }'
+        EOT
+      ]
+    }
+    # Clean up the file we added to the _ENTRIES_DIR bucket now that it's been
+    # integrated to the log.
+    step {
+      name = "gcr.io/cloud-builders/gcloud"
+      entrypoint = "bash"
+      args = [
+        "-c",
+        <<-EOT
+        gcloud storage rm \
+        gs://${var.log_name_prefix}-${var.log_shard}/${var.entries_dir}/$(sha256sum output/boot_manifest | cut -f1 -d" ")/trusted_os_manifest_both
+        EOT
+      ]
+    }
+  }
+}
+
 # TODO(jayhou): add GCF stuff.

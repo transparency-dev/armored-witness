@@ -35,6 +35,7 @@ inputs = merge(
     applet_public_key = "transparency.dev-aw-applet-ci+3ff32e2c+AV1fgxtByjXuPjPfi0/7qTbEBlPGGCyxqr6ZlppoLOz3"
     os_public_key1 = "transparency.dev-aw-os1-ci+7a0eaef3+AcsqvmrcKIbs21H2Bm2fWb6oFWn/9MmLGNc6NLJty2eQ"
     os_public_key2 = "transparency.dev-aw-os2-ci+af8e4114+AbBJk5MgxRB+68KhGojhUdSt1ts5GAdRIT1Eq9zEkgQh"
+    console = "on"
     bee = "1"
     debug = "1"
     checkpoint_cache = "public, max-age=30"
