@@ -18,13 +18,6 @@ variable "signing_keyring_location" {
   type        = string
 }
 
-variable "build_components" {
-  type = map(object({
-    repo            = string
-    cloudbuild_path = string
-  }))
-}
-
 variable "cloudbuild_trigger_tag" {
   description = <<EOH
     Specifies how the build will be triggered. Exactly one of cloudbuild_trigger_branch or cloudbuild_trigger_tag should be specified.
