@@ -235,4 +235,232 @@ resource "google_cloudbuild_trigger" "release" {
   filename = "${each.value.cloudbuild_path}"
 }
 
+resource "google_cloudbuild_trigger" "os_build" {
+  name = "os-build-${var.env}"
+  location = "global"
+
+  github {
+    owner = "transparency-dev"
+    name  = "armored-witness-os"
+
+    push {
+      branch = var.cloudbuild_trigger_branch != "" ? var.cloudbuild_trigger_branch : null
+      tag = var.cloudbuild_trigger_tag != "" ? var.cloudbuild_trigger_tag : null
+    }
+  }
+
+  build {
+    # If the trigger is not based on `tag`, create a fake one.
+    #
+    # Unfortunately, GCB has no concept of dynamically creating substitutions or
+    # passing ENV vars between steps, so the best we can do is to create a file
+    # containing our tag in the shared workspace which other steps can inspect.
+    step {
+      name = "bash"
+      script = (
+        var.cloudbuild_trigger_tag != "" ?
+        "$TAG_NAME > /workspace/git_tag && cat /workspace/git_tag" :
+        "date +'0.3.%s-incompatible' > /workspace/git_tag && cat /workspace/git_tag"
+      )
+    }
+    ### Build the Trusted OS and upload it to GCS.
+    # Build an image containing the Trusted OS artifacts with the Dockerfile.
+    # This step needs to be a bash script in order to read the tag content from file.
+    step {
+      name = "gcr.io/cloud-builders/docker"
+      entrypoint = "bash"
+      args = [
+        "-c",
+        <<-EOT
+        docker build \
+          --build-arg=TAMAGO_VERSION=${var.tamago_version} \
+          --build-arg=GIT_SEMVER_TAG=$(cat /workspace/git_tag) \
+          --build-arg=LOG_ORIGIN=${var.origin_prefix}/${var.log_shard} \
+          --build-arg=LOG_PUBLIC_KEY=${var.log_public_key} \
+          --build-arg=APPLET_PUBLIC_KEY=${var.applet_public_key} \
+          --build-arg=OS_PUBLIC_KEY1=${var.os_public_key1} \
+          --build-arg=OS_PUBLIC_KEY2=${var.os_public_key2} \
+          --build-arg=BEE=${var.bee} \
+          --build-arg=DEBUG=${var.debug} \
+          --build-arg=SRK_HASH=${var.srk_hash} \
+          -t builder-image \
+          .
+       EOT
+      ]
+    }
+    # Prepare a container with a copy of the artifacts.
+    step {
+      name = "gcr.io/cloud-builders/docker"
+      args = [
+        "create",
+        "--name",
+        "builder_scratch",
+        "builder-image",
+      ]
+    }
+    # Copy the artifacts from the container to the Cloud Build VM.
+    step {
+      name = "gcr.io/cloud-builders/docker"
+      args = [
+       "cp",
+       "builder_scratch:/build/bin",
+       "output",
+      ]
+    }
+    # List the artifacts.
+    step {
+      name = "bash"
+      script = "ls output"
+    }
+    # Copy the artifacts from the Cloud Build VM to GCS.
+    step {
+      name = "gcr.io/cloud-builders/gcloud"
+      entrypoint = "bash"
+      args = [
+        "-c",
+        <<-EOT
+        gcloud storage cp \
+          output/trusted_os.elf \
+          gs://${var.firmware_bucket_prefix}-${var.log_shard}/$(sha256sum output/trusted_os.elf | cut -f1 -d" ")
+        EOT
+      ]
+    }
+    ### Construct log entry / Claimant Model statement.
+    # This step needs to be a bash script in order to read the tag content
+    # from file.
+    step {
+      name = "golang"
+      entrypoint = "bash"
+      args = [
+        "-c",
+        <<-EOT
+        go run github.com/transparency-dev/armored-witness/cmd/manifest@main \
+          create \
+          --git_tag=$(cat /workspace/git_tag) \
+          --git_commit_fingerprint=$COMMIT_SHA \
+          --firmware_file=output/trusted_os.elf \
+          --firmware_type=TRUSTED_OS \
+          --tamago_version=${var.tamago_version} \
+          --build_env="LOG_ORIGIN=${var.origin_prefix}/${var.log_shard}" \
+          --build_env="LOG_PUBLIC_KEY=${var.log_public_key}" \
+          --build_env="APPLET_PUBLIC_KEY=${var.applet_public_key}" \
+          --build_env="OS_PUBLIC_KEY1=${var.os_public_key1}" \
+          --build_env="OS_PUBLIC_KEY2=${var.os_public_key2}" \
+          --build_env="BEE=${var.bee}" \
+          --build_env="DEBUG=${var.debug}" \
+          --build_env="SRK_HASH=${var.srk_hash}" \
+          --raw \
+          --output_file=output/trusted_os_manifest_unsigned.json
+        EOT
+      ]
+    }
+    # Sign the log entry.
+    step {
+      name = "golang"
+      args = [
+        "go",
+        "run",
+        "github.com/transparency-dev/armored-witness/cmd/sign@main",
+        "--project_name=$PROJECT_ID",
+        "--release=ci",
+        "--artefact=os1",
+        "--manifest_file=output/trusted_os_manifest_unsigned.json",
+        "--output_file=output/trusted_os_manifest_transparency_dev",
+      ]
+    }
+    # Countersign the log entry with a second key.
+    step {
+      name = "golang"
+      args = [
+        "go",
+        "run",
+        "github.com/transparency-dev/armored-witness/cmd/sign@main",
+        "--project_name=$PROJECT_ID",
+        "--release=ci",
+        "--artefact=os2",
+        "--note_file=output/trusted_os_manifest_transparency_dev",
+        "--note_verifier=${var.os_public_key1}",
+        "--output_file=output/trusted_os_manifest_both",
+      ]
+    }
+     # Print the content of the signed manifest.
+    step {
+      name = "bash"
+      script = "cat output/trusted_os_manifest_both"
+    }
+    ### Write the firmware release to the CI transparency log.
+    # Copy the signed note to the sequence bucket, preparing to write to log.
+    #
+    # Use the SHA256 of the manifest as the name of the manifest. This allows
+    # multiple triggers to run without colliding.
+    step {
+      name = "gcr.io/cloud-builders/gcloud"
+      entrypoint = "bash"
+      args = [
+        "-c",
+        <<-EOT
+        gcloud storage cp output/trusted_os_manifest_both \
+        gs://${var.log_name_prefix}-${var.log_shard}/${var.entries_dir}/$(sha256sum output/trusted_os_manifest_both | cut -f1 -d" ")/trusted_os_manifest_both
+        EOT
+      ]
+    }
+    # Sequence log entry.
+    step {
+      name = "gcr.io/cloud-builders/gcloud"
+      entrypoint = "bash"
+      args = [
+        "-c",
+        <<-EOT
+        gcloud functions call sequence \
+        --data="{
+          \"entriesDir\": \"${var.entries_dir}/$(sha256sum output/trusted_os_manifest_both | cut -f1 -d" ")\",
+          \"origin\": \"${var.origin_prefix}/${var.log_shard}\",
+          \"bucket\": \"${var.log_name_prefix}-${var.log_shard}\",
+          \"kmsKeyName\": \"ft-log-${var.env}\",
+          \"kmsKeyRing\": \"firmware-release-${var.env}\",
+          \"kmsKeyVersion\": ${var.log_shard},
+          \"kmsKeyLocation\": \"global\",
+          \"noteKeyName\": \"transparency.dev-aw-ftlog-${var.env}-${var.log_shard}\",
+          \"checkpointCacheControl\": \"${var.checkpoint_cache}\"
+        }"
+        EOT
+      ]
+    }
+    # Integrate log entry.
+    step {
+      name = "gcr.io/cloud-builders/gcloud"
+      entrypoint = "bash"
+      args = [
+        "-c",
+        <<-EOT
+        gcloud functions call integrate \
+        --data='{
+          "origin": "${var.origin_prefix}/${var.log_shard}",
+          "bucket": "${var.log_name_prefix}-${var.log_shard}",
+          "kmsKeyName": "ft-log-${var.env}",
+          "kmsKeyRing": "firmware-release-${var.env}",
+          "kmsKeyVersion": ${var.log_shard},
+          "kmsKeyLocation": "global",
+          "noteKeyName": "transparency.dev-aw-ftlog-${var.env}-${var.log_shard}",
+          "checkpointCacheControl": "${var.checkpoint_cache}"
+        }'
+        EOT
+      ]
+    }
+    # Clean up the file we added to the _ENTRIES_DIR bucket now that it's been
+    # integrated to the log.
+    step {
+      name = "gcr.io/cloud-builders/gcloud"
+      entrypoint = "bash"
+      args = [
+        "-c",
+        <<-EOT
+        gcloud storage rm \
+        gs://${var.log_name_prefix}-${var.log_shard}/${var.entries_dir}/$(sha256sum output/trusted_os_manifest_both | cut -f1 -d" ")/trusted_os_manifest_both
+        EOT
+      ]
+    }
+  }
+}
+
 # TODO(jayhou): add GCF stuff.

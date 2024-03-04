@@ -23,5 +23,21 @@ inputs = merge(
         cloudbuild_path = "release/cloudbuild.yaml"
       }
     }
+
+    log_shard = 1
+    log_name_prefix = "armored-witness-firmware-log-prod"
+    firmware_bucket_prefix = "armored-witness-firmware-prod"
+    origin_prefix = "transparency.dev/armored-witness/firmware_transparency/prod"
+    
+    tamago_version = "1.21.5"
+    entries_dir = "firmware-log-sequence"
+    log_public_key = "transparency.dev-aw-ftlog-prod+72b0da75+Aa3qdhefd2cc/98jV3blslJT2L+iFR8WKHeGcgFmyjnt"
+    applet_public_key = "transparency.dev-aw-applet-prod+d45f2a0d+AZSnFa8GxH+jHV6ahELk6peqVObbPKrYAdYyMjrzNF35"
+    os_public_key1 = "transparency.dev-aw-os-prod+c31218b7+AV7mmRamQp6VC9CutzSXzqtNhYNyNmQQRcLX07F6qlC1"
+    os_public_key2 = "transparency.dev-aw-os-prod-wave0+fee4bbcc+AQF1ml5TrXJkhnrJRJz5QsCZAYuCj9oOD5VpUdghWOiQ"
+    bee = "1"
+    debug = "1"
+    checkpoint_cache = "public, max-age=30"
+    srk_hash = "TODO"
   }
 )
