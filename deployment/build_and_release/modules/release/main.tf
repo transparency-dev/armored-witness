@@ -235,6 +235,224 @@ resource "google_cloudbuild_trigger" "release" {
   filename = "${each.value.cloudbuild_path}"
 }
 
+resource "google_cloudbuild_trigger" "applet_build" {
+  name = "applet-build-${var.env}"
+  location = "global"
+
+  github {
+    owner = "transparency-dev"
+    name  = "armored-witness-applet"
+
+    push {
+      branch = var.cloudbuild_trigger_branch != "" ? var.cloudbuild_trigger_branch : null
+      tag = var.cloudbuild_trigger_tag != "" ? var.cloudbuild_trigger_tag : null
+    }
+  }
+
+  build {
+    # If the trigger is not based on `tag`, create a fake one.
+    #
+    # Unfortunately, GCB has no concept of dynamically creating substitutions or
+    # passing ENV vars between steps, so the best we can do is to create a file
+    # containing our tag in the shared workspace which other steps can inspect.
+    step {
+      name = "bash"
+      script = (
+        var.cloudbuild_trigger_tag != "" ?
+        "$TAG_NAME > /workspace/git_tag && cat /workspace/git_tag" :
+        "date +'0.3.%s-incompatible' > /workspace/git_tag && cat /workspace/git_tag"
+      )
+    }
+    ### Build the Trusted OS and upload it to GCS.
+    # Build an image containing the Trusted OS artifacts with the Dockerfile.
+    # This step needs to be a bash script in order to read the tag content from file.
+    step {
+      name = "gcr.io/cloud-builders/docker"
+      entrypoint = "bash"
+      args = [
+        "-c",
+        <<-EOT
+        docker build \
+          --build-arg=TAMAGO_VERSION=${var.tamago_version} \
+          --build-arg=GIT_SEMVER_TAG=$(cat /workspace/git_tag) \
+          --build-arg=FT_LOG_URL=${var.transparencydev_base_url}/${var.env}/log/${var.log_shard} \
+          --build-arg=FT_BIN_URL=${var.transparencydev_base_url}/${var.env}/artefacts/${var.log_shard} \
+          --build-arg=LOG_ORIGIN=${var.origin_prefix}/${var.log_shard} \
+          --build-arg=LOG_PUBLIC_KEY=${var.log_public_key} \
+          --build-arg=APPLET_PUBLIC_KEY=${var.applet_public_key} \
+          --build-arg=OS_PUBLIC_KEY1=${var.os_public_key1} \
+          --build-arg=OS_PUBLIC_KEY2=${var.os_public_key2} \
+          --build-arg=REST_DISTRIBUTOR_BASE_URL=${var.rest_distributor_base_url}/${var.env} \
+          --build-arg=BEE=${var.bee} \
+          --build-arg=DEBUG=${var.debug} \
+          -t builder-image \
+          .
+       EOT
+      ]
+    }
+    # Prepare a container with a copy of the artifacts.
+    step {
+      name = "gcr.io/cloud-builders/docker"
+      args = [
+        "create",
+        "--name",
+        "builder_scratch",
+        "builder-image",
+      ]
+    }
+    # Copy the artifacts from the container to the Cloud Build VM.
+    step {
+      name = "gcr.io/cloud-builders/docker"
+      args = [
+       "cp",
+       "builder_scratch:/build/bin",
+       "output",
+      ]
+    }
+    # List the artifacts.
+    step {
+      name = "bash"
+      script = "ls output"
+    }
+    # Copy the artifacts from the Cloud Build VM to GCS.
+    step {
+      name = "gcr.io/cloud-builders/gcloud"
+      entrypoint = "bash"
+      args = [
+        "-c",
+        <<-EOT
+        gcloud storage cp \
+          output/trusted_applet.elf \
+          gs://${var.firmware_bucket_prefix}-${var.log_shard}/$(sha256sum output/trusted_applet.elf | cut -f1 -d" ")
+        EOT
+      ]
+    }
+    ### Construct log entry / Claimant Model statement.
+    # This step needs to be a bash script in order to read the tag content
+    # from file.
+    step {
+      name = "golang"
+      entrypoint = "bash"
+      args = [
+        "-c",
+        <<-EOT
+        go run github.com/transparency-dev/armored-witness/cmd/manifest@main \
+          create \
+          --git_tag=$(cat /workspace/git_tag) \
+          --git_commit_fingerprint=$COMMIT_SHA \
+          --firmware_file=output/trusted_applet.elf \
+          --firmware_type=TRUSTED_APPLET \
+          --tamago_version=${var.tamago_version} \
+          --build_env="FT_LOG_URL=${var.transparencydev_base_url}/${var.env}/log/${var.log_shard}" \
+          --build_env="FT_BIN_URL=${var.transparencydev_base_url}/${var.env}/artefacts/${var.log_shard}" \
+          --build_env="LOG_ORIGIN=${var.origin_prefix}/${var.log_shard}" \
+          --build_env="LOG_PUBLIC_KEY=${var.log_public_key}" \
+          --build_env="APPLET_PUBLIC_KEY=${var.applet_public_key}" \
+          --build_env="OS_PUBLIC_KEY1=${var.os_public_key1}" \
+          --build_env="OS_PUBLIC_KEY2=${var.os_public_key2}" \
+          --build_env="REST_DISTRIBUTOR_BASE_URL=${var.rest_distributor_base_url}/${var.env}" \
+          --build_env="BEE=${var.bee}" \
+          --build_env="DEBUG=${var.debug}" \
+          --build_env="SRK_HASH=${var.srk_hash}" \
+          --raw \
+          --output_file=output/trusted_applet_manifest_unsigned.json
+        EOT
+      ]
+    }
+    # Sign the log entry.
+    step {
+      name = "golang"
+      args = [
+        "go",
+        "run",
+        "github.com/transparency-dev/armored-witness/cmd/sign@main",
+        "--project_name=$PROJECT_ID",
+        "--release=${var.env}",
+        "--artefact=applet",
+        "--manifest_file=output/trusted_applet_manifest_unsigned.json",
+        "--output_file=output/trusted_applet_manifest",
+      ]
+    }
+    # Print the content of the signed manifest.
+    step {
+      name = "bash"
+      script = "cat output/trusted_applet_manifest"
+    }
+    ### Write the firmware release to the CI transparency log.
+    # Copy the signed note to the sequence bucket, preparing to write to log.
+    #
+    # Use the SHA256 of the manifest as the name of the manifest. This allows
+    # multiple triggers to run without colliding.
+    step {
+      name = "gcr.io/cloud-builders/gcloud"
+      entrypoint = "bash"
+      args = [
+        "-c",
+        <<-EOT
+        gcloud storage cp output/trusted_applet_manifest \
+        gs://${var.log_name_prefix}-${var.log_shard}/${var.entries_dir}/$(sha256sum output/trusted_applet_manifest | cut -f1 -d" ")/trusted_applet_manifest
+        EOT
+      ]
+    }
+    # Sequence log entry.
+    step {
+      name = "gcr.io/cloud-builders/gcloud"
+      entrypoint = "bash"
+      args = [
+        "-c",
+        <<-EOT
+        gcloud functions call sequence \
+        --data="{
+          \"entriesDir\": \"${var.entries_dir}/$(sha256sum output/trusted_applet_manifest | cut -f1 -d" ")\",
+          \"origin\": \"${var.origin_prefix}/${var.log_shard}\",
+          \"bucket\": \"${var.log_name_prefix}-${var.log_shard}\",
+          \"kmsKeyName\": \"ft-log-${var.env}\",
+          \"kmsKeyRing\": \"firmware-release-${var.env}\",
+          \"kmsKeyVersion\": ${var.log_shard},
+          \"kmsKeyLocation\": \"global\",
+          \"noteKeyName\": \"transparency.dev-aw-ftlog-${var.env}-${var.log_shard}\",
+          \"checkpointCacheControl\": \"${var.checkpoint_cache}\"
+        }"
+        EOT
+      ]
+    }
+    # Integrate log entry.
+    step {
+      name = "gcr.io/cloud-builders/gcloud"
+      entrypoint = "bash"
+      args = [
+        "-c",
+        <<-EOT
+        gcloud functions call integrate \
+        --data='{
+          "origin": "${var.origin_prefix}/${var.log_shard}",
+          "bucket": "${var.log_name_prefix}-${var.log_shard}",
+          "kmsKeyName": "ft-log-${var.env}",
+          "kmsKeyRing": "firmware-release-${var.env}",
+          "kmsKeyVersion": ${var.log_shard},
+          "kmsKeyLocation": "global",
+          "noteKeyName": "transparency.dev-aw-ftlog-${var.env}-${var.log_shard}",
+          "checkpointCacheControl": "${var.checkpoint_cache}"
+        }'
+        EOT
+      ]
+    }
+    # Clean up the file we added to the _ENTRIES_DIR bucket now that it's been
+    # integrated to the log.
+    step {
+      name = "gcr.io/cloud-builders/gcloud"
+      entrypoint = "bash"
+      args = [
+        "-c",
+        <<-EOT
+        gcloud storage rm \
+        gs://${var.log_name_prefix}-${var.log_shard}/${var.entries_dir}/$(sha256sum output/trusted_applet_manifest | cut -f1 -d" ")/trusted_applet_manifest
+        EOT
+      ]
+    }
+  }
+}
+
 resource "google_cloudbuild_trigger" "os_build" {
   name = "os-build-${var.env}"
   location = "global"
