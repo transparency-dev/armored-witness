@@ -110,6 +110,12 @@ variable "os_public_key2" {
   EOT
 }
 
+variable "console" {
+  description = "If set to `on`, then the bootloader firmware will emit debug logging"
+  type        =  string
+  default     = ""
+}
+
 variable "bee" {
   type        = string
   description = "If '1', compile with BEE flag"
@@ -147,6 +153,6 @@ variable "hab_revision" {
 
 variable "hab_leaf_minor" {
   description = "Revision count for CSF and IMG certs. This allows us to optionally regenerate these certs, while leaving the SRK ones in place."
-  type = string
-  default = ""
+  type        = string
+  default     = ""
 }
