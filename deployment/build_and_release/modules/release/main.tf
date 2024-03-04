@@ -545,9 +545,6 @@ resource "google_cloudbuild_trigger" "build_recovery" {
       ]
     }
     # HAB: Create SRK table & hash
-    # TODO(al): we should probably store the generated SRK/hash in a GCS bucket
-    # and then compare each time to ensure that nothing bad has happened with
-    # our PKI.
     step {
       name = "golang"
       entrypoint = "bash"
@@ -821,9 +818,6 @@ resource "google_cloudbuild_trigger" "build_boot" {
       ]
     }
     # HAB: Create SRK table & hash
-    # TODO(al): we should probably store the generated SRK/hash in a GCS bucket
-    # and then compare each time to ensure that nothing bad has happened with
-    # our PKI.
     step {
       name = "golang"
       entrypoint = "bash"

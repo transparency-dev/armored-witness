@@ -111,7 +111,7 @@ variable "os_public_key2" {
 }
 
 variable "console" {
-  description = "If set to `on`, then build with the `console` build arg"
+  description = "If set to `on`, then the bootloader firmware will emit debug logging"
   type        =  string
   default     = ""
 }
