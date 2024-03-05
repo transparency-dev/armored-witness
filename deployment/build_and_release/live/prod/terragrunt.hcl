@@ -35,9 +35,6 @@ inputs = merge(
 
     # HAB-related
     srk_hash = "TODO"
-    hab_key_version = 1
-    hab_revision = 0
-    hab_leaf_minor = "-0"
 
     # Pinned at tag [v20231018](https://github.com/usbarmory/armory-ums/releases/tag/v20231018)
     armory_ums_version: "850baf54809bd29548d6f817933240043400a4e1"
