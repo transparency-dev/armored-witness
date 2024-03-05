@@ -19,7 +19,7 @@ require (
 	github.com/usbarmory/armory-boot v0.0.0-20230922092524-e66d926bc36c
 	github.com/usbarmory/hid v0.0.0-20210318233634-85ced88a1ffe
 	golang.org/x/exp v0.0.0-20230905200255-921286631fa9
-	golang.org/x/mod v0.15.0
+	golang.org/x/mod v0.16.0
 	google.golang.org/protobuf v1.32.0
 	k8s.io/klog/v2 v2.120.1
 )
