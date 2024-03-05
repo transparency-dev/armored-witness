@@ -1,0 +1,98 @@
+{{template "head" .}}
+
+{{template "prom_right_table_head"}}
+<tr>
+  <th>ArmoredWitness</th>
+  <th>{{ template "prom_query_drilldown" (args "sum(up{job='armored_witness'})") }}
+      / {{ template "prom_query_drilldown" (args "count(up{job='armored_witness'})") }}
+  </th>
+</tr>
+<tr>
+{{template "prom_right_table_tail"}}
+
+
+{{template "prom_content_head" .}}
+<h1>ArmoredWitness</h1>
+
+<h3>Witnessing: Distributor attempts</h3>
+<div id="wDistGraph"></div>
+<script>
+new PromConsole.Graph({
+  node: document.querySelector("#wDistGraph"),
+  expr: "rate(omniwitness_distribute_rest_attempt{job='armored_witness'}[5m])",
+  name: "Distribute attempts [[ logid ]] ",
+  yAxisFormatter: PromConsole.NumberFormatter.humanize,
+  yHoverFormatter: PromConsole.NumberFormatter.humanize,
+  yUnits: "/s",
+  renderer: "area",
+})
+</script>
+
+<h3>Witnessing: Update success by log</h3>
+<div id="wUpdates"></div>
+<script>
+new PromConsole.Graph({
+  node: document.querySelector("#wUpdates"),
+  expr:  "rate(omniwitness_witness_update_request{job='armored_witness'}[5m]) / rate(omniwitness_witness_update_success{job='armored_witness'}[5m]) * 100",
+  yAxisFormatter: PromConsole.NumberFormatter.humanize,
+  yHoverFormatter: PromConsole.NumberFormatter.humanize,
+  yUnits: "%",
+  min: 0,
+  max: 100,
+})
+</script>
+
+<h3>Memory</h3>
+<div id="memGraph"></div>
+<script>
+new PromConsole.Graph({
+  node: document.querySelector("#memGraph"),
+  expr: [
+        "go_memstats_alloc_bytes{job='armored_witness'}",
+        "go_memstats_heap_alloc_bytes{job='armored_witness'}",
+        "go_memstats_sys_bytes{job='armored_witness'}",
+        "go_memstats_other_sys_bytes{job='armored_witness'}"
+        ],
+  name: [
+        "Alloc bytes",
+        "Heap bytes",
+        "Sys bytes",
+        "Other sys bytes"
+        ],
+  yAxisFormatter: PromConsole.NumberFormatter.humanizeNoSmallPrefix,
+  yHoverFormatter: PromConsole.NumberFormatter.humanizeNoSmallPrefix,
+  yUnits: "bytes",
+})
+</script>
+
+<h3>GoRoutines</h3>
+<div id="goroutinesGraph"></div>
+<script>
+new PromConsole.Graph({
+  node: document.querySelector("#goroutinesGraph"),
+  expr: "go_goroutines{job='armored_witness'}",
+  name: "goroutines",
+  yAxisFormatter: PromConsole.NumberFormatter.humanizeNoSmallPrefix,
+  yHoverFormatter: PromConsole.NumberFormatter.humanizeNoSmallPrefix,
+  yUnits: "Go routines",
+})
+</script>
+
+<h3>GC duration quantiles</h3>
+<div id="gcGraph"></div>
+<script>
+new PromConsole.Graph({
+  node: document.querySelector("#gcGraph"),
+  expr: "go_gc_duration_seconds{job='armored_witness'}",
+  name: "GC seconds [[ quantile ]] quantile",
+  yAxisFormatter: PromConsole.NumberFormatter.humanize,
+  yHoverFormatter: PromConsole.NumberFormatter.humanize,
+  yUnits: "seconds",
+})
+</script>
+
+
+
+{{template "prom_content_tail" .}}
+
+{{template "tail"}}
