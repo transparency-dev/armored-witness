@@ -17,12 +17,6 @@ inputs = merge(
     bucket_count = 2
 
     cloudbuild_trigger_tag = ".*"
-    build_components = {
-      applet = {
-        repo = "armored-witness-applet"
-        cloudbuild_path = "release/cloudbuild.yaml"
-      }
-    }
 
     log_shard = 1
     log_name_prefix = "armored-witness-firmware-log-prod"
