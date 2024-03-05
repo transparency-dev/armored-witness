@@ -852,7 +852,7 @@ resource "google_cloudbuild_trigger" "build_recovery" {
         "github.com/transparency-dev/armored-witness/cmd/sign@main",
         "--project_name=$PROJECT_ID",
         "--release=${var.env}",
-        "--artefact=os1",
+        "--artefact=recovery",
         "--manifest_file=output/recovery_manifest_unsigned.json",
         "--output_file=output/recovery_manifest",
       ]
