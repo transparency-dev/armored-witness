@@ -1,12 +1,20 @@
 variable "project_id" {
+  type = number
   description = "The project ID to host the cluster in"
 }
 
+variable "project_name" {
+  type = string
+  description = "The string project ID"
+}
+
 variable "signing_keyring_location" {
+  type = string
   description = "The GCP location to create the signing keyring"
 }
 
 variable "tf_state_location" {
+  type = string
   description = "The GCP location to store Terraform remote state"
 }
 
@@ -21,6 +29,7 @@ variable "tls" {
 }
 
 variable "distributor_prod_host" {
+  type = string
   description = "Host name serving distributor service API (prod)"
 }
 variable "distributor_prod_port" {
@@ -28,6 +37,7 @@ variable "distributor_prod_port" {
   type        = number
 }
 variable "distributor_ci_host" {
+  type = string
   description = "Host name serving distributor service API (ci)"
 }
 variable "distributor_ci_port" {
@@ -35,15 +45,7 @@ variable "distributor_ci_port" {
   type        = number
 }
 
-variable "ci_bucket_count" {
-  description = "The number of log and firmware buckets in CI (each)"
-  type        = number
-}
-variable "prod_bucket_count" {
-  description = "The number of log and firmware buckets in prod (each)"
-  type        = number
-}
-
 variable "lb_name" {
+  type = string
   description = "Name of the load balancer"
 }

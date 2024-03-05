@@ -15,6 +15,23 @@ data "google_project" "project" {
   project_id = var.project_id
 }
 
+data "terraform_remote_state" "ci_build_artefacts" {
+  backend = "gcs"
+  workspace = terraform.workspace
+  config  = {
+    bucket = "${var.project_name}-build-and-release-bucket-tfstate-ci"
+    prefix = "ci/terraform.tfstate"
+  }
+}
+data "terraform_remote_state" "prod_build_artefacts" {
+  backend = "gcs"
+  workspace = terraform.workspace
+  config  = {
+    bucket = "${var.project_name}-build-and-release-bucket-tfstate-prod"
+    prefix = "prod/terraform.tfstate"
+  }
+}
+
 # Enable necessary APIs
 resource "google_project_service" "cloudkms_googleapis_com" {
   service = "cloudkms.googleapis.com"
@@ -157,125 +174,71 @@ resource "google_compute_url_map" "default" {
 
     #####
     ## CI log & aretefacts rules
-    # CI log rev 0
-    path_rule {
-      paths = [
-        "/armored-witness-firmware/ci/log/0/*"
-      ]
-      route_action {
-        url_rewrite {
-          path_prefix_rewrite = "/"
+    dynamic "path_rule" {
+      for_each = data.terraform_remote_state.ci_build_artefacts.outputs.firmware_log_buckets
+      iterator = i
+
+      content {
+        paths = [
+          "/armored-witness-firmware/ci/log/${i.key}/*"
+        ]
+        route_action {
+          url_rewrite {
+            path_prefix_rewrite = "/"
+          }
         }
+        service = google_compute_backend_bucket.firmware_log_ci["${i.key}"].id
       }
-      service = google_compute_backend_bucket.firmware_log_ci[0].id
     }
-    path_rule {
-      paths = [
-        "/armored-witness-firmware/ci/artefacts/0/*"
-      ]
-      route_action {
-        url_rewrite {
-          path_prefix_rewrite = "/"
+    dynamic "path_rule" {
+      for_each = data.terraform_remote_state.ci_build_artefacts.outputs.firmware_artefact_buckets
+      iterator = i
+
+      content {
+        paths = [
+          "/armored-witness-firmware/ci/artefacts/${i.key}/*"
+        ]
+        route_action {
+          url_rewrite {
+            path_prefix_rewrite = "/"
+          }
         }
+        service = google_compute_backend_bucket.firmware_artefacts_ci["${i.key}"].id
       }
-      service = google_compute_backend_bucket.firmware_artefacts_ci[0].id
     }
 
-    # CI log rev 1
-    path_rule {
-      paths = [
-        "/armored-witness-firmware/ci/log/1/*"
-      ]
-      route_action {
-        url_rewrite {
-          path_prefix_rewrite = "/"
-        }
-      }
-      service = google_compute_backend_bucket.firmware_log_ci[1].id
-    }
-    path_rule {
-      paths = [
-        "/armored-witness-firmware/ci/artefacts/1/*"
-      ]
-      route_action {
-        url_rewrite {
-          path_prefix_rewrite = "/"
-        }
-      }
-      service = google_compute_backend_bucket.firmware_artefacts_ci[1].id
-    }
+    ## Prod (wave 0 devices) log & aretefacts rules
+    dynamic "path_rule" {
+      for_each = data.terraform_remote_state.prod_build_artefacts.outputs.firmware_log_buckets
+      iterator = i
 
-    # CI log rev 2
-    path_rule {
-      paths = [
-        "/armored-witness-firmware/ci/log/2/*"
-      ]
-      route_action {
-        url_rewrite {
-          path_prefix_rewrite = "/"
+      content {
+        paths = [
+          "/armored-witness-firmware/prod/log/${i.key}/*"
+        ]
+        route_action {
+          url_rewrite {
+            path_prefix_rewrite = "/"
+          }
         }
+        service = google_compute_backend_bucket.firmware_log_prod["${i.key}"].id
       }
-      service = google_compute_backend_bucket.firmware_log_ci[2].id
     }
-    path_rule {
-      paths = [
-        "/armored-witness-firmware/ci/artefacts/2/*"
-      ]
-      route_action {
-        url_rewrite {
-          path_prefix_rewrite = "/"
-        }
-      }
-      service = google_compute_backend_bucket.firmware_artefacts_ci[2].id
-    }
+    dynamic "path_rule" {
+      for_each = data.terraform_remote_state.prod_build_artefacts.outputs.firmware_artefact_buckets
+      iterator = i
 
-
-    # Prod log rev 0 (wave 0 devices)
-    path_rule {
-      paths = [
-        "/armored-witness-firmware/prod/log/0/*"
-      ]
-      route_action {
-        url_rewrite {
-          path_prefix_rewrite = "/"
+      content {
+        paths = [
+          "/armored-witness-firmware/prod/artefacts/${i.key}/*"
+        ]
+        route_action {
+          url_rewrite {
+            path_prefix_rewrite = "/"
+          }
         }
+        service = google_compute_backend_bucket.firmware_artefacts_prod["${i.key}"].id
       }
-      service = google_compute_backend_bucket.firmware_log_prod[0].id
-    }
-    path_rule {
-      paths = [
-        "/armored-witness-firmware/prod/artefacts/0/*"
-      ]
-      route_action {
-        url_rewrite {
-          path_prefix_rewrite = "/"
-        }
-      }
-      service = google_compute_backend_bucket.firmware_artefacts_prod[0].id
-    }
-
-    # Prod log rev 1
-    path_rule {
-      paths = [
-        "/armored-witness-firmware/prod/log/1/*"
-      ]
-      route_action {
-        url_rewrite {
-          path_prefix_rewrite = "/"
-        }
-      }
-      service = google_compute_backend_bucket.firmware_log_prod[1].id
-    }
-    path_rule {
-      paths = [
-        "/armored-witness-firmware/prod/artefacts/1/*"
-      ]
-      route_action {
-        url_rewrite {
-          path_prefix_rewrite = "/"
-        }
-      }
-      service = google_compute_backend_bucket.firmware_artefacts_prod[1].id
     }
   }
 }
@@ -283,37 +246,37 @@ resource "google_compute_url_map" "default" {
 ## Corresponding load balancer backend buckets.
 # CI logs
 resource "google_compute_backend_bucket" "firmware_log_ci" {
-  count = var.ci_bucket_count
+  for_each = data.terraform_remote_state.ci_build_artefacts.outputs.firmware_log_buckets
 
-  name        = "firmware-log-ci-backend-${count.index}"
-  description = "Contains CI firmware transparency log ${count.index}"
-  bucket_name = "armored-witness-firmware-log-ci-${count.index}" # google_storage_bucket.armored_witness_firmware_log_ci.name
+  name        = "firmware-log-ci-backend-${each.key}"
+  description = "Contains CI firmware transparency log ${each.key}"
+  bucket_name = "${each.value}"
   enable_cdn  = false
 }
 resource "google_compute_backend_bucket" "firmware_artefacts_ci" {
-  count = var.ci_bucket_count
+  for_each = data.terraform_remote_state.ci_build_artefacts.outputs.firmware_artefact_buckets
 
-  name        = "firmware-artefacts-ci-backend-${count.index}"
-  description = "Contains CI firmware artefacts for FT log ${count.index}"
-  bucket_name = "armored-witness-firmware-ci-${count.index}" # google_storage_bucket.armored_witness_firmware_ci.name
+  name        = "firmware-artefacts-ci-backend-${each.key}"
+  description = "Contains CI firmware artefacts for FT log ${each.key}"
+  bucket_name = "${each.value}"
   enable_cdn  = false
 }
 
 # Prod logs (Q1 2024 - wave 0 devices)
 resource "google_compute_backend_bucket" "firmware_log_prod" {
-  count = var.prod_bucket_count
+  for_each = data.terraform_remote_state.prod_build_artefacts.outputs.firmware_log_buckets
 
-  name        = "firmware-log-prod-backend-${count.index}"
-  description = "Contains prod firmware transparency log ${count.index}"
-  bucket_name = "armored-witness-firmware-log-prod-${count.index}"
+  name        = "firmware-log-prod-backend-${each.key}"
+  description = "Contains prod firmware transparency log ${each.key}"
+  bucket_name = "${each.value}"
   enable_cdn  = false
 }
 resource "google_compute_backend_bucket" "firmware_artefacts_prod" {
-  count = var.prod_bucket_count
+  for_each = data.terraform_remote_state.prod_build_artefacts.outputs.firmware_artefact_buckets
 
-  name        = "firmware-artefacts-prod-backend-${count.index}"
-  description = "Contains prod firmware artefacts for FT log ${count.index}"
-  bucket_name = "armored-witness-firmware-prod-${count.index}"
+  name        = "firmware-artefacts-prod-backend-${each.key}"
+  description = "Contains prod firmware artefacts for FT log ${each.key}"
+  bucket_name = "${each.value}"
   enable_cdn  = false
 }
 
