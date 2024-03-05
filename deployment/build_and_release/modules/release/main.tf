@@ -979,7 +979,7 @@ resource "google_cloudbuild_trigger" "build_boot" {
           --build-arg=LOG_ORIGIN=${var.origin_prefix}/${var.log_shard} \
           --build-arg=LOG_PUBLIC_KEY=${var.log_public_key} \
           --build-arg=OS_PUBLIC_KEY1=${var.os_public_key1} \
-          --build-arg=OS_PUBLIC_KEY2=${var.os_public_key1} \
+          --build-arg=OS_PUBLIC_KEY2=${var.os_public_key2} \
           --build-arg=BEE=${var.bee} \
           --build-arg=CONSOLE=${var.console} \
           -t builder-image \
