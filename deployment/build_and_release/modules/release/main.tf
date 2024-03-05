@@ -252,7 +252,7 @@ resource "google_cloudbuild_trigger" "applet_build" {
         "date +'0.3.%s-incompatible' > /workspace/git_tag && cat /workspace/git_tag"
       )
     }
-    ### Build the Trusted OS and upload it to GCS.
+    ### Build the Trusted Applet and upload it to GCS.
     # Build an image containing the Trusted OS artifacts with the Dockerfile.
     # This step needs to be a bash script in order to read the tag content from file.
     step {
@@ -711,7 +711,7 @@ resource "google_cloudbuild_trigger" "build_recovery" {
           --build-arg=ARMORY_UMS_VERSION=${var.armory_ums_version} \
           -t builder-image \
           recovery
-       EOT
+        EOT
       ]
     }
     # Prepare a container with a copy of the artifacts.
