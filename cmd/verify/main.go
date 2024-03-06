@@ -36,10 +36,12 @@ import (
 	"github.com/transparency-dev/armored-witness-common/release/firmware/update"
 	"github.com/transparency-dev/armored-witness/internal/device"
 	"github.com/transparency-dev/armored-witness/internal/fetcher"
+	"github.com/transparency-dev/armored-witness/internal/release"
 	"github.com/transparency-dev/formats/log"
 	"github.com/transparency-dev/merkle/proof"
 	"github.com/transparency-dev/merkle/rfc6962"
 	"github.com/transparency-dev/serverless-log/client"
+	"golang.org/x/exp/maps"
 	"golang.org/x/mod/sumdb/note"
 )
 
@@ -59,6 +61,7 @@ const (
 )
 
 var (
+	template            = flag.String("template", "", fmt.Sprintf("One of the optional preconfigured templates (%v)", maps.Keys(release.Templates)))
 	firmwareLogURL      = flag.String("firmware_log_url", "", "URL of the firmware transparency log to scan for firmware artefacts.")
 	firmwareLogOrigin   = flag.String("firmware_log_origin", "", "Origin string for the firmware transparency log.")
 	firmwareLogVerifier = flag.String("firmware_log_verifier", "", "Checkpoint verifier key for the firmware transparency log.")
@@ -70,14 +73,36 @@ var (
 	osVerifier2      = flag.String("os_verifier_2", "", "Verifier key 2 for the OS manifest.")
 	recoveryVerifier = flag.String("recovery_verifier", "", "Verifier key for the recovery manifest.")
 
-	blockDeviceGlob = flag.String("blockdevs", "/dev/sd*", "Glob for plausible block devices where the armored witness could appear.")
+	habTarget       = flag.String("hab_target", "", "Device type firmware must be targetting.")
+	blockDeviceGlob = flag.String("blockdevs", "/dev/disk/by-id/usb-F-Secure_USB_*", "Glob for plausible block devices where the armored witness could appear.")
 
 	runAnyway = flag.Bool("run_anyway", false, "Let the user override bailing on any potential problems we've detected.")
 )
 
+func applyFlagTemplate(k string) {
+	t, ok := release.Templates[k]
+	if !ok {
+		klog.Exitf("No such template %q", k)
+	}
+	for f, v := range t {
+		if u := flag.Lookup(f); u == nil {
+			klog.Exitf("Internal error - template flag --%v unknown", f)
+		} else if u.Value.String() != "" {
+			klog.Exitf("Cannot set --template and --%s", f)
+		}
+		klog.Infof("Using template flag setting --%v=%v", f, v)
+		if err := flag.Set(f, v); err != nil {
+			klog.Exitf("Failed to set template flag --%v: %v", f, err)
+		}
+	}
+}
+
 func main() {
 	klog.InitFlags(nil)
 	flag.Parse()
+	if *template != "" {
+		applyFlagTemplate(*template)
+	}
 
 	v := verifierFromFlags()
 
@@ -137,7 +162,7 @@ type verifier struct {
 // been signed for the attached device.
 func (v *verifier) fetchRecoveryFirmware(ctx context.Context) error {
 	logFetcher := fetcher.New(v.logBaseURL)
-	binFetcher := fetcher.BinaryFetcher(logFetcher)
+	binFetcher := fetcher.BinaryFetcher(fetcher.New(v.binBaseURL))
 	updateFetcher, err := update.NewFetcher(ctx,
 		update.FetcherOpts{
 			LogFetcher:       logFetcher,
@@ -148,6 +173,7 @@ func (v *verifier) fetchRecoveryFirmware(ctx context.Context) error {
 			BootVerifier:     v.bootV,
 			OSVerifiers:      [2]note.Verifier{v.osV1, v.osV2},
 			RecoveryVerifier: v.recoveryV,
+			HABTarget:        *habTarget,
 		})
 	if err != nil {
 		return fmt.Errorf("NewFetcher: %v", err)
@@ -188,7 +214,7 @@ func (v *verifier) waitAndVerify(ctx context.Context) error {
 	}
 	klog.Info("Successfully fetched and verified recovery image")
 	klog.Info("----------------------------------------------------------------------------------------------")
-	klog.Info("🙏 Operator, please ensure boot switch is set to USB, and then connect unprovisioned device 🙏")
+	klog.Info("🙏 Operator, please ensure boot switch is set to USB, and then connect device 🙏")
 	klog.Info("----------------------------------------------------------------------------------------------")
 
 	recoveryHAB := append(v.recovery.Firmware, v.recovery.HABSignature...)
