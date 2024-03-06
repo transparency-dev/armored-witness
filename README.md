@@ -57,3 +57,27 @@ Along with other ancillary parts:
 This repo contains some tooling to help provision the factory-fresh devices into ArmoredWitness devices.
 * Recovery Image \
 <https://github.com/usbarmory/armory-ums>
+
+### Build and release
+
+The [deployment/build_and_release](deployment/build_and_release) directory contains Terraform configs to define Cloud Build triggers which build and release the firmware and recovery image.
+
+TODO(jayhou): add public links.
+
+Every firmware version and recovery image version is written to the transparency log. The software itself is written to the artefacts log. The filename is the SHA256 of the software.
+
+### Claimant Model
+
+
+| Role         | Description |
+| -----------  | ----------- |
+| **Claimant** | Transparency.dev team |
+| **Claim**    | <ol><li>The digest of the firmware or tool is derived from the source Github repositories ([bootloader](https://github.com/transparency-dev/armored-witness-boot), [Trusted OS](https://github.com/transparency-dev/armored-witness-os), [Witness Applet](https://github.com/transparency-dev/armored-witness-applet), [recovery](https://github.com/transparency-dev/armored-witness-boot/tree/main/recovery)), and is reproducible.</li><li>The firmware is issued by the Transparency.dev team.</li></ol> |
+| **Believer** | The [provision](https://github.com/transparency-dev/armored-witness/tree/main/cmd/provision) and [verify](https://github.com/transparency-dev/armored-witness/tree/main/cmd/verify) tools. |
+| **Verifier** | <ol><li>For Claim #1: third party auditing the Transparency.dev team</li><li>For Claim #2: the Transparency.dev team</li></ol> |
+| **Arbiter**  | Log ecosystem participants and reliers |
+
+The **Statement** is defined in
+[https://github.com/transparency-dev/armored-witness-common/tree/main/release/firmware/ftlog/log_entries.go](https://github.com/transparency-dev/armored-witness-common/tree/main/release/firmware/ftlog/log_entries.go).
+An example is available at
+[https://github.com/transparency-dev/armored-witness-common/tree/main/release/firmware/ftlog//example_firmware_release.json](https://github.com/transparency-dev/armored-witness-common/tree/main/release/firmware/ftlog//example_firmware_release.json).
