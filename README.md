@@ -24,7 +24,7 @@ Encourage others to participate, learn with us, and potentially even go on to de
 
 ## Device
 
-The ArmoredWitness device is a small networked device based on the [USBArmory](https://inversepath.com/usbarmory) that runs an open-source implementation of a witness configured to support a growing number of transparency-enabled ecosystems.
+The ArmoredWitness device is a small networked device based on the [USB armory](https://github.com/usbarmory/usbarmory/wiki) that runs an open-source implementation of a witness configured to support a growing number of transparency-enabled ecosystems.
 
 ![alt_text](images/armored-witness-render.png "ArmoredWitness case render")
 
