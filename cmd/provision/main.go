@@ -462,6 +462,7 @@ func waitAndProvision(ctx context.Context, fw *firmwares) error {
 			klog.Infof(" Fusing in %d", i)
 			<-time.After(time.Second)
 		}
+		klog.Infof("Attempting to fuse device and activate HAB 🫣")
 		if err := device.ActivateHAB(dev); err != nil {
 			err = fmt.Errorf("device failed to activate HAB: %v", err)
 			if !*runAnyway {
@@ -469,8 +470,10 @@ func waitAndProvision(ctx context.Context, fw *firmwares) error {
 			}
 			klog.Warningf("⚠️ %s, continuing anyway", err.Error())
 		}
+		klog.Info("✅ Fusing successful! 👌")
 		// Close dev as we'll need to re-open it below after the device has rebooted...
 		dev.Close()
+
 		klog.Infof("%d remaining firmware(s) to install", len(flashStages[1]))
 
 		klog.Infof(operPlease, "please change boot switch to USB, and then reboot device")
