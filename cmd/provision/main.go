@@ -439,7 +439,6 @@ func waitAndProvision(ctx context.Context, fw *firmwares) error {
 	} else {
 		klog.Infof("✅ Witness serial number %s is not HAB fused", s.Serial)
 	}
-	dev.Close()
 
 	srkEnv, ok := expectedSRKHashes[s.SRKHash]
 	if !ok {
@@ -470,6 +469,8 @@ func waitAndProvision(ctx context.Context, fw *firmwares) error {
 			}
 			klog.Warningf("⚠️ %s, continuing anyway", err.Error())
 		}
+		// Close dev as we'll need to re-open it below after the device has rebooted...
+		dev.Close()
 		klog.Infof("%d remaining firmware(s) to install", len(flashStages[1]))
 
 		klog.Infof(operPlease, "please change boot switch to USB, and then reboot device")
@@ -491,19 +492,16 @@ func waitAndProvision(ctx context.Context, fw *firmwares) error {
 
 		klog.Infof(operPlease, "please change boot switch to MMC, and then reboot device")
 		klog.Info("Waiting for device to boot...")
-
-		p, dev, err := waitForU2FDevice(ctx)
+		p, dev, err = waitForU2FDevice(ctx)
 		if err != nil {
 			return fmt.Errorf("failed to find armored witness device: %v", err)
 		}
-		defer dev.Close()
 
 		klog.Infof("✅ Detected device %q", p)
 		s, err = device.WitnessStatus(dev)
 		if err != nil {
 			return fmt.Errorf("failed to fetch witness status: %v", err)
 		}
-
 	}
 
 	// TODO: Reboot device.
@@ -513,6 +511,8 @@ func waitAndProvision(ctx context.Context, fw *firmwares) error {
 	// TODO: Use HID to access witness public keys from device and store somewhere durable.
 
 	klog.Infof("✅ Witness ID %s provisioned", s.Witness.Identity)
+
+	dev.Close()
 
 	return nil
 
