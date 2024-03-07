@@ -975,7 +975,7 @@ resource "google_cloudbuild_trigger" "build_boot" {
         <<-EOT
         docker build \
           --build-arg=TAMAGO_VERSION=${var.tamago_version} \
-          --build-arg=GIT_SEMVER_TAG=$(cat /workspace/fake_tag) \
+          --build-arg=GIT_SEMVER_TAG=$(cat /workspace/git_tag) \
           --build-arg=LOG_ORIGIN=${var.origin_prefix}/${var.log_shard} \
           --build-arg=LOG_PUBLIC_KEY=${var.log_public_key} \
           --build-arg=OS_PUBLIC_KEY1=${var.os_public_key1} \
@@ -1153,7 +1153,7 @@ resource "google_cloudbuild_trigger" "build_boot" {
         "-c",
         <<-EOT
         gcloud storage cp output/boot_manifest \
-        gs://${var.log_name_prefix}-${var.log_shard}/${var.entries_dir}/$(sha256sum output/boot_manifest | cut -f1 -d" ")/trusted_os_manifest_both
+        gs://${var.log_name_prefix}-${var.log_shard}/${var.entries_dir}/$(sha256sum output/boot_manifest | cut -f1 -d" ")/boot_manifest
         EOT
       ]
     }
@@ -1209,7 +1209,7 @@ resource "google_cloudbuild_trigger" "build_boot" {
         "-c",
         <<-EOT
         gcloud storage rm \
-        gs://${var.log_name_prefix}-${var.log_shard}/${var.entries_dir}/$(sha256sum output/boot_manifest | cut -f1 -d" ")/trusted_os_manifest_both
+        gs://${var.log_name_prefix}-${var.log_shard}/${var.entries_dir}/$(sha256sum output/boot_manifest | cut -f1 -d" ")/boot_manifest
         EOT
       ]
     }
