@@ -81,6 +81,8 @@ The use of this tool is therefore **at your own risk**.
 
 ████████████████████████████████████████████████████████████████████████████████
 `
+
+	operPlease = "🔷🔷🔷 🙋 OPERATOR: %s 🙏"
 )
 
 var (
@@ -364,7 +366,7 @@ func waitAndProvision(ctx context.Context, fw *firmwares) error {
 	// TODO: sign bootloader and recovery images.
 	// TODO: store signed bootloader and recovery images somewhere durable.
 
-	klog.Info("Operator, please ensure boot switch is set to USB, and then connect unprovisioned device 🙏")
+	klog.Infof(operPlease, "please ensure boot switch is set to USB, and then connect unprovisioned device")
 
 	recoveryHAB := append(fw.recovery.bundle.Firmware, fw.recovery.bundle.HABSignature...)
 	klog.Infof("Recovery firmware is %d bytes + %d bytes HAB signature", len(fw.recovery.bundle.Firmware), len(fw.recovery.bundle.HABSignature))
@@ -415,7 +417,7 @@ func waitAndProvision(ctx context.Context, fw *firmwares) error {
 		}
 	}
 
-	klog.Info("Operator, please change boot switch to MMC, and then reboot device 🙏")
+	klog.Infof(operPlease, "please change boot switch to MMC, and then reboot device")
 	klog.Info("Waiting for device to boot...")
 
 	p, dev, err := waitForU2FDevice(ctx)
@@ -470,7 +472,7 @@ func waitAndProvision(ctx context.Context, fw *firmwares) error {
 		}
 		klog.Infof("%d remaining firmware(s) to install", len(flashStages[1]))
 
-		klog.Info("Operator, please change boot switch to USB, and then reboot device 🙏")
+		klog.Infof(operPlease, "please change boot switch to USB, and then reboot device")
 		klog.Info("Waiting for device to boot...")
 		// The device will initially be in HID mode (showing as "RecoveryMode" in the output to lsusb).
 		// So we'll detect it as such:
@@ -487,7 +489,7 @@ func waitAndProvision(ctx context.Context, fw *firmwares) error {
 		}
 		klog.Info("✅ Flashed Applet image")
 
-		klog.Info("Operator, please change boot switch to MMC, and then reboot device 🙏")
+		klog.Infof(operPlease, "please change boot switch to MMC, and then reboot device")
 		klog.Info("Waiting for device to boot...")
 
 		p, dev, err := waitForU2FDevice(ctx)
@@ -505,7 +507,7 @@ func waitAndProvision(ctx context.Context, fw *firmwares) error {
 	}
 
 	// TODO: Reboot device.
-	klog.Info("Operator, please reboot device 🙏")
+	klog.Infof(operPlease, "please reboot device")
 	klog.Info("Waiting for device to boot...")
 
 	// TODO: Use HID to access witness public keys from device and store somewhere durable.
