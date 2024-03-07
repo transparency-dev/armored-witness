@@ -1073,7 +1073,6 @@ resource "google_cloudbuild_trigger" "build_boot" {
           -b ${data.terraform_remote_state.hab_pki.outputs.hab_img_id} \
           -B ${data.terraform_remote_state.hab_pki.outputs.hab_img_key} \
           -x 1 \
-          -s \
           -t output/gcp_hab_srk.srk \
           -i output/armored-witness-boot.imx \
           -o output/armored-witness-boot.csf
