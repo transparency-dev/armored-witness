@@ -776,7 +776,7 @@ resource "google_cloudbuild_trigger" "build_recovery" {
       args = [
         "-c",
         <<-EOT
-        if [ -n "${var.srk_hash}"]; then \
+        if [ -n "${var.srk_hash}" ]; then \
           echo "$(od -An -tx1 output/gcp_hab_srk.hash | tr -d ' \n')" >> /workspace/got_srk_hash; \
           if [ "${var.srk_hash}" != $(cat /workspace/got_srk_hash) ]; then \
             echo "Got SRK hash \"$(cat /workspace/got_srk_hash)\""; \
@@ -1049,7 +1049,7 @@ resource "google_cloudbuild_trigger" "build_boot" {
       args = [
         "-c",
         <<-EOT
-        if [ -n "${var.srk_hash}"]; then \
+        if [ -n "${var.srk_hash}" ]; then \
           echo "$(od -An -tx1 output/gcp_hab_srk.hash | tr -d ' \n')" >> /workspace/got_srk_hash; \
           if [ "${var.srk_hash}" != $(cat /workspace/got_srk_hash) ]; then \
             echo "Got SRK hash \"$(cat /workspace/got_srk_hash)\""; \
