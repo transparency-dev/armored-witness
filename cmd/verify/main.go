@@ -20,7 +20,10 @@ package main
 import (
 	"bytes"
 	"context"
+	"crypto/sha256"
+	"encoding/base64"
 	"encoding/gob"
+	"encoding/json"
 	"errors"
 	"flag"
 	"fmt"
@@ -252,7 +255,9 @@ func (v *verifier) verifyFirmwares(ctx context.Context, fw firmwares) error {
 			LogVerifer:        v.logV,
 			ManifestVerifiers: p.manifestVs,
 		}
-		klog.V(1).Infof("Manifest:\n%s\b%[1]q", p.bundle.Manifest)
+		extractedFWHash := sha256.Sum256(p.bundle.Firmware)
+		klog.V(1).Infof("%s extracted firmware has base64 hash: %s", p.name, base64.StdEncoding.EncodeToString(extractedFWHash[:]))
+		klog.V(1).Infof("%s Manifest:\n%s", p.name, p.bundle.Manifest)
 		if _, err := bv.Verify(p.bundle); err != nil {
 			klog.Infof("  ❌ %s: %v", p.name, err)
 			errs = append(errs, fmt.Errorf("failed to verify %s: %v", p.name, err))
@@ -338,7 +343,10 @@ func readFirmware(f *os.File, cfgBlock int64) (firmware.Bundle, error) {
 		Firmware:       make([]byte, cfg.Size),
 	}
 	klog.Infof("Found config at block 0x%x", cfgBlock)
-	klog.V(1).Infof("Config:\n%+v", cfg)
+	if klog.V(1).Enabled() {
+		pp, _ := json.MarshalIndent(cfg, "", "  ")
+		klog.V(1).Infof("Config:\n%s", pp)
+	}
 	klog.Infof("Reading 0x%x bytes of firmware from MMC byte offset 0x%x", cfg.Size, cfg.Offset)
 	if _, err := f.ReadAt(fw.Firmware, cfg.Offset); err != nil {
 		return firmware.Bundle{}, fmt.Errorf("failed to read firmware data: %v", err)
