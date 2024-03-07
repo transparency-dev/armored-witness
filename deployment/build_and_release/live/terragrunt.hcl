@@ -5,6 +5,9 @@ locals {
   env                      = path_relative_to_include()
   rest_distributor_base_url = "https://api.transparency.dev"
   firmware_base_url = "https://api.transparency.dev/armored-witness-firmware"
+
+  entries_dir      = "firmware-log-sequence"
+  checkpoint_cache = "public, max-age=30"
 }
 
 remote_state {

@@ -1,3 +1,7 @@
+terraform {
+  source = "${get_repo_root()}/deployment/docker/modules/cloudbuild"
+}
+
 locals {
   project_id  = "armored-witness"
   region      = "us-central1"
