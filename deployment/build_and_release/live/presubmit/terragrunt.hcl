@@ -1,20 +1,15 @@
-include {
-  path = find_in_parent_folders()
+include "root" {
+  path   = find_in_parent_folders()
+  expose = true
 }
 
 terraform {
-  source = "${get_path_to_repo_root()}/deployment/build_and_release/modules/presubmit_cloudbuild_triggers"
-}
-
-locals {
-  common_vars = read_terragrunt_config(find_in_parent_folders())
+  source = "${get_repo_root()}/deployment/build_and_release/modules/presubmit_cloudbuild_triggers"
 }
 
 inputs = merge(
-  local.common_vars.locals,
+  include.root.locals,
   {
-    env = "presubmit"
-
     log_shard = 2
     origin_prefix = "transparency.dev/armored-witness/firmware_transparency/ci"
 

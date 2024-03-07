@@ -1,19 +1,15 @@
-include {
-  path = find_in_parent_folders()
+include "root" {
+  path   = find_in_parent_folders()
+  expose = true
 }
 
 terraform {
-  source = "${get_path_to_repo_root()}/deployment/build_and_release/modules/release"
-}
-
-locals {
-  common_vars = read_terragrunt_config(find_in_parent_folders())
+  source = "${get_repo_root()}/deployment/build_and_release/modules/release"
 }
 
 inputs = merge(
-  local.common_vars.locals,
+  include.root.locals,
   {
-    env = "ci"
     bucket_count = 3
 
     cloudbuild_trigger_branch = "^main$"
@@ -24,7 +20,6 @@ inputs = merge(
     origin_prefix = "transparency.dev/armored-witness/firmware_transparency/ci"
 
     tamago_version = "1.22.0"
-    entries_dir = "firmware-log-sequence"
     log_public_key = "transparency.dev-aw-ftlog-ci-2+f77c6276+AZXqiaARpwF4MoNOxx46kuiIRjrML0PDTm+c7BLaAMt6"
     applet_public_key = "transparency.dev-aw-applet-ci+3ff32e2c+AV1fgxtByjXuPjPfi0/7qTbEBlPGGCyxqr6ZlppoLOz3"
     os_public_key1 = "transparency.dev-aw-os1-ci+7a0eaef3+AcsqvmrcKIbs21H2Bm2fWb6oFWn/9MmLGNc6NLJty2eQ"
@@ -32,7 +27,6 @@ inputs = merge(
     console = "on"
     bee = "1"
     debug = "1"
-    checkpoint_cache = "public, max-age=30"
 
     # HAB-related
     srk_hash = "b8ba457320663bf006accd3c57e06720e63b21ce5351cb91b4650690bb08d85a"
