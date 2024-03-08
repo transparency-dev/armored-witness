@@ -89,7 +89,7 @@ We have embodied this principle into the design of the ArmoredWitness firmware a
   * The [`verify`](cmd/verify) tool can be used to inspect the device, extract the firmware components from it, and verify that they are present in the FT log.
   * The [`verify_build`](cmd/verify_build) command continuously monitors the contents of the FT log, and tests that every logged firmware is indeed reproducibly built.
 
-TODO(al): Add page with more detail
+More detail is available in the [docs/transparency.md](/docs/transparency.md) page.
 
 ### Claimant Model
 
