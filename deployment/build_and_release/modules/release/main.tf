@@ -239,6 +239,9 @@ resource "google_cloudbuild_trigger" "applet_build" {
   }
 
   build {
+    options {
+      logging = "CLOUD_LOGGING_ONLY"
+    }
     # If the trigger is not based on `tag`, create a fake one.
     #
     # Unfortunately, GCB has no concept of dynamically creating substitutions or
@@ -457,6 +460,9 @@ resource "google_cloudbuild_trigger" "os_build" {
   }
 
   build {
+    options {
+      logging = "CLOUD_LOGGING_ONLY"
+    }
     # If the trigger is not based on `tag`, create a fake one.
     #
     # Unfortunately, GCB has no concept of dynamically creating substitutions or
@@ -685,6 +691,9 @@ resource "google_cloudbuild_trigger" "build_recovery" {
   }
 
   build {
+    options {
+      logging = "CLOUD_LOGGING_ONLY"
+    }
     # If the trigger is not based on `tag`, create a fake one.
     #
     # Unfortunately, GCB has no concept of dynamically creating substitutions or
@@ -952,6 +961,9 @@ resource "google_cloudbuild_trigger" "build_boot" {
   }
 
   build {
+    options {
+      logging = "CLOUD_LOGGING_ONLY"
+    }
     # If the trigger is not based on `tag`, create a fake one.
     #
     # Unfortunately, GCB has no concept of dynamically creating substitutions or
