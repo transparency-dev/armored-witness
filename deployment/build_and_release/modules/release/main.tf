@@ -227,6 +227,7 @@ data "terraform_remote_state" "hab_pki" {
 resource "google_cloudbuild_trigger" "applet_build" {
   name = "applet-build-${var.env}"
   location = "global"
+  service_account = google_service_account.builder.id
 
   github {
     owner = "transparency-dev"
@@ -448,6 +449,7 @@ resource "google_cloudbuild_trigger" "applet_build" {
 resource "google_cloudbuild_trigger" "os_build" {
   name = "os-build-${var.env}"
   location = "global"
+  service_account = google_service_account.builder.id
 
   github {
     owner = "transparency-dev"
@@ -679,6 +681,7 @@ resource "google_cloudbuild_trigger" "os_build" {
 resource "google_cloudbuild_trigger" "build_recovery" {
   name = "recovery-build-${var.env}"
   location = "global"
+  service_account = google_service_account.builder.id
 
   github {
     owner = "transparency-dev"
@@ -949,6 +952,7 @@ resource "google_cloudbuild_trigger" "build_recovery" {
 resource "google_cloudbuild_trigger" "build_boot" {
   name = "boot-build-${var.env}"
   location = "global"
+  service_account = google_service_account.builder.id
 
   github {
     owner = "transparency-dev"
