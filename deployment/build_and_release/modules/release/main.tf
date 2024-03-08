@@ -77,6 +77,15 @@ resource "google_storage_bucket_iam_member" "firmware_bucket_reader" {
   role    = "roles/storage.legacyBucketReader"
   member  = "allUsers"
 }
+resource "google_storage_bucket_iam_binding" "firmware_bucket_writer" {
+  count = var.bucket_count
+
+  bucket = google_storage_bucket.firmware["${count.index}"].name
+  role    = "roles/storage.legacyBucketWriter"
+  members = [
+    google_service_account.builder.member
+  ]
+}
 
 resource "google_storage_bucket" "firmware_log" {
   count = var.bucket_count
@@ -99,6 +108,15 @@ resource "google_storage_bucket_iam_member" "firmware_log_bucket_reader" {
   bucket = google_storage_bucket.firmware_log["${count.index}"].name
   role    = "roles/storage.legacyBucketReader"
   member  = "allUsers"
+}
+resource "google_storage_bucket_iam_binding" "firmware_log_bucket_writer" {
+  count = var.bucket_count
+
+  bucket = google_storage_bucket.firmware["${count.index}"].name
+  role    = "roles/storage.legacyBucketWriter"
+  members = [
+    google_service_account.builder.member
+  ]
 }
 
 # KMS key rings & data sources
