@@ -6,13 +6,15 @@ The ArmoredWitness project is intended to kick-start a cross-ecosystem witness n
 
 Transparency systems work by ensuring that all actors in a given ecosystem see the same append-only list of data, typically stored in [verifiable logs](https://transparency.dev/verifiable-data-structures/). This allows folks relying on this data to be confident that even if they are unable to determine the correctness of the data themselves, it is visible to others who _can_ verify it and call out badness.
 
-If a malicious log is able to present inconsistent views of itself to different roles, then such badness will go undetected.
+If a malicious log is able to present inconsistent views of itself to different roles, then such badness can go undetected.
 
-Witnessing is a solution to this "split-view" attack - well-known identities verify the append-only property of the logs; countersigning checkpoints (commitments to the state of a log) which have been proved to be consistent with all earlier checkpoints from the same log which have also been seen by the witness.
+Witnessing is a solution to this "split-view" attack: well-known identities verify the append-only property of a given log, countersigning only those checkpoints (commitments to the state of a log) that were verified to be consistent with all earlier checkpoints the witness has seen. These counter-signed checkpoints are made available, enabling 3rd parties to be sure that transparency logs are not targetting them with a split-view.
+
+A deeper dive into witnessing is provided in the [Think local, act global: Gossip and Client Audits in Verifiable Data Structures](https://arxiv.org/pdf/2011.04551.pdf) paper.
 
 ## Goals
 
-We want to:
+By building these devices, and asking a number of folks around the world to be _custodians_ of them, we aim to:
 
 * **Help transparency-enabled ecosystems further tighten their security properties.** \
 By providing a lightweight network which is compatible with ecosystems using a [common checkpoint format](https://github.com/transparency-dev/formats/tree/main/log), we can help reduce the trust being placed in log operators.  \
@@ -24,15 +26,20 @@ Encourage others to participate, learn with us, and potentially even go on to de
 
 ## Device
 
-The ArmoredWitness device is a small networked device based on the [USB armory](https://github.com/usbarmory/usbarmory/wiki) that runs an open-source implementation of a witness configured to support a growing number of transparency-enabled ecosystems.
+The ArmoredWitness device is a small networked device based on the [USB armory](https://github.com/usbarmory/usbarmory/wiki), adding an RJ45 LAN port which supports PoE, and running an open-source implementation of a witness configured to support a growing number of transparency-enabled ecosystems.
+We're making a small number of these devices, and plan to distribute them to folks who are passionate about one or more of the witnessed ecosystems.
+Once provisioned, the ArmoredWitness devices will only run the ArmoredWitness firmware, so will not be repurposable for other use cases.
 
 ![alt_text](images/armored-witness-render.png "ArmoredWitness case render")
 
-We're making a small number of these devices, and plan to distribute them to folks who are passionate about one or more of the witnessed ecosystems.
+Like the USB armory, the new device is an opensource hardware design too, more info is available [here](https://github.com/usbarmory/usbarmory/wiki/Mk-II-LAN).
 
-The ArmoredWitness devices will only run the ArmoredWitness firmware, so will not be repurposable for other use cases.
+The hardware provides a number of interesting security features which we use in the design:
 
-TODO: We'll add more information about the hardware
+* Bus encryption engine: provides on-the-fly encryption of DRAM contents,
+* Cryptographic accelerator and assurance module: hardware support for encryption and hashing, PRNG, etc.,
+* Replay protected memory block: replay protected, authenticated non-volatile storage,
+* High Assurance Boot: "Secure Boot", allows the SoC to cryptographically authenticate the bootloader,
 
 ## Software
 
@@ -60,14 +67,31 @@ This repo contains some tooling to help provision the factory-fresh devices into
 
 ### Build and release
 
+Each of the four firmware components listed above are built and released by a staticly-configured pipeline, and ultimately make their way into a public Firmware Transparency log.
+
 The [deployment/build_and_release](deployment/build_and_release) directory contains Terraform configs to define Cloud Build triggers which build and release the firmware and recovery image.
 
 TODO(jayhou): add public links.
 
-Every firmware version and recovery image version is written to the transparency log. The software itself is written to the artefacts log. The filename is the SHA256 of the software.
+### Transparency
+
+Given how important the role witnessing is to the security properties of transparency-enabled ecosystem, it's important that the operation of the witnesses, and therefore the software running on the devices, is as open to inspection and verification as possible.
+
+We have embodied this principle into the design of the ArmoredWitness firmware and tooling:
+
+* All firmware is opensource, written in TamaGo, and is build-reproducible from source.
+* All firmware is logged to a Firmware Transparency (FT) log at build and release time.
+* The [`provision`](cmd/provision/) tool will only use firmware artefacts discovered in the FT log in order to program devices.
+* The on-device self-update process requires that updated firmware is hosted in the FT log.
+* The boot "chain of trust" requires valid "off-line FT proof bundles" to be present alongside the firmware at boot time:
+  * The bootloader verifies signatures and FT proofs for the secure monitor ("OS"), and only launches it if they succeed.
+  * The secure monitor ("OS") verifies signatures and FT proofs for the witness applet, and only launches it if they succeed.
+* The [`verify`](cmd/verify) tool can be used to inspect the device, extract the firmware components from it, and verify that they are present in the FT log.
+* The [`verify_build`](cmd/verify_build) command continuously monitors the contents of the FT log, and tests that every logged firmware is indeed reproducibly built.
+
+More detail is available in the [docs/transparency.md](/docs/transparency.md) page.
 
 ### Claimant Model
-
 
 | Role         | Description |
 | -----------  | ----------- |
