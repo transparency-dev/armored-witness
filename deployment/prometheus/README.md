@@ -8,4 +8,4 @@ To deploy this:
  3. Run `docker compose up -d`
 
 Prometheus will now be running, collecting metrics from the armored witness.
-You can access the prometheus UI at `http://localhost:9091` to investigate the metrics.
+A custom console will be available at `http://localhost:9091/consoles/armoredwitness.html`.
