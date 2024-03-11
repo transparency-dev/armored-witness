@@ -80,14 +80,14 @@ Given how important the role witnessing is to the security properties of transpa
 We have embodied this principle into the design of the ArmoredWitness firmware and tooling:
 
 * All firmware is opensource, written in TamaGo, and is build-reproducible from source.
-* All firmware is logged to a Firmware Transparency log at build and release time.
+* All firmware is logged to a Firmware Transparency (FT) log at build and release time.
 * The [`provision`](cmd/provision/) tool will only use firmware artefacts discovered in the FT log in order to program devices.
 * The on-device self-update process requires that updated firmware is hosted in the FT log.
 * The boot "chain of trust" requires valid "off-line FT proof bundles" to be present alongside the firmware at boot time:
-  * the bootloader verifies signatures and FT proofs for the secure monitor ("OS"), and only launches it if they succeed
-  * the secure monitor ("OS") verifies signatures and FT proofs for the witness applet, and only launches it if they succeed.
-  * The [`verify`](cmd/verify) tool can be used to inspect the device, extract the firmware components from it, and verify that they are present in the FT log.
-  * The [`verify_build`](cmd/verify_build) command continuously monitors the contents of the FT log, and tests that every logged firmware is indeed reproducibly built.
+  * The bootloader verifies signatures and FT proofs for the secure monitor ("OS"), and only launches it if they succeed.
+  * The secure monitor ("OS") verifies signatures and FT proofs for the witness applet, and only launches it if they succeed.
+* The [`verify`](cmd/verify) tool can be used to inspect the device, extract the firmware components from it, and verify that they are present in the FT log.
+* The [`verify_build`](cmd/verify_build) command continuously monitors the contents of the FT log, and tests that every logged firmware is indeed reproducibly built.
 
 More detail is available in the [docs/transparency.md](/docs/transparency.md) page.
 

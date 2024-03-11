@@ -37,11 +37,11 @@ we have designed & implemented it such that:
   in the FT log in order to program devices.
 * The on-device self-update process requires that updated firmware is hosted in the 
   FT log.
-* The boot "chain of trust" requires valid "off-line FT proof bundles" to be present
+* The boot "chain of trust" requires valid "offline FT proof bundles" to be present
   alongside the firmware at boot time:
-  * the bootloader verifies signatures and FT proofs for the secure monitor ("OS"),
-    and only launches it if they succeed
-  * the secure monitor ("OS") verifies signatures and FT proofs for the witness
+  * The bootloader verifies signatures and FT proofs for the secure monitor ("OS"),
+    and only launches it if they succeed.
+  * The secure monitor ("OS") verifies signatures and FT proofs for the witness
     applet, and only launches it if they succeed.
 * The [`verify`](cmd/verify) tool can be used by _custodians_ to inspect the device,
   extract the firmware components from it, and verify that they are present in the FT log.
@@ -63,7 +63,7 @@ commits to all necessary inputs to the build, and the corresponding firmware out
 
 Here is a [real manifest from the CI log](https://storage.googleapis.com/armored-witness-firmware-log-ci-2/seq/00/00/00/00/2f):
 
-```json
+```
 {
   "schema_version": 0,
   "component": "TRUSTED_APPLET",
