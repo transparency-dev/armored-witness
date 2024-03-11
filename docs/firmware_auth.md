@@ -89,11 +89,12 @@ With entries required to be present in the log, two benefits are realised:
    can be rebuilt from the claimed git commit, and inspect the entire source at that
    commit for any undesireable or malicious behaviour.
 
+There's more detailed information about the implementation of firmware transparency on
+the armored witness in the [transparency page](./transparency.md).
+
 For more information about the transparency concepts mentioned above, please visit
 <https://binary.transparency.dev>, as well as <https://transparency.dev> for more
 general information.
 
 If you have questions, or are interested in this topic come and say hello at
 <https://transparency-dev.slack.com/>.
-
-
