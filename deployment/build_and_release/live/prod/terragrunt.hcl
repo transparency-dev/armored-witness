@@ -25,6 +25,7 @@ inputs = merge(
     os_public_key1 = "transparency.dev-aw-os-prod+c31218b7+AV7mmRamQp6VC9CutzSXzqtNhYNyNmQQRcLX07F6qlC1"
     os_public_key2 = "transparency.dev-aw-os-prod-wave0+fee4bbcc+AQF1ml5TrXJkhnrJRJz5QsCZAYuCj9oOD5VpUdghWOiQ"
     bee = "1"
+    debug = "1"
 
     # HAB-related
     srk_hash = "77e021cc51b5547fb0c2192fb32710bfa89b4bbaa7dab5f97fc585f673b0b236"
