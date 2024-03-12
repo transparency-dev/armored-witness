@@ -10,11 +10,11 @@ terraform {
 inputs = merge(
   include.root.locals,
   {
-    bucket_count = 3
+    bucket_count = 4
 
     cloudbuild_trigger_branch = "^main$"
 
-    log_shard = 2
+    log_shard = 3
     log_name_prefix = "armored-witness-firmware-log-ci"
     firmware_bucket_prefix = "armored-witness-firmware-ci"
     origin_prefix = "transparency.dev/armored-witness/firmware_transparency/ci"
