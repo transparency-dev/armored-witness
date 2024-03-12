@@ -28,7 +28,7 @@ inputs = merge(
     debug = "1"
 
     # HAB-related
-    srk_hash = "TODO"
+    srk_hash = "77e021cc51b5547fb0c2192fb32710bfa89b4bbaa7dab5f97fc585f673b0b236"
 
     # Pinned at tag [v20231018](https://github.com/usbarmory/armory-ums/releases/tag/v20231018)
     armory_ums_version: "850baf54809bd29548d6f817933240043400a4e1"
