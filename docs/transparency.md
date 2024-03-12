@@ -198,9 +198,15 @@ The `bootloader` verifiers the `ProofBundle` for the `OS` before launching it. S
 This, coupled with:
 
 * The self-update being unable to upgrade the bootloader,
-* The requirement to manually flip a DIP switch on the bottom of the device to boot the `recovery` image
-  means that only firmware present in the FT can boot on the device without the custodian being aware that
-  something untoward has happened.
+* The requirement to manually flip a DIP switch on the bottom of the device to boot the `recovery` image,
+
+means that only firmware present in the FT log can boot on the device without the custodian being aware that
+something untoward has happened.
+
+To prevent roll-back attacks, the firmware uses the
+[`Replay-Protected Memory Block`](https://en.wikipedia.org/wiki/Replay_Protected_Memory_Block) (RPMB) on the
+eMMC storage to store the highest version of firmware which has successfully booted. It checks its own version
+against that on each boot, and will halt if the currently running version is older than the one stored in the RPMB.
 
 ##### Manual
 
