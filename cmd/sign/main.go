@@ -69,8 +69,8 @@ var (
 			keys: map[string]keyInfo{
 				"ftlog": {
 					kmsKeyName:    "ft-log-ci",
-					kmsKeyVersion: 1,
-					noteVerifier:  "transparency.dev-aw-ftlog-ci+f5479c1e+AR6gW0mycDtL17iM2uvQUThJsoiuSRirstEj9a5AdCCu",
+					kmsKeyVersion: 3,
+					noteVerifier:  "transparency.dev-aw-ftlog-ci-3+3f689522+Aa1Eifq6rRC8qiK+bya07yV1fXyP156pEMsX7CFBC6gg",
 				},
 				"applet": {
 					kmsKeyName:    "trusted-applet-ci",
