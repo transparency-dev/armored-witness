@@ -67,11 +67,6 @@ var (
 			kmsKeyRing: "firmware-release-ci",
 			kmsRegion:  "global",
 			keys: map[string]keyInfo{
-				"ftlog": {
-					kmsKeyName:    "ft-log-ci",
-					kmsKeyVersion: 3,
-					noteVerifier:  "transparency.dev-aw-ftlog-ci-3+3f689522+Aa1Eifq6rRC8qiK+bya07yV1fXyP156pEMsX7CFBC6gg",
-				},
 				"applet": {
 					kmsKeyName:    "trusted-applet-ci",
 					kmsKeyVersion: 1,
@@ -103,11 +98,6 @@ var (
 			kmsKeyRing: "firmware-release-prod",
 			kmsRegion:  "global",
 			keys: map[string]keyInfo{
-				"ftlog": {
-					kmsKeyName:    "ft-log-prod",
-					kmsKeyVersion: 1,
-					noteVerifier:  "transparency.dev-aw-ftlog-prod+72b0da75+Aa3qdhefd2cc/98jV3blslJT2L+iFR8WKHeGcgFmyjnt",
-				},
 				"applet": {
 					kmsKeyName:    "trusted-applet-prod",
 					kmsKeyVersion: 1,
