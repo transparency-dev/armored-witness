@@ -105,7 +105,7 @@ var (
 	recoveryVerifier = flag.String("recovery_verifier", "", "Verifier key for the recovery manifest.")
 
 	habTarget       = flag.String("hab_target", "", "Device type firmware must be targetting.")
-	blockDeviceGlob = flag.String("blockdevs", "/dev/disk/by-id/usb-F-Secure_USB_*", "Glob for plausible block devices where the armored witness could appear.")
+	blockDeviceGlob = flag.String("blockdevs", "/dev/disk/by-id/usb-F-Secure_USB_*0:0", "Glob for plausible block devices where the armored witness could appear.")
 
 	runAnyway   = flag.Bool("run_anyway", false, "Let the user override bailing on any potential problems we've detected.")
 	wipeWitness = flag.Bool("wipe_witness_state", false, "If true, erase the witness stored data.")
