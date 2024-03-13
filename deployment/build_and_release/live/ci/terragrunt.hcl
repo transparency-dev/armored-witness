@@ -10,17 +10,17 @@ terraform {
 inputs = merge(
   include.root.locals,
   {
-    bucket_count = 3
+    bucket_count = 4
 
     cloudbuild_trigger_branch = "^main$"
 
-    log_shard = 2
+    log_shard = 3
     log_name_prefix = "armored-witness-firmware-log-ci"
     firmware_bucket_prefix = "armored-witness-firmware-ci"
     origin_prefix = "transparency.dev/armored-witness/firmware_transparency/ci"
 
     tamago_version = "1.22.0"
-    log_public_key = "transparency.dev-aw-ftlog-ci-2+f77c6276+AZXqiaARpwF4MoNOxx46kuiIRjrML0PDTm+c7BLaAMt6"
+    log_public_key = "transparency.dev-aw-ftlog-ci-3+3f689522+Aa1Eifq6rRC8qiK+bya07yV1fXyP156pEMsX7CFBC6gg"
     applet_public_key = "transparency.dev-aw-applet-ci+3ff32e2c+AV1fgxtByjXuPjPfi0/7qTbEBlPGGCyxqr6ZlppoLOz3"
     os_public_key1 = "transparency.dev-aw-os1-ci+7a0eaef3+AcsqvmrcKIbs21H2Bm2fWb6oFWn/9MmLGNc6NLJty2eQ"
     os_public_key2 = "transparency.dev-aw-os2-ci+af8e4114+AbBJk5MgxRB+68KhGojhUdSt1ts5GAdRIT1Eq9zEkgQh"
