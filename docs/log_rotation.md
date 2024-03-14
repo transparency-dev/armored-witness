@@ -28,7 +28,7 @@ This doc outlines how to rotate the logs detailed in [transparency.md](transpare
 
 1. Apply [`api_transparency_dev`](/deployment/api_transparency_dev) Terraform to create new https://api.transparency.dev paths for the firmware artefacts and log.
 
-1. Populate the buckets by running the build triggers.
+1. Populate the buckets with all four firmware types so new devices can be provisioned from them by running the build triggers.
     * For CI:
       ```
       gcloud builds triggers run applet-build-ci --branch=main
@@ -36,7 +36,18 @@ This doc outlines how to rotate the logs detailed in [transparency.md](transpare
       gcloud builds triggers run boot-build-ci --branch=main
       gcloud builds triggers run recovery-build-ci --branch=main
       ```
-    * For prod, create a new release on the Github repo.
+    * For prod:
+        * Create a new release on the Github repos:
+            * https://github.com/transparency-dev/armored-witness-applet
+            * https://github.com/transparency-dev/armored-witness-os
+            * https://github.com/transparency-dev/armored-witness-boot
+        * Or, find the latest tag from the repos and then run the triggers:
+            ```
+            gcloud builds triggers run applet-build-pro --tag=$TAG
+            gcloud builds triggers run os-build-pro --tag=$TAG
+            gcloud builds triggers run boot-build-pro --tag=$TAG
+            gcloud builds triggers run recovery-build-pro --tag=$TAG
+            ```
 
 ### Update dependencies
 1. Update the template used by `verify` and `provision` tools. Example [PR](https://github.com/transparency-dev/armored-witness/pull/186).
