@@ -25,8 +25,18 @@ This doc outlines how to rotate the logs detailed in [transparency.md](transpare
         "noteKeyName": "transparency.dev-aw-ftlog-$ENV-$LOG_SHARD"
     }'
     ```
+
 1. Apply [`api_transparency_dev`](/deployment/api_transparency_dev) Terraform to create new https://api.transparency.dev paths for the firmware artefacts and log.
+
 1. Populate the buckets by running the build triggers.
+    * For CI:
+      ```
+      gcloud builds triggers run applet-build-ci --branch=main
+      gcloud builds triggers run os-build-ci --branch=main
+      gcloud builds triggers run boot-build-ci --branch=main
+      gcloud builds triggers run recovery-build-ci --branch=main
+      ```
+    * For prod, create a new release on the Github repo.
 
 ### Update dependencies
 1. Update the template used by `verify` and `provision` tools. Example [PR](https://github.com/transparency-dev/armored-witness/pull/186).
