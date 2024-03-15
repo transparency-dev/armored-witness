@@ -23,6 +23,9 @@ Existing compatible ecosystems include: Go's sum DB, Sigstore, Pixel Binary Tran
 We don't want to ask anyone to be a full-time system administrator for these devices, they should be as "plug-in and go" as possible.
 * **Bootstrap a diverse witnessing ecosystem** \
 Encourage others to participate, learn with us, and potentially even go on to develop their own witness protocols and networks, ideally in such a way that interoperability remains possible and enables greater diversification of reputational trust.
+* **Show how to apply firmware transparency** \
+All of the firmware running on the device is logged in publicly auditable transparency logs; all tooling
+(including the [provisioning](cmd/provision), on-device self-update, [build-reproducibility verifier](cmd/verify_build/), and the end-user [device integrity checking tool](cmd/verify)) integrate with the transparency log to ensure everything is discoverable and auditable. See the [Transparency](#transparency) section below.
 
 ## Device
 
@@ -75,7 +78,7 @@ TODO(jayhou): add public links.
 
 ### Transparency
 
-Given how important the role witnessing is to the security properties of transparency-enabled ecosystem, it's important that the operation of the witnesses, and therefore the software running on the devices, is as open to inspection and verification as possible.
+Given how important the role of witnessing is to the security properties of transparency-enabled ecosystem, it's also important that the operation of the witnesses, and therefore the software running on the devices, is as open to inspection and verification as possible.
 
 We have embodied this principle into the design of the ArmoredWitness firmware and tooling:
 
