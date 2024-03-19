@@ -10,7 +10,7 @@ questions at all which aren't covered here, please don't hesitate to find us on 
 
 You've just received your ArmoredWitness device, and you want to plug it into your network.
 
-*Easy, Tiger!* First, let's make sure that it hasn't been tampered with on its way to you.
+🐯 *Easy, Tiger!* First, let's make sure that it hasn't been tampered with on its way to you.
 
 The [verify](/cmd/verify) tool is used for this, it puts the device into `recovery` mode, and
 inspects the firmware stored on the MMC to check that it is unmodified, authentic, and present
@@ -95,7 +95,7 @@ The block of ✅ green ticks towards the end indicates that the firmware on the 
 If you see these green ticks when running against your device, then you can be sure that:
 
 1. Your ArmoredWitness has not been tampered with on its journey from us to you.
-1. All 3 pieces of firmware on the device are publicly discoverable via the transparency log,
+1. All 3 pieces of firmware on the device are publicly discoverable via the transparency log.
    * This enables anyone running the [verify_build](/cmd/verify_build) tool to check that all the firmware in the
      log is reproducibly built, and, consequently, to inspect the source code for all released versions of the firmware to see that it's doing only what it claims.
 
@@ -107,13 +107,13 @@ You should unplug the device and contact us, perferably via a publicly-visible c
 
 For normal operation, the device will need:
 
-* Power (~1.5 Watts normally)
+* Power (~1.5 Watts normally)\
   Either from:
   * PoE if your switch supports this (or you are using a PoE injector), or
   * Via a USB-A to USB-C cable
   Note that **PoE MUST NOT be used when powering over USB**
-* Internet access
-  Network configuration should be provided via DHCP.
+* Internet access\
+  network configuration should be provided via DHCP.
 
 Ensure that, having completed the verify step above, the sliding switch on the bottom of the device has been
 slid fully back towards the USB end of the board, and connect the device to the network (and USB for power,
@@ -145,9 +145,9 @@ The normal states for the white and blue LEDs are listed in the table below:
 
 This indicates that the device was not able to boot, there are two possible causes:
 
-1. The switch on the bottom of the device is in the wrong position.
+1. The switch on the bottom of the device is in the wrong position.\
    Ensure that the switch is fully positioned towards the USB port, and power-cycle the device.
-1. The bootloader firmware is corrupt, or has an incorrect HAB signature.
+1. The bootloader firmware is corrupt, or has an incorrect HAB signature.\
    The device will need to be re-provisioned. See instructions [below]{#reinstall}.
 
 ### Blue & white LEDs are blinking together/in opposite states
