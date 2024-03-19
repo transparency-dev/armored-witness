@@ -4,7 +4,8 @@ Welcome, and *Thank you* for volunteering to be a custodian of an ArmoredWitness
 
 This page serves as an introduction and starting point for the care and feeding of the devices. If you have any
 questions at all which aren't covered here, please don't hesitate to find us on the
-[transparency-dev slack](https://transparency-dev.slack.com/)!
+[transparency-dev slack](https://transparency-dev.slack.com/)
+[[invite]](https://join.slack.com/t/transparency-dev/shared_invite/zt-27pkqo21d-okUFhur7YZ0rFoJVIOPznQ)!
 
 ## First things first
 
@@ -101,7 +102,8 @@ If you see these green ticks when running against your device, then you can be s
 
 If you see ❌ **red crosses** here this means something is wrong and the tool was unable to verify the device.
 You should unplug the device and contact us, perferably via a publicly-visible channel such as the
-[transparency-dev slack](https://transparency-dev.slack.com/).
+[transparency-dev slack](https://transparency-dev.slack.com/)
+[[invite]](https://join.slack.com/t/transparency-dev/shared_invite/zt-27pkqo21d-okUFhur7YZ0rFoJVIOPznQ).
 
 ## Normal operation
 
@@ -273,7 +275,10 @@ overwritten in the event of another unexpected restart.
 ## Reinstall
 
 You will need to re-run the provision tool, for now, it's probably best to get in touch with us via the
-[transparency-dev slack](https://transparency-dev.slack.com/) and we'll walk you through it - it's not
-hard to use the tool, BUT we would certainly like to know that it seems to be necessary to do it.
+[transparency-dev slack](https://transparency-dev.slack.com/)
+[[invite]](https://join.slack.com/t/transparency-dev/shared_invite/zt-27pkqo21d-okUFhur7YZ0rFoJVIOPznQ)
+and we'll walk you through it - it's not hard to use the tool, BUT we would certainly like to know that it
+seems to be necessary to do it.
 
+## More info
 
