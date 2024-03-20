@@ -61,6 +61,8 @@ const (
 	osBlock = 0x5000
 	// appletBlock defines the location of the first block of the TrustedApplet on MMC.
 	appletBlock = 0x200000
+
+	operPlease = "🔷🔷🔷 🙋 OPERATOR: %s 🙏"
 )
 
 var (
@@ -125,7 +127,7 @@ func main() {
 	}
 	klog.Info("✅ Device verified OK!")
 	klog.Info("----------------------------------------------------------------------------------------------")
-	klog.Info("🙏 Operator, please ensure boot switch is set to MMC, and then reboot device 🙏")
+	klog.Infof(operPlease, "please ensure boot switch is set to MMC, and then reboot device")
 	klog.Info("----------------------------------------------------------------------------------------------")
 }
 
@@ -217,7 +219,7 @@ func (v *verifier) waitAndVerify(ctx context.Context) error {
 	}
 	klog.Info("Successfully fetched and verified recovery image")
 	klog.Info("----------------------------------------------------------------------------------------------")
-	klog.Info("🙏 Operator, please ensure boot switch is set to USB, and then connect device 🙏")
+	klog.Infof(operPlease, "please ensure boot switch is set to USB, and then connect device")
 	klog.Info("----------------------------------------------------------------------------------------------")
 
 	recoveryHAB := append(v.recovery.Firmware, v.recovery.HABSignature...)
