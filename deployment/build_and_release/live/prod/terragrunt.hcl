@@ -12,7 +12,9 @@ inputs = merge(
   {
     bucket_count = 2
 
-    cloudbuild_trigger_tag = ".*"
+    # Require "v" in front of the regex from
+    # https://semver.org/#is-there-a-suggested-regular-expression-regex-to-check-a-semver-string
+    cloudbuild_trigger_tag = "^v(?P<major>0|[1-9]\\d*)\\.(?P<minor>0|[1-9]\\d*)\\.(?P<patch>0|[1-9]\\d*)(?:-(?P<prerelease>(?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\\.(?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\\+(?P<buildmetadata>[0-9a-zA-Z-]+(?:\\.[0-9a-zA-Z-]+)*))?$"
 
     log_shard = 1
     log_name_prefix = "armored-witness-firmware-log-prod"
