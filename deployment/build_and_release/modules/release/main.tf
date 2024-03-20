@@ -270,7 +270,7 @@ resource "google_cloudbuild_trigger" "applet_build" {
       name = "bash"
       script = (
         var.cloudbuild_trigger_tag != "" ?
-        "$TAG_NAME > /workspace/git_tag && cat /workspace/git_tag" :
+        "echo $TAG_NAME > /workspace/git_tag && cat /workspace/git_tag" :
         "date +'0.3.%s-incompatible' > /workspace/git_tag && cat /workspace/git_tag"
       )
     }
@@ -492,7 +492,7 @@ resource "google_cloudbuild_trigger" "os_build" {
       name = "bash"
       script = (
         var.cloudbuild_trigger_tag != "" ?
-        "$TAG_NAME > /workspace/git_tag && cat /workspace/git_tag" :
+        "echo $TAG_NAME > /workspace/git_tag && cat /workspace/git_tag" :
         "date +'0.3.%s-incompatible' > /workspace/git_tag && cat /workspace/git_tag"
       )
     }
@@ -724,7 +724,7 @@ resource "google_cloudbuild_trigger" "build_recovery" {
       name = "bash"
       script = (
         var.cloudbuild_trigger_tag != "" ?
-        "$TAG_NAME > /workspace/git_tag && cat /workspace/git_tag" :
+        "echo $TAG_NAME > /workspace/git_tag && cat /workspace/git_tag" :
         "date +'0.3.%s-incompatible' > /workspace/git_tag && cat /workspace/git_tag"
       )
     }
@@ -995,7 +995,7 @@ resource "google_cloudbuild_trigger" "build_boot" {
       name = "bash"
       script = (
         var.cloudbuild_trigger_tag != "" ?
-        "$TAG_NAME > /workspace/git_tag && cat /workspace/git_tag" :
+        "echo $TAG_NAME > /workspace/git_tag && cat /workspace/git_tag" :
         "date +'0.0.%s-incompatible' > /workspace/git_tag && cat /workspace/git_tag"
       )
     }

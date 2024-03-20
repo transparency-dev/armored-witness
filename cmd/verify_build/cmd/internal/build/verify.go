@@ -146,7 +146,7 @@ func (v *ReproducibleBuildVerifier) verifyManifest(ctx context.Context, i uint64
 	// Clone the repository at the release tag
 	// TODO(mhutchinson): this should check out the GitTagName but we don't tag
 	// all releases in CI.
-	// 	cmd := exec.Command("/usr/bin/git", "clone", fmt.Sprintf("https://github.com/%s/%s", gitOwner, repo), "-b", r.Git.TagName)
+	// 	cmd := exec.Command("/usr/bin/git", "clone", fmt.Sprintf("https://github.com/%s/%s", gitOwner, repo), "-b", fmt.Sprintf("v%s", r.Git.TagName))
 	repo := cv.repo()
 	cmd := exec.Command("/usr/bin/git", "clone", cv.repo())
 	cmd.Dir = dir

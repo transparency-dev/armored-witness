@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strings"
 
 	"github.com/coreos/go-semver/semver"
 	"github.com/spf13/cobra"
@@ -89,23 +90,23 @@ func create(cmd *cobra.Command, args []string) {
 	}
 	digestBytes := sha256.Sum256(firmwareBytes)
 
-	gitTagName, err := semver.NewVersion(gitTag)
+	gitSemVer, err := semver.NewVersion(strings.TrimPrefix(gitTag, "v"))
 	if err != nil {
 		log.Fatalf("Failed to parse git_tag: %v", err)
 	}
-	tamagoVersionName, err := semver.NewVersion(tamagoVersion)
+	tamagoSemVer, err := semver.NewVersion(strings.TrimPrefix(tamagoVersion, "v"))
 	if err != nil {
 		log.Fatalf("Failed to parse tamago_version: %v", err)
 	}
 	r := ftlog.FirmwareRelease{
 		SchemaVersion: schemaVersion,
-		Component: firmwareType,
+		Component:     firmwareType,
 		Git: ftlog.Git{
-			TagName:           *gitTagName,
+			TagName:           *gitSemVer,
 			CommitFingerprint: gitCommitFingerprint,
 		},
 		Build: ftlog.Build{
-			TamagoVersion: *tamagoVersionName,
+			TamagoVersion: *tamagoSemVer,
 			Envs:          buildEnvs,
 		},
 		Output: ftlog.Output{
