@@ -19,6 +19,7 @@ package device
 import (
 	"context"
 	"fmt"
+	"os"
 	"path/filepath"
 	"time"
 
@@ -114,11 +115,39 @@ func waitForBlockDevice(ctx context.Context, glob string, f func() error) (strin
 			}
 			if matched && e.Has(fsnotify.Create) {
 				// At least on linux, it takes a while for the device to become usable
-				// TODO: can we detect when it's usable directly?
 				klog.Info("Waiting for block device to settle...")
-				time.Sleep(5 * time.Second)
+				if err := probeDevice(ctx, e.Name); err != nil {
+					return "", err
+				}
 				return e.Name, nil
 			}
 		}
+	}
+}
+
+// probeDevice waits for the witness device file to appear to be working.
+func probeDevice(ctx context.Context, p string) error {
+	for {
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		case <-time.After(time.Second):
+		}
+		err := func() error {
+			f, err := os.Open(p)
+			if err != nil {
+				return err
+			}
+			defer f.Close()
+			b := make([]byte, 1024)
+			if _, err := f.Read(b); err != nil {
+				return err
+			}
+			return nil
+		}()
+		if err != nil {
+			continue
+		}
+		return nil
 	}
 }
