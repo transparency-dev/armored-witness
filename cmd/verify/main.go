@@ -162,9 +162,6 @@ type verifier struct {
 
 // fetchRecoveryFirmware returns a recovery image suitable for use on the armored witness,
 // and which has been verified to be present in the firmware transparency log.
-//
-// TODO: this will need updating to fetch a specific version of the image which has
-// been signed for the attached device.
 func (v *verifier) fetchRecoveryFirmware(ctx context.Context) error {
 	logFetcher := fetcher.New(v.logBaseURL)
 	binFetcher := fetcher.BinaryFetcher(fetcher.New(v.binBaseURL))

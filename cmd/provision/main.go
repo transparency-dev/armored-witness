@@ -333,10 +333,6 @@ func prepareFlashJobs(firmwares *firmwares) (*firmwareJobs, error) {
 
 // waitAndProvision waits for a fresh armored witness device to be detected, and then provisions it.
 func waitAndProvision(ctx context.Context, fw *firmwares) error {
-	// Per-device prep:
-	// TODO: sign bootloader and recovery images.
-	// TODO: store signed bootloader and recovery images somewhere durable.
-
 	klog.Infof(operPlease, "please ensure boot switch is set to USB, and then connect unprovisioned device")
 
 	recoveryHAB := append(fw.recovery.bundle.Firmware, fw.recovery.bundle.HABSignature...)
@@ -478,11 +474,8 @@ func waitAndProvision(ctx context.Context, fw *firmwares) error {
 		}
 	}
 
-	// TODO: Reboot device.
 	klog.Infof(operPlease, "please reboot device")
 	klog.Info("Waiting for device to boot...")
-
-	// TODO: Use HID to access witness public keys from device and store somewhere durable.
 
 	klog.Infof("✅ Witness ID %s provisioned", s.Witness.Identity)
 
