@@ -39,7 +39,7 @@ import (
 	"github.com/transparency-dev/armored-witness-common/release/firmware/update"
 	"github.com/transparency-dev/armored-witness/internal/device"
 	"github.com/transparency-dev/armored-witness/internal/fetcher"
-	"github.com/transparency-dev/armored-witness/internal/release"
+	"github.com/transparency-dev/armored-witness/pkg/release"
 	"github.com/transparency-dev/formats/log"
 	"github.com/transparency-dev/merkle/proof"
 	"github.com/transparency-dev/merkle/rfc6962"

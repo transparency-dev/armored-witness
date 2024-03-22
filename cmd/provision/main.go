@@ -37,7 +37,7 @@ import (
 	"github.com/transparency-dev/armored-witness-common/release/firmware/update"
 	"github.com/transparency-dev/armored-witness/internal/device"
 	"github.com/transparency-dev/armored-witness/internal/fetcher"
-	"github.com/transparency-dev/armored-witness/internal/release"
+	"github.com/transparency-dev/armored-witness/pkg/release"
 	"golang.org/x/exp/maps"
 	"golang.org/x/mod/sumdb/note"
 )
