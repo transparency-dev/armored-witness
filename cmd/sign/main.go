@@ -108,10 +108,15 @@ var (
 					kmsKeyVersion: 1,
 					noteVerifier:  "transparency.dev-aw-boot-prod+2fa9168e+AR+KIx++GIlMBICxLkf4ZUK5RDlvJuiYUboqX5//RmUm",
 				},
-				"os": {
+				"os1": {
 					kmsKeyName:    "trusted-os-prod",
 					kmsKeyVersion: 1,
-					noteVerifier:  "transparency.dev-aw-os-prod+c31218b7+AV7mmRamQp6VC9CutzSXzqtNhYNyNmQQRcLX07F6qlC1",
+					noteVerifier:  "transparency.dev-aw-os1-prod+985bdfd2+AV7mmRamQp6VC9CutzSXzqtNhYNyNmQQRcLX07F6qlC1",
+				},
+				"os2": {
+					kmsKeyName:    "trusted-os-prod-2",
+					kmsKeyVersion: 1,
+					noteVerifier:  "transparency.dev-aw-os2-prod+662add8c+AebLJIKJhx57T3mWmHKe0sasFnXmtIQNTGRaoj2PQLrY",
 				},
 				"recovery": {
 					kmsKeyName:    "recovery-prod",
