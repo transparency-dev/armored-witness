@@ -271,8 +271,8 @@ resource "google_cloudbuild_trigger" "applet_build" {
       args = [
         "-c",
         var.cloudbuild_trigger_tag != "" ?
-        "echo $TAG_NAME > /workspace/git_tag && cat /workspace/git_tag" :
-        "date +'0.3.%s-incompatible' > /workspace/git_tag && cat /workspace/git_tag"
+          "echo $TAG_NAME > /workspace/git_tag && cat /workspace/git_tag" :
+          "date +'0.3.%s-incompatible' > /workspace/git_tag && cat /workspace/git_tag"
       ]
     }
     ### Build the Trusted Applet and upload it to GCS.
@@ -494,8 +494,8 @@ resource "google_cloudbuild_trigger" "os_build" {
       args = [
         "-c",
         var.cloudbuild_trigger_tag != "" ?
-        "echo $TAG_NAME > /workspace/git_tag && cat /workspace/git_tag" :
-        "date +'0.3.%s-incompatible' > /workspace/git_tag && cat /workspace/git_tag"
+          "echo $TAG_NAME > /workspace/git_tag && cat /workspace/git_tag" :
+          "date +'0.3.%s-incompatible' > /workspace/git_tag && cat /workspace/git_tag"
       ]
     }
     ### Build the Trusted OS and upload it to GCS.
@@ -727,8 +727,8 @@ resource "google_cloudbuild_trigger" "build_recovery" {
       args = [
         "-c",
         var.cloudbuild_trigger_tag != "" ?
-        "echo $TAG_NAME > /workspace/git_tag && cat /workspace/git_tag" :
-        "date +'0.3.%s-incompatible' > /workspace/git_tag && cat /workspace/git_tag"
+          "echo $TAG_NAME > /workspace/git_tag && cat /workspace/git_tag" :
+          "date +'0.3.%s-incompatible' > /workspace/git_tag && cat /workspace/git_tag"
       ]
     }
     ### Build the recovery binary and upload it to GCS.
@@ -999,8 +999,8 @@ resource "google_cloudbuild_trigger" "build_boot" {
       args = [
         "-c",
         var.cloudbuild_trigger_tag != "" ?
-        "echo $TAG_NAME > /workspace/git_tag && cat /workspace/git_tag" :
-        "date +'0.0.%s-incompatible' > /workspace/git_tag && cat /workspace/git_tag"
+          "echo $TAG_NAME > /workspace/git_tag && cat /workspace/git_tag" :
+          "date +'0.0.%s-incompatible' > /workspace/git_tag && cat /workspace/git_tag"
       ]
     }
     ### Build the bootloader binary and upload it to GCS.
