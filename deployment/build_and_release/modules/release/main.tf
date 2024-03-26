@@ -268,11 +268,12 @@ resource "google_cloudbuild_trigger" "applet_build" {
     # containing our tag in the shared workspace which other steps can inspect.
     step {
       name = "bash"
-      script = (
+      args = [
+        "-c",
         var.cloudbuild_trigger_tag != "" ?
         "echo $TAG_NAME > /workspace/git_tag && cat /workspace/git_tag" :
         "date +'0.3.%s-incompatible' > /workspace/git_tag && cat /workspace/git_tag"
-      )
+      ]
     }
     ### Build the Trusted Applet and upload it to GCS.
     # Build an image containing the Trusted OS artifacts with the Dockerfile.
@@ -490,11 +491,12 @@ resource "google_cloudbuild_trigger" "os_build" {
     # containing our tag in the shared workspace which other steps can inspect.
     step {
       name = "bash"
-      script = (
+      args = [
+        "-c",
         var.cloudbuild_trigger_tag != "" ?
         "echo $TAG_NAME > /workspace/git_tag && cat /workspace/git_tag" :
         "date +'0.3.%s-incompatible' > /workspace/git_tag && cat /workspace/git_tag"
-      )
+      ]
     }
     ### Build the Trusted OS and upload it to GCS.
     # Build an image containing the Trusted OS artifacts with the Dockerfile.
@@ -722,11 +724,12 @@ resource "google_cloudbuild_trigger" "build_recovery" {
     # containing our tag in the shared workspace which other steps can inspect.
     step {
       name = "bash"
-      script = (
+      args = [
+        "-c",
         var.cloudbuild_trigger_tag != "" ?
         "echo $TAG_NAME > /workspace/git_tag && cat /workspace/git_tag" :
         "date +'0.3.%s-incompatible' > /workspace/git_tag && cat /workspace/git_tag"
-      )
+      ]
     }
     ### Build the recovery binary and upload it to GCS.
     # Build an image containing the trusted applet artifacts with the Dockerfile.
@@ -993,11 +996,12 @@ resource "google_cloudbuild_trigger" "build_boot" {
     # containing our tag in the shared workspace which other steps can inspect.
     step {
       name = "bash"
-      script = (
+      args = [
+        "-c",
         var.cloudbuild_trigger_tag != "" ?
         "echo $TAG_NAME > /workspace/git_tag && cat /workspace/git_tag" :
-        "date +'0.0.%s-incompatible' > /workspace/git_tag && cat /workspace/git_tag"
-      )
+        "date +'0.3.%s-incompatible' > /workspace/git_tag && cat /workspace/git_tag"
+      ]
     }
     ### Build the bootloader binary and upload it to GCS.
     # Use the dockerfile to build an image containing the bootloader artifact.
