@@ -86,8 +86,10 @@ var (
 	// expectedSRKHashes maps known SRK hash values to the release environment they came from.
 	// These values MUST NOT be changed unless you really know what you're doing!
 	expectedSRKHashes = map[string]string{
-		// ci: From https://github.com/transparency-dev/armored-witness-os/blob/main/release/cloudbuild_ci.yaml#L188-L191C18
+		// ci: From https://github.com/transparency-dev/armored-witness/blob/main/deployment/build_and_release/live/ci/terragrunt.hcl#L32
 		"b8ba457320663bf006accd3c57e06720e63b21ce5351cb91b4650690bb08d85a": "ci",
+		// prod: From https://github.com/transparency-dev/armored-witness/blob/main/deployment/build_and_release/live/prod/terragrunt.hcl#L33
+		"77e021cc51b5547fb0c2192fb32710bfa89b4bbaa7dab5f97fc585f673b0b236": "prod",
 	}
 )
 
