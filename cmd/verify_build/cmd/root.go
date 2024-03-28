@@ -17,9 +17,13 @@
 package cmd
 
 import (
+	"fmt"
 	"os"
 
 	"github.com/spf13/cobra"
+	"github.com/transparency-dev/armored-witness/internal/release"
+	"golang.org/x/exp/maps"
+	"k8s.io/klog/v2"
 )
 
 // rootCmd represents the base command when called without any subcommands
@@ -35,14 +39,15 @@ reproduced by building it again.`,
 }
 
 func init() {
-	rootCmd.PersistentFlags().String("log_url", "https://api.transparency.dev/armored-witness-firmware/ci/log/2/", "URL identifying the location of the log.")
-	rootCmd.PersistentFlags().String("log_origin", "transparency.dev/armored-witness/firmware_transparency/ci/2", "The expected first line of checkpoints issued by the log.")
-	rootCmd.PersistentFlags().String("log_pubkey", "transparency.dev-aw-ftlog-ci-2+f77c6276+AZXqiaARpwF4MoNOxx46kuiIRjrML0PDTm+c7BLaAMt6", "The log's public key.")
-	rootCmd.PersistentFlags().String("os_release_pubkey1", "transparency.dev-aw-os1-ci+7a0eaef3+AcsqvmrcKIbs21H2Bm2fWb6oFWn/9MmLGNc6NLJty2eQ", "The first OS release signer's public key.")
-	rootCmd.PersistentFlags().String("os_release_pubkey2", "transparency.dev-aw-os2-ci+af8e4114+AbBJk5MgxRB+68KhGojhUdSt1ts5GAdRIT1Eq9zEkgQh", "The second OS release signer's public key.")
-	rootCmd.PersistentFlags().String("applet_release_pubkey", "transparency.dev-aw-applet-ci+3ff32e2c+AV1fgxtByjXuPjPfi0/7qTbEBlPGGCyxqr6ZlppoLOz3", "The applet release signer's public key.")
-	rootCmd.PersistentFlags().String("boot_release_pubkey", "transparency.dev-aw-boot-ci+9f62b6ac+AbnipFmpRltfRiS9JCxLUcAZsbeH4noBOJXbVD3H5Eg4", "The boot release signer's public key.")
-	rootCmd.PersistentFlags().String("recovery_release_pubkey", "transparency.dev-aw-recovery-ci+cc699423+AarlJMSl0rbTMf31B5o9bqc6PHorwvF1GbwyJRXArbfg", "The recovery release signer's public key.")
+	rootCmd.PersistentFlags().String("template", "prod", fmt.Sprintf("One of %v", maps.Keys(release.Templates)))
+	rootCmd.PersistentFlags().String("log_url", "", "URL identifying the location of the log.")
+	rootCmd.PersistentFlags().String("log_origin", "", "The expected first line of checkpoints issued by the log.")
+	rootCmd.PersistentFlags().String("log_pubkey", "", "The log's public key.")
+	rootCmd.PersistentFlags().String("os_release_pubkey1", "", "The first OS release signer's public key.")
+	rootCmd.PersistentFlags().String("os_release_pubkey2", "", "The second OS release signer's public key.")
+	rootCmd.PersistentFlags().String("applet_release_pubkey", "", "The applet release signer's public key.")
+	rootCmd.PersistentFlags().String("boot_release_pubkey", "", "The boot release signer's public key.")
+	rootCmd.PersistentFlags().String("recovery_release_pubkey", "", "The recovery release signer's public key.")
 
 	rootCmd.PersistentFlags().Bool("cleanup", true, "Set to false to keep git checkouts and make artifacts around after failed verification.")
 	rootCmd.PersistentFlags().String("tamago_dir", "/usr/local/tamago-go", "Directory in which versions of tamago should be installed to. User must have read/write permission to this directory.")
@@ -51,8 +56,48 @@ func init() {
 // Execute adds all child commands to the root command and sets flags appropriately.
 // This is called by main.main(). It only needs to happen once to the rootCmd.
 func Execute() {
+	if tName, err := rootCmd.PersistentFlags().GetString("template"); err != nil {
+		klog.Exitf("Failed to get `template` flag: %v", err)
+	} else if tName != "" {
+		applyFlagTemplate(tName)
+	}
 	err := rootCmd.Execute()
 	if err != nil {
 		os.Exit(1)
+	}
+}
+
+func applyFlagTemplate(k string) {
+	klog.Infof("Using template flags %q", k)
+	tmpl, ok := release.Templates[k]
+	if !ok {
+		klog.Exitf("No such template %q", k)
+	}
+	// Define which flags we need, and map them to what they're called in the template.
+	flagMap := map[string]string{
+		"log_url":                 "firmware_log_url",
+		"log_origin":              "firmware_log_origin",
+		"log_pubkey":              "firmware_log_verifier",
+		"os_release_pubkey1":      "os_verifier_1",
+		"os_release_pubkey2":      "os_verifier_2",
+		"applet_release_pubkey":   "applet_verifier",
+		"boot_release_pubkey":     "boot_verifier",
+		"recovery_release_pubkey": "recovery_verifier",
+	}
+	for f, m := range flagMap {
+		v, ok := tmpl[m]
+		if !ok {
+			klog.Exitf("Unknown template flag %q", m)
+		}
+		if c, err := rootCmd.PersistentFlags().GetString(f); err != nil {
+			klog.Exitf("Internal error applying template: %v", err)
+		} else if c != "" {
+			klog.Exitf("Cannot set --template and --%s", f)
+		}
+		klog.Infof("Using template flag setting --%v=%v", f, v)
+		if err := rootCmd.PersistentFlags().Set(f, v); err != nil {
+			klog.Exitf("Internal error setting templated flag %q: %v", f, err)
+
+		}
 	}
 }
