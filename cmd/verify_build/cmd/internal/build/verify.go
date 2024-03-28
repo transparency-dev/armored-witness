@@ -181,7 +181,7 @@ func (v *ReproducibleBuildVerifier) verifyManifest(ctx context.Context, i uint64
 	cmd.Env = append(cmd.Env, r.Build.Envs...)
 	cmd.Env = append(cmd.Env, v.metadata.Envs...)
 	cmd.Env = append(cmd.Env, v.tamago.Envs(r.Build.TamagoVersion)...)
-	cmd.Env = append(cmd.Env, fmt.Sprintf("GIT_SEMVER_TAG=%s", r.Git.TagName))
+	cmd.Env = append(cmd.Env, fmt.Sprintf("GIT_SEMVER_TAG=v%s", r.Git.TagName))
 	klog.V(1).Infof("Running %q in %s", cmd.String(), repoRoot)
 	if klog.V(2).Enabled() {
 		for _, e := range cmd.Env {
