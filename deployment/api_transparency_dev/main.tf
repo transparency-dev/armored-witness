@@ -148,11 +148,16 @@ resource "google_compute_url_map" "default" {
     # Distributor rules
 
     path_rule {
+      # We're currently aliasing the prod distributor on two prefixes:
+      #  - the "/distributor/..." path for checkpoint consumers (this is "vanity" so that the API url doesn't highlight the env)
+      #  - on `/prod/distributor/...` for witness devices (this is to avoid special-casing prod builds)
       paths = [
-        "/distributor/*"
+        "/distributor/*",
+        "/prod/distributor/*"
       ]
       route_action {
         url_rewrite {
+          path_prefix_rewrite = "/distributor/"
           host_rewrite = var.distributor_prod_host
         }
       }
