@@ -9,9 +9,18 @@ questions at all which aren't covered here, please don't hesitate to find us on 
 
 ## First things first
 
-You've just received your ArmoredWitness device, and you want to plug it into your network.
+You've just received your ArmoredWitness device, and you want to plug it into your network; this is quite natural - it's very exiting!
 
-🐯 *Easy, Tiger!* First, let's make sure that it hasn't been tampered with on its way to you.
+**However, before you do**, there are two **very important** things to tell you:
+
+1. ⚠️ **NEVER** ⚠️ provide power to the device via the Power-over-Ethernet *and* USB-C sockets at the same time. \
+   This is very likely to result in a broken device (symptom: device boots, but is unable to obtain a network link).
+2. You **should** verify that your device hasn't been tampered with on its way to you.\
+   Instructions on how to do this are below.
+
+### Verifying the device
+
+Let's make sure that your ArmoredWitness hasn't been tampered with on its way to you.
 
 The [verify](/cmd/verify) tool is used for this, it puts the device into `recovery` mode, and
 inspects the firmware stored on the MMC to check that it is unmodified, authentic, and present
@@ -27,8 +36,10 @@ You'll need:
     * Used for fetching the tool, and to allow the tool to contact the firmware transparency logs
 * A USB-A to USB-C cable
   * (this is important, it *may* work with some USB-C host ports, but we're aware of a few cases where there were issues due to `USB PD`)
-
-### Verifying the device
+* A small implement (e.g. a very small screwdriver) for sliding the DIP switch visible through the small aperture on the underside of the device. \
+  This switch is referred to as the "boot switch" below. \
+  Sliding it TOWARD the NETWORK port is the "USB" setting, and AWAY from the NETWORK port is the "MMC" setting. \
+  The switch *may* have a pliable translucent orange covering over it, this shouldn't stop you from being able to slide the switch.
 
 First, build the `verify` tool:
 
@@ -44,51 +55,51 @@ Then, you'll need to run it as root and follow the prompts (these looks like "�
 > access to the block device.
 
 ```bash
-$ sudo ${pwd}/verify --template=prod
-I0319 11:19:02.441909 1243525 main.go:98] Using template flag setting --boot_verifier=transparency.dev-aw-boot-ci+9f62b6ac+AbnipFmpRltfRiS9JCxLUcAZsbeH4noBOJXbVD3H5Eg4
-I0319 11:19:02.441940 1243525 main.go:98] Using template flag setting --os_verifier_1=transparency.dev-aw-os1-ci+7a0eaef3+AcsqvmrcKIbs21H2Bm2fWb6oFWn/9MmLGNc6NLJty2eQ
-I0319 11:19:02.441943 1243525 main.go:98] Using template flag setting --binaries_url=https://api.transparency.dev/armored-witness-firmware/ci/artefacts/3/
-I0319 11:19:02.441945 1243525 main.go:98] Using template flag setting --firmware_log_url=https://api.transparency.dev/armored-witness-firmware/ci/log/3/
-I0319 11:19:02.441947 1243525 main.go:98] Using template flag setting --firmware_log_origin=transparency.dev/armored-witness/firmware_transparency/ci/3
-I0319 11:19:02.441949 1243525 main.go:98] Using template flag setting --firmware_log_verifier=transparency.dev-aw-ftlog-ci-3+3f689522+Aa1Eifq6rRC8qiK+bya07yV1fXyP156pEMsX7CFBC6gg
-I0319 11:19:02.441951 1243525 main.go:98] Using template flag setting --applet_verifier=transparency.dev-aw-applet-ci+3ff32e2c+AV1fgxtByjXuPjPfi0/7qTbEBlPGGCyxqr6ZlppoLOz3
-I0319 11:19:02.441964 1243525 main.go:98] Using template flag setting --recovery_verifier=transparency.dev-aw-recovery-ci+cc699423+AarlJMSl0rbTMf31B5o9bqc6PHorwvF1GbwyJRXArbfg
-I0319 11:19:02.441967 1243525 main.go:98] Using template flag setting --os_verifier_2=transparency.dev-aw-os2-ci+af8e4114+AbBJk5MgxRB+68KhGojhUdSt1ts5GAdRIT1Eq9zEkgQh
-I0319 11:19:02.441969 1243525 main.go:98] Using template flag setting --hab_target=ci
-I0319 11:19:02.926959 1243525 fetcher.go:88] Fetching RECOVERY bin from "8271e2a8ccefb6c4df48889fcbb35343511501e3bcd527317d9e63e2ac7349e3"
-I0319 11:19:02.989993 1243525 main.go:220] Successfully fetched and verified recovery image
-I0319 11:19:02.990004 1243525 main.go:221] ----------------------------------------------------------------------------------------------
-I0319 11:19:02.990008 1243525 main.go:222] 🔷🔷🔷 🙋 OPERATOR: please ensure boot switch is set to USB, and then connect device 🙏
-I0319 11:19:02.990011 1243525 main.go:223] ----------------------------------------------------------------------------------------------
-I0319 11:19:02.990015 1243525 main.go:226] Recovery firmware is 1924096 bytes + 16384 bytes HAB signature
-I0319 11:19:02.990037 1243525 recovery.go:63] Waiting for device to be detected...
-I0319 11:19:04.053438 1243525 sdp.go:85] found device 15a2:007d Freescale SemiConductor Inc  SE Blank 6UL
-I0319 11:19:04.112973 1243525 sdp.go:111] Attempting to SDP boot device /dev/hidraw0
-I0319 11:19:04.113079 1243525 sdp.go:123] Loading DCD at 0x00910000 (976 bytes)
-I0319 11:19:04.116490 1243525 sdp.go:128] Loading imx to 0x8000f400 (1940480 bytes)
-I0319 11:19:05.443371 1243525 sdp.go:133] Sending jump address to 0x8000f400
-I0319 11:19:05.443835 1243525 sdp.go:138] Serial download on /dev/hidraw0 complete
-I0319 11:19:06.444384 1243525 recovery.go:50] Witness device booting recovery image
-I0319 11:19:06.444418 1243525 recovery.go:105] Waiting for block device to appear
-I0319 11:19:09.884108 1243525 recovery.go:118] Waiting for block device to settle...
-I0319 11:19:14.900987 1243525 main.go:233] ✅ Detected device "/dev/hidraw0"
-I0319 11:19:14.901050 1243525 main.go:234] ✅ Detected blockdevice /dev/disk/by-id/usb-F-Secure_USB_armory_Mk_II_CA6B65D9D4992516-0:0
-I0319 11:19:14.905938 1243525 main.go:373] Found config at block 0x4fb0
-I0319 11:19:14.905964 1243525 main.go:378] Reading 0x2d6c00 bytes of firmware from MMC byte offset 0x400
-I0319 11:19:15.054263 1243525 main.go:373] Found config at block 0x5000
-I0319 11:19:15.054359 1243525 main.go:378] Reading 0xdd44e8 bytes of firmware from MMC byte offset 0x20505000
-I0319 11:19:15.749003 1243525 main.go:373] Found config at block 0x200000
-I0319 11:19:15.749041 1243525 main.go:378] Reading 0x102d8c0 bytes of firmware from MMC byte offset 0x4000a000
-I0319 11:19:16.594640 1243525 main.go:294]   ✅ Bootloader: proof bundle is self-consistent
-I0319 11:19:16.603331 1243525 main.go:317]   ✅ Bootloader: proof bundle checkpoint(@10) is consistent with current view of log(@17)
-I0319 11:19:16.636720 1243525 main.go:294]   ✅ TrustedOS: proof bundle is self-consistent
-I0319 11:19:16.636804 1243525 main.go:317]   ✅ TrustedOS: proof bundle checkpoint(@17) is consistent with current view of log(@17)
-I0319 11:19:16.658899 1243525 main.go:294]   ✅ TrustedApplet: proof bundle is self-consistent
-I0319 11:19:16.659019 1243525 main.go:317]   ✅ TrustedApplet: proof bundle checkpoint(@12) is consistent with current view of log(@17)
-I0319 11:19:16.659029 1243525 main.go:128] ✅ Device verified OK!
-I0319 11:19:16.659034 1243525 main.go:129] ----------------------------------------------------------------------------------------------
-I0319 11:19:16.659039 1243525 main.go:130] 🔷🔷🔷 🙋 OPERATOR: please ensure boot switch is set to MMC, and then reboot device 🙏
-I0319 11:19:16.659054 1243525 main.go:131] ----------------------------------------------------------------------------------------------
+$ sudo ${PWD}/verify --template=prod
+I0412 10:40:28.663780 2193170 main.go:98] Using template flag setting --binaries_url=https://api.transparency.dev/armored-witness-firmware/prod/artefacts/1/
+I0412 10:40:28.663867 2193170 main.go:98] Using template flag setting --firmware_log_url=https://api.transparency.dev/armored-witness-firmware/prod/log/1/
+I0412 10:40:28.663882 2193170 main.go:98] Using template flag setting --firmware_log_origin=transparency.dev/armored-witness/firmware_transparency/prod/1
+I0412 10:40:28.663893 2193170 main.go:98] Using template flag setting --firmware_log_verifier=transparency.dev-aw-ftlog-prod-1+3e6d87ee+Aa3qdhefd2cc/98jV3blslJT2L+iFR8WKHeGcgFmyjnt
+I0412 10:40:28.663914 2193170 main.go:98] Using template flag setting --applet_verifier=transparency.dev-aw-applet-prod+d45f2a0d+AZSnFa8GxH+jHV6ahELk6peqVObbPKrYAdYyMjrzNF35
+I0412 10:40:28.663927 2193170 main.go:98] Using template flag setting --boot_verifier=transparency.dev-aw-boot-prod+2fa9168e+AR+KIx++GIlMBICxLkf4ZUK5RDlvJuiYUboqX5//RmUm
+I0412 10:40:28.663940 2193170 main.go:98] Using template flag setting --recovery_verifier=transparency.dev-aw-recovery-prod+f3710baa+ATu+HMUuO8ZsgaNwP97XMcb/+Ve8W1u1KdFQHNzOyLxx
+I0412 10:40:28.663952 2193170 main.go:98] Using template flag setting --hab_target=prod
+I0412 10:40:28.663963 2193170 main.go:98] Using template flag setting --os_verifier_1=transparency.dev-aw-os1-prod+985bdfd2+AV7mmRamQp6VC9CutzSXzqtNhYNyNmQQRcLX07F6qlC1
+I0412 10:40:28.663982 2193170 main.go:98] Using template flag setting --os_verifier_2=transparency.dev-aw-os2-prod+662add8c+AebLJIKJhx57T3mWmHKe0sasFnXmtIQNTGRaoj2PQLrY
+I0412 10:40:29.681000 2193170 fetcher.go:88] Fetching RECOVERY bin from "8271e2a8ccefb6c4df48889fcbb35343511501e3bcd527317d9e63e2ac7349e3"
+I0412 10:40:29.879505 2193170 main.go:217] Successfully fetched and verified recovery image
+I0412 10:40:29.879519 2193170 main.go:218] ----------------------------------------------------------------------------------------------
+I0412 10:40:29.879523 2193170 main.go:219] 🔷🔷🔷 🙋 OPERATOR: please ensure boot switch is set to USB, and then connect device 🙏
+I0412 10:40:29.879526 2193170 main.go:220] ----------------------------------------------------------------------------------------------
+I0412 10:40:29.879530 2193170 main.go:223] Recovery firmware is 1924096 bytes + 16384 bytes HAB signature
+I0412 10:40:29.879540 2193170 recovery.go:64] Waiting for device to be detected...
+I0412 10:46:13.033524 2193170 sdp.go:85] found device 15a2:007d Freescale SemiConductor Inc  SE Blank 6UL
+I0412 10:46:13.092825 2193170 sdp.go:111] Attempting to SDP boot device /dev/hidraw0
+I0412 10:46:13.092912 2193170 sdp.go:123] Loading DCD at 0x00910000 (976 bytes)
+I0412 10:46:13.096387 2193170 sdp.go:128] Loading imx to 0x8000f400 (1940480 bytes)
+I0412 10:46:14.288277 2193170 sdp.go:133] Sending jump address to 0x8000f400
+I0412 10:46:14.288651 2193170 sdp.go:138] Serial download on /dev/hidraw0 complete
+I0412 10:46:15.289152 2193170 recovery.go:51] Witness device booting recovery image
+I0412 10:46:15.289210 2193170 recovery.go:106] Waiting for block device to appear
+I0412 10:46:18.876369 2193170 recovery.go:118] Waiting for block device to settle...
+I0412 10:46:19.897030 2193170 main.go:230] ✅ Detected device "/dev/hidraw0"
+I0412 10:46:19.897079 2193170 main.go:231] ✅ Detected blockdevice /dev/disk/by-id/usb-F-Secure_USB_armory_Mk_II_720A9DEAD4413E39-0:0
+I0412 10:46:19.900369 2193170 main.go:370] Found config at block 0x4fb0
+I0412 10:46:19.900394 2193170 main.go:375] Reading 0x2d6c00 bytes of firmware from MMC byte offset 0x400
+I0412 10:46:20.045080 2193170 main.go:370] Found config at block 0x5000
+I0412 10:46:20.045122 2193170 main.go:375] Reading 0xdcfe65 bytes of firmware from MMC byte offset 0xa0a000
+I0412 10:46:20.765940 2193170 main.go:370] Found config at block 0x200000
+I0412 10:46:20.765988 2193170 main.go:375] Reading 0xf09521 bytes of firmware from MMC byte offset 0x4000a000
+I0412 10:46:21.695851 2193170 main.go:291]   ✅ Bootloader: proof bundle is self-consistent
+I0412 10:46:21.695923 2193170 main.go:314]   ✅ Bootloader: proof bundle checkpoint(@7) is consistent with current view of log(@7)
+I0412 10:46:21.714944 2193170 main.go:291]   ✅ TrustedOS: proof bundle is self-consistent
+I0412 10:46:21.715029 2193170 main.go:314]   ✅ TrustedOS: proof bundle checkpoint(@7) is consistent with current view of log(@7)
+I0412 10:46:21.735579 2193170 main.go:291]   ✅ TrustedApplet: proof bundle is self-consistent
+I0412 10:46:21.735666 2193170 main.go:314]   ✅ TrustedApplet: proof bundle checkpoint(@7) is consistent with current view of log(@7)
+I0412 10:46:21.735672 2193170 main.go:128] ✅ Device verified OK!
+I0412 10:46:21.735681 2193170 main.go:129] ----------------------------------------------------------------------------------------------
+I0412 10:46:21.735685 2193170 main.go:130] 🔷🔷🔷 🙋 OPERATOR: please ensure boot switch is set to MMC, and then reboot device 🙏
+I0412 10:46:21.735689 2193170 main.go:131] ---------------------------------------------------------------------------------------------- 
 ```
 
 The block of ✅ green ticks towards the end indicates that the firmware on the device was successfully verified.
