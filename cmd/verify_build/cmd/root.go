@@ -36,6 +36,13 @@ Manifest files contain important information about firmware releases, and
 are intended to be stored in firmware transparency logs. This tool implements
 a verifier that checks that the binary committed to by a manifest file can be
 reproduced by building it again.`,
+	PersistentPreRun: func(cmd *cobra.Command, args []string) {
+		if tName, err := cmd.Flags().GetString("template"); err != nil {
+			klog.Exitf("Failed to get `template` flag: %v", err)
+		} else if tName != "" {
+			applyFlagTemplate(cmd, tName)
+		}
+	},
 }
 
 func init() {
@@ -56,18 +63,13 @@ func init() {
 // Execute adds all child commands to the root command and sets flags appropriately.
 // This is called by main.main(). It only needs to happen once to the rootCmd.
 func Execute() {
-	if tName, err := rootCmd.PersistentFlags().GetString("template"); err != nil {
-		klog.Exitf("Failed to get `template` flag: %v", err)
-	} else if tName != "" {
-		applyFlagTemplate(tName)
-	}
 	err := rootCmd.Execute()
 	if err != nil {
 		os.Exit(1)
 	}
 }
 
-func applyFlagTemplate(k string) {
+func applyFlagTemplate(cmd *cobra.Command, k string) {
 	klog.Infof("Using template flags %q", k)
 	tmpl, ok := release.Templates[k]
 	if !ok {
@@ -89,13 +91,13 @@ func applyFlagTemplate(k string) {
 		if !ok {
 			klog.Exitf("Unknown template flag %q", m)
 		}
-		if c, err := rootCmd.PersistentFlags().GetString(f); err != nil {
+		if c, err := cmd.Flags().GetString(f); err != nil {
 			klog.Exitf("Internal error applying template: %v", err)
 		} else if c != "" {
 			klog.Exitf("Cannot set --template and --%s", f)
 		}
 		klog.Infof("Using template flag setting --%v=%v", f, v)
-		if err := rootCmd.PersistentFlags().Set(f, v); err != nil {
+		if err := cmd.Flags().Set(f, v); err != nil {
 			klog.Exitf("Internal error setting templated flag %q: %v", f, err)
 
 		}
