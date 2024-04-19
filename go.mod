@@ -17,7 +17,6 @@ require (
 	github.com/transparency-dev/merkle v0.0.2
 	github.com/transparency-dev/serverless-log v0.0.0-20231215122707-66f68a7705f5
 	github.com/usbarmory/armory-boot v0.0.0-20230922092524-e66d926bc36c
-	github.com/usbarmory/hid v0.0.0-20210318233634-85ced88a1ffe
 	golang.org/x/exp v0.0.0-20230905200255-921286631fa9
 	golang.org/x/mod v0.16.0
 	google.golang.org/protobuf v1.33.0
