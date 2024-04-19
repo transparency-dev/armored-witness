@@ -27,7 +27,7 @@ import (
 	"github.com/usbarmory/armory-boot/sdp"
 	"k8s.io/klog/v2"
 
-	"github.com/usbarmory/hid"
+	"github.com/flynn/hid"
 )
 
 const (
