@@ -107,8 +107,6 @@ github.com/transparency-dev/serverless-log v0.0.0-20231215122707-66f68a7705f5 h1
 github.com/transparency-dev/serverless-log v0.0.0-20231215122707-66f68a7705f5/go.mod h1:rx4EB9NW4aZFJT5kxf6BWRWbZSThl36jv7O5o5r/qv8=
 github.com/usbarmory/armory-boot v0.0.0-20230922092524-e66d926bc36c h1:qQL3CljMNrk9TyG8EUvCAPU7/bTVitJMhqlKSNhskis=
 github.com/usbarmory/armory-boot v0.0.0-20230922092524-e66d926bc36c/go.mod h1:20DIzHJntbLDOptGT7TOm8DkT5mL2jRyzPzVXAYVHJ8=
-github.com/usbarmory/hid v0.0.0-20210318233634-85ced88a1ffe h1:WWop+y0QNxBEZAKu9xlNiZWgo5+y5VkzlyngVMViBlE=
-github.com/usbarmory/hid v0.0.0-20210318233634-85ced88a1ffe/go.mod h1:8ScVLh9aty8MLtypACxU7JdF5u2y2rEfhx3zJPS/tPc=
 github.com/usbarmory/tamago v0.0.0-20220823080407-04f05cf2a5a3/go.mod h1:Lok79mjbJnhoBGqhX5cCUsZtSemsQF5FNZW+2R1dRr8=
 github.com/yuin/goldmark v1.4.13/go.mod h1:6yULJ656Px+3vBD8DxQVa3kxgyrAnzto9xy5taEt/CY=
 go.opencensus.io v0.24.0 h1:y73uSU6J157QMP2kn2r30vwW1A2W2WFwSCGnAVxeaD0=
