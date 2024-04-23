@@ -34,5 +34,7 @@ inputs = merge(
 
     # Pinned at tag [v20231018](https://github.com/usbarmory/armory-ums/releases/tag/v20231018)
     armory_ums_version: "850baf54809bd29548d6f817933240043400a4e1"
+
+    verify_template = "prod"
   }
 )
