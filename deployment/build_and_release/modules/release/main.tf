@@ -390,6 +390,17 @@ resource "google_cloudbuild_trigger" "applet_build" {
       name = "bash"
       script = "cat output/trusted_applet_manifest"
     }
+    # Verify build reproducibility before we log anything...
+    step {
+      name = "golang"
+      entrypoint = "bash"
+      args = [
+        "-c",
+        <<-EOT
+        cat output/trusted_applet_manifest | go run ./cmd/verify_build single --tamago_dir=/tmp/tamago --v=2
+        EOT
+      ]
+    }
     ### Write the firmware release to the CI transparency log.
     # Copy the signed note to the sequence bucket, preparing to write to log.
     #
@@ -622,6 +633,17 @@ resource "google_cloudbuild_trigger" "os_build" {
     step {
       name = "bash"
       script = "cat output/trusted_os_manifest_both"
+    }
+    # Verify build reproducibility before we log anything...
+    step {
+      name = "golang"
+      entrypoint = "bash"
+      args = [
+        "-c",
+        <<-EOT
+        cat output/trusted_os_manifest_both | go run ./cmd/verify_build single --tamago_dir=/tmp/tamago --v=2
+        EOT
+      ]
     }
     ### Write the firmware release to the CI transparency log.
     # Copy the signed note to the sequence bucket, preparing to write to log.
@@ -894,6 +916,17 @@ resource "google_cloudbuild_trigger" "build_recovery" {
     step {
       name = "bash"
       script = "cat output/recovery_manifest"
+    }
+    # Verify build reproducibility before we log anything...
+    step {
+      name = "golang"
+      entrypoint = "bash"
+      args = [
+        "-c",
+        <<-EOT
+        cat output/recovery_manifest | go run ./cmd/verify_build single --tamago_dir=/tmp/tamago --v=2
+        EOT
+      ]
     }
     ### Write the firmware release to the CI transparency log.
     # Copy the signed note to the sequence bucket, preparing to write to log.
@@ -1177,6 +1210,17 @@ resource "google_cloudbuild_trigger" "build_boot" {
     step {
       name = "bash"
       script = "cat output/boot_manifest"
+    }
+    # Verify build reproducibility before we log anything...
+    step {
+      name = "golang"
+      entrypoint = "bash"
+      args = [
+        "-c",
+        <<-EOT
+        cat output/boot_manifest | go run ./cmd/verify_build single --tamago_dir=/tmp/tamago --v=2
+        EOT
+      ]
     }
     ### Write the firmware release to the CI transparency log.
     # Copy the signed note to the sequence bucket, preparing to write to log.
