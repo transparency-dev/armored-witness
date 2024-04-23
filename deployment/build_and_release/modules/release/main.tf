@@ -397,7 +397,7 @@ resource "google_cloudbuild_trigger" "applet_build" {
       args = [
         "-c",
         <<-EOT
-        cat output/trusted_applet_manifest | go run ./cmd/verify_build single --tamago_dir=$HOME/tamago --v=2
+        cat output/trusted_applet_manifest | go run ./cmd/verify_build single --tamago_dir=/tmp/tamago --v=2
         EOT
       ]
     }
@@ -641,7 +641,7 @@ resource "google_cloudbuild_trigger" "os_build" {
       args = [
         "-c",
         <<-EOT
-        cat output/trusted_os_manifest_both | go run ./cmd/verify_build single --tamago_dir=$HOME/tamago --v=2
+        cat output/trusted_os_manifest_both | go run ./cmd/verify_build single --tamago_dir=/tmp/tamago --v=2
         EOT
       ]
     }
@@ -924,7 +924,7 @@ resource "google_cloudbuild_trigger" "build_recovery" {
       args = [
         "-c",
         <<-EOT
-        cat output/recovery_manifest | go run ./cmd/verify_build single --tamago_dir=$HOME/tamago --v=2
+        cat output/recovery_manifest | go run ./cmd/verify_build single --tamago_dir=/tmp/tamago --v=2
         EOT
       ]
     }
@@ -1218,7 +1218,7 @@ resource "google_cloudbuild_trigger" "build_boot" {
       args = [
         "-c",
         <<-EOT
-        cat output/boot_manifest | go run ./cmd/verify_build single --tamago_dir=$HOME/tamago --v=2
+        cat output/boot_manifest | go run ./cmd/verify_build single --tamago_dir=/tmp/tamago --v=2
         EOT
       ]
     }
