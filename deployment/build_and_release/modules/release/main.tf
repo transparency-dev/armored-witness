@@ -272,7 +272,7 @@ resource "google_cloudbuild_trigger" "applet_build" {
         "-c",
         var.cloudbuild_trigger_tag != "" ?
           "echo $TAG_NAME > /workspace/git_tag && cat /workspace/git_tag" :
-          "date +'0.3.%s-incompatible' > /workspace/git_tag && cat /workspace/git_tag"
+          "date +'v0.3.%s-incompatible' > /workspace/git_tag && cat /workspace/git_tag"
       ]
     }
     ### Build the Trusted Applet and upload it to GCS.
