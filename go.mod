@@ -10,15 +10,15 @@ require (
 	github.com/fsnotify/fsnotify v1.7.0
 	github.com/spf13/cobra v1.8.0
 	github.com/spf13/pflag v1.0.5
-	github.com/transparency-dev/armored-witness-boot v0.0.0-20231011120056-79f8a7e1e0c8
-	github.com/transparency-dev/armored-witness-common v0.0.0-20240220112235-78461719cb5e
-	github.com/transparency-dev/armored-witness-os v0.0.0-20240221101142-11fd91adf0bb
+	github.com/transparency-dev/armored-witness-boot v0.1.0
+	github.com/transparency-dev/armored-witness-common v0.0.0-20240313170947-0b19d0fb8b95
+	github.com/transparency-dev/armored-witness-os v0.1.2
 	github.com/transparency-dev/formats v0.0.0-20230920083814-0f75b1d4e813
 	github.com/transparency-dev/merkle v0.0.2
 	github.com/transparency-dev/serverless-log v0.0.0-20231215122707-66f68a7705f5
 	github.com/usbarmory/armory-boot v0.0.0-20230922092524-e66d926bc36c
 	golang.org/x/exp v0.0.0-20230905200255-921286631fa9
-	golang.org/x/mod v0.16.0
+	golang.org/x/mod v0.17.0
 	google.golang.org/protobuf v1.33.0
 	k8s.io/klog/v2 v2.120.1
 )
@@ -35,7 +35,7 @@ require (
 	github.com/google/s2a-go v0.1.7 // indirect
 	github.com/googleapis/enterprise-certificate-proxy v0.3.2 // indirect
 	github.com/googleapis/gax-go/v2 v2.12.2 // indirect
-	github.com/gsora/fidati v0.0.0-20220824075547-eeb0a5f7d6c3 // indirect
+	github.com/gsora/fidati v0.0.0-20230806170658-ab651720d7c3 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	go.opencensus.io v0.24.0 // indirect
 	go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc v0.49.0 // indirect
