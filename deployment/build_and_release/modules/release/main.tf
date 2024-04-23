@@ -398,6 +398,7 @@ resource "google_cloudbuild_trigger" "applet_build" {
         "-c",
         <<-EOT
         cat output/trusted_applet_manifest | go run ./cmd/verify_build single --tamago_dir=$HOME/tamago --v=2
+        EOT
       ]
     }
     ### Write the firmware release to the CI transparency log.
@@ -641,6 +642,7 @@ resource "google_cloudbuild_trigger" "os_build" {
         "-c",
         <<-EOT
         cat output/trusted_os_manifest_both | go run ./cmd/verify_build single --tamago_dir=$HOME/tamago --v=2
+        EOT
       ]
     }
     ### Write the firmware release to the CI transparency log.
@@ -923,6 +925,7 @@ resource "google_cloudbuild_trigger" "build_recovery" {
         "-c",
         <<-EOT
         cat output/recovery_manifest | go run ./cmd/verify_build single --tamago_dir=$HOME/tamago --v=2
+        EOT
       ]
     }
     ### Write the firmware release to the CI transparency log.
@@ -1216,6 +1219,7 @@ resource "google_cloudbuild_trigger" "build_boot" {
         "-c",
         <<-EOT
         cat output/boot_manifest | go run ./cmd/verify_build single --tamago_dir=$HOME/tamago --v=2
+        EOT
       ]
     }
     ### Write the firmware release to the CI transparency log.
