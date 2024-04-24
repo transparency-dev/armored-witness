@@ -160,9 +160,11 @@ func (m *Monitor) From(ctx context.Context, start uint64) error {
 			return fmt.Errorf("VerifyInclusionProof() %d: %v", i, err)
 		}
 
-		if err := m.rbv.Verify(ctx, i, rawLeaf); err != nil {
+		if success, err := m.rbv.Verify(ctx, i, rawLeaf); err != nil {
 			resErr = err
 			klog.Errorf("Error verifying index %d: %v", i, err)
+		} else if !success {
+			klog.Errorf("Log index %d appears unreproducible!", i)
 		}
 	}
 	if resErr != nil {

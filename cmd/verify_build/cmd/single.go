@@ -67,8 +67,10 @@ func single(cmd *cobra.Command, args []string) {
 		klog.Exitf("Failed to read manifest from stdin: %v", err)
 	}
 	klog.V(1).Infof("Read %d bytes:\n%s", len(nbs), nbs)
-	if err := rbv.Verify(ctx, 0, nbs); err != nil {
-		klog.Exitf("Failed to verify manifest: %v", err)
+	if success, err := rbv.Verify(ctx, 0, nbs); err != nil {
+		klog.Exitf("Error while verifying manifest: %v", err)
+	} else if !success {
+		klog.Exitf("Failed to verify manifest!")
 	}
 	klog.Info("Success!")
 }

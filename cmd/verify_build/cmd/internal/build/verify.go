@@ -60,39 +60,41 @@ type ReproducibleBuildVerifier struct {
 //  1. That it is a valid note signed by the correct release signer
 //  2. That this note contains a valid manifest file
 //  3. That the binary committed to in the manifest file can be reproducibly built
-func (v *ReproducibleBuildVerifier) Verify(ctx context.Context, i uint64, manifest []byte) error {
+//
+// Returns true if the build was successfully reproduced, false otherwise, or an error if the build process itself failed.
+func (v *ReproducibleBuildVerifier) Verify(ctx context.Context, i uint64, manifest []byte) (bool, error) {
 	releaseNote, err := note.Open(manifest, v.metadata.AllV)
 	if err != nil {
 		if e, ok := err.(*note.UnverifiedNoteError); ok && len(e.Note.UnverifiedSigs) > 0 {
-			return fmt.Errorf("unknown signer %q for leaf at index %d: %v", e.Note.UnverifiedSigs[0].Name, i, err)
+			return false, fmt.Errorf("unknown signer %q for leaf at index %d: %v", e.Note.UnverifiedSigs[0].Name, i, err)
 		}
-		return fmt.Errorf("failed to open leaf note at index %d: %v", i, err)
+		return false, fmt.Errorf("failed to open leaf note at index %d: %v", i, err)
 	}
 
 	var release ftlog.FirmwareRelease
 	if err := json.Unmarshal([]byte(releaseNote.Text), &release); err != nil {
-		return fmt.Errorf("failed to unmarshal release at index %d: %w", i, err)
+		return false, fmt.Errorf("failed to unmarshal release at index %d: %w", i, err)
 	}
 
 	switch release.Component {
 	case ftlog.ComponentApplet:
 		if err := assertSigners(releaseNote, v.metadata.AppV); err != nil {
-			return fmt.Errorf("applet sig verification failed: %v", err)
+			return false, fmt.Errorf("applet sig verification failed: %v", err)
 		}
 	case ftlog.ComponentOS:
 		if err := assertSigners(releaseNote, v.metadata.OSV1, v.metadata.OSV2); err != nil {
-			return fmt.Errorf("os sig verification failed: %v", err)
+			return false, fmt.Errorf("os sig verification failed: %v", err)
 		}
 	case ftlog.ComponentBoot:
 		if err := assertSigners(releaseNote, v.metadata.BootV); err != nil {
-			return fmt.Errorf("boot sig verification failed: %v", err)
+			return false, fmt.Errorf("boot sig verification failed: %v", err)
 		}
 	case ftlog.ComponentRecovery:
 		if err := assertSigners(releaseNote, v.metadata.RecoveryV); err != nil {
-			return fmt.Errorf("recovery sig verification failed: %v", err)
+			return false, fmt.Errorf("recovery sig verification failed: %v", err)
 		}
 	default:
-		return fmt.Errorf("Unsupported component: %q", release.Component)
+		return false, fmt.Errorf("Unsupported component: %q", release.Component)
 	}
 
 	klog.V(1).Infof("Leaf index %d: verifying manifest: %s@%s (%s)", i, release.Component, release.Git.TagName, release.Git.CommitFingerprint)
@@ -101,7 +103,9 @@ func (v *ReproducibleBuildVerifier) Verify(ctx context.Context, i uint64, manife
 
 // verifyManifest attempts to reproduce the FirmwareRelease at index `i` in the log by
 // checking out the code and running the make file.
-func (v *ReproducibleBuildVerifier) verifyManifest(ctx context.Context, i uint64, r ftlog.FirmwareRelease) error {
+//
+// Returns true if the build was successfully reproduced, false otherwise, or an error if the build process itself failed.
+func (v *ReproducibleBuildVerifier) verifyManifest(ctx context.Context, i uint64, r ftlog.FirmwareRelease) (bool, error) {
 	klog.V(1).Infof("verifyManifest %d: %s@%s", i, r.Component, r.Git.TagName)
 	var cv componentVerifier
 	switch r.Component {
@@ -114,18 +118,18 @@ func (v *ReproducibleBuildVerifier) verifyManifest(ctx context.Context, i uint64
 	case ftlog.ComponentRecovery:
 		cv = recoveryVerifier{}
 	default:
-		return fmt.Errorf("Unsupported component: %q", r.Component)
+		return false, fmt.Errorf("Unsupported component: %q", r.Component)
 	}
 
 	// Download, install, and then set up tamago environment to match manifest
 	if err := v.tamago.Switch(r.Build.TamagoVersion); err != nil {
-		return fmt.Errorf("failed to switch tamago version: %v", err)
+		return false, fmt.Errorf("failed to switch tamago version: %v", err)
 	}
 
 	// Create temporary directory that will be cleaned up after this method returns
 	dir, err := os.MkdirTemp("", "armored-witness-build-verify")
 	if err != nil {
-		return fmt.Errorf("failed to create temp directory: %v", err)
+		return false, fmt.Errorf("failed to create temp directory: %v", err)
 	}
 
 	// Cleanup will occur:
@@ -151,7 +155,7 @@ func (v *ReproducibleBuildVerifier) verifyManifest(ctx context.Context, i uint64
 	cmd := exec.Command("/usr/bin/git", "clone", cv.repo())
 	cmd.Dir = dir
 	if out, err := cmd.CombinedOutput(); err != nil {
-		return fmt.Errorf("failed to clone: %v (%s)", err, out)
+		return false, fmt.Errorf("failed to clone: %v (%s)", err, out)
 	}
 
 	repoRoot := filepath.Join(dir, repo[strings.LastIndex(repo, "/"):])
@@ -159,7 +163,7 @@ func (v *ReproducibleBuildVerifier) verifyManifest(ctx context.Context, i uint64
 	cmd = exec.Command("/usr/bin/git", "reset", "--hard", r.Git.CommitFingerprint)
 	cmd.Dir = repoRoot
 	if out, err := cmd.CombinedOutput(); err != nil {
-		return fmt.Errorf("failed to reset to commit: %v (%s)", err, out)
+		return false, fmt.Errorf("failed to reset to commit: %v (%s)", err, out)
 	}
 
 	// Confirm that the git revision matches the manifest
@@ -169,10 +173,10 @@ func (v *ReproducibleBuildVerifier) verifyManifest(ctx context.Context, i uint64
 	cmd.Dir = repoRoot
 	out, err := cmd.Output()
 	if err != nil {
-		return fmt.Errorf("failed to get HEAD revision: %v (%s)", err, out)
+		return false, fmt.Errorf("failed to get HEAD revision: %v (%s)", err, out)
 	}
 	if got, want := strings.TrimSpace(string(out)), r.Git.CommitFingerprint; got != want {
-		return fmt.Errorf("expected revision %q but got %q for tag %q", want, got, r.Git.TagName)
+		return false, fmt.Errorf("expected revision %q but got %q for tag %q", want, got, r.Git.TagName)
 	}
 
 	// Make the elf file
@@ -189,7 +193,7 @@ func (v *ReproducibleBuildVerifier) verifyManifest(ctx context.Context, i uint64
 		}
 	}
 	if out, err := cmd.CombinedOutput(); err != nil {
-		return fmt.Errorf("failed to make: %v (%s)", err, out)
+		return false, fmt.Errorf("failed to make: %v (%s)", err, out)
 	} else if klog.V(2).Enabled() {
 		klog.V(2).Info(string(out))
 	}
@@ -197,17 +201,17 @@ func (v *ReproducibleBuildVerifier) verifyManifest(ctx context.Context, i uint64
 	// Hash the firmware artifact.
 	data, err := os.ReadFile(filepath.Join(repoRoot, cv.binFile()))
 	if err != nil {
-		return fmt.Errorf("failed to read %s: %v", cv.binFile(), err)
+		return false, fmt.Errorf("failed to read %s: %v", cv.binFile(), err)
 	}
 	if got, want := sha256.Sum256(data), r.Output.FirmwareDigestSha256; !bytes.Equal(got[:], want) {
 		// TODO: report this in a more visible way than an error in the log.
 		klog.Errorf("Leaf index %d: ❌ failed to reproduce build %s@%s (%s) => (got %x, wanted %x)", i, r.Component, r.Git.TagName, r.Git.CommitFingerprint, got, want)
-		return nil
+		return false, nil
 	}
 
 	klog.Infof("Leaf index %d: ✅ reproduced build %s@%s (%s) => %x", i, r.Component, r.Git.TagName, r.Git.CommitFingerprint, r.Output.FirmwareDigestSha256)
 	cleanup = true
-	return nil
+	return true, nil
 }
 
 type componentVerifier interface {
