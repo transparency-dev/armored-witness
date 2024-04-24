@@ -402,14 +402,7 @@ resource "google_cloudbuild_trigger" "applet_build" {
           single \
           --tamago_dir=/tmp/tamago \
           --v=2 \
-          --log_origin="${var.origin_prefix}/${var.log_shard}" \
-          --log_pubkey="${var.log_public_key}" \
-          --log_url="${var.firmware_base_url}/${var.env}/log/${var.log_shard}" \
-          --applet_release_pubkey="${var.applet_public_key}" \
-          --boot_release_pubkey="${var.boot_public_key}" \
-          --os_release_pubkey1="${var.os_public_key1}" \
-          --os_release_pubkey2="${var.os_public_key2}" \
-          --recovery_release_pubkey="${var.recovery_public_key}"
+          --template=${var.verify_template}
         EOT
       ]
     }
@@ -658,14 +651,7 @@ resource "google_cloudbuild_trigger" "os_build" {
           single \
           --tamago_dir=/tmp/tamago \
           --v=2 \
-          --log_origin="${var.origin_prefix}/${var.log_shard}" \
-          --log_pubkey="${var.log_public_key}" \
-          --log_url="${var.firmware_base_url}/${var.env}/log/${var.log_shard}" \
-          --applet_release_pubkey="${var.applet_public_key}" \
-          --boot_release_pubkey="${var.boot_public_key}" \
-          --os_release_pubkey1="${var.os_public_key1}" \
-          --os_release_pubkey2="${var.os_public_key2}" \
-          --recovery_release_pubkey="${var.recovery_public_key}"
+          --template=${var.verify_template}
          EOT
       ]
     }
@@ -953,14 +939,7 @@ resource "google_cloudbuild_trigger" "build_recovery" {
           single \
           --tamago_dir=/tmp/tamago \
           --v=2 \
-          --log_origin="${var.origin_prefix}/${var.log_shard}" \
-          --log_pubkey="${var.log_public_key}" \
-          --log_url="${var.firmware_base_url}/${var.env}/log/${var.log_shard}" \
-          --applet_release_pubkey="${var.applet_public_key}" \
-          --boot_release_pubkey="${var.boot_public_key}" \
-          --os_release_pubkey1="${var.os_public_key1}" \
-          --os_release_pubkey2="${var.os_public_key2}" \
-          --recovery_release_pubkey="${var.recovery_public_key}"
+          --template=${var.verify_template}
         EOT
       ]
     }
@@ -1259,14 +1238,7 @@ resource "google_cloudbuild_trigger" "build_boot" {
           single \
           --tamago_dir=/tmp/tamago \
           --v=2 \
-          --log_origin="${var.origin_prefix}/${var.log_shard}" \
-          --log_pubkey="${var.log_public_key}" \
-          --log_url="${var.firmware_base_url}/${var.env}/log/${var.log_shard}" \
-          --applet_release_pubkey="${var.applet_public_key}" \
-          --boot_release_pubkey="${var.boot_public_key}" \
-          --os_release_pubkey1="${var.os_public_key1}" \
-          --os_release_pubkey2="${var.os_public_key2}" \
-          --recovery_release_pubkey="${var.recovery_public_key}"
+          --template=${var.verify_template}
         EOT
       ]
     }

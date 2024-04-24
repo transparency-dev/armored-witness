@@ -144,3 +144,8 @@ variable "rest_distributor_base_url" {
   description = "Base URL for the checkpoint distributor"
   type = string
 }
+
+variable "verify_template" {
+  description = "Template to use for verify_build step"
+  type = string
+}
