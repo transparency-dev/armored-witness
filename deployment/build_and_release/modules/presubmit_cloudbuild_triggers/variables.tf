@@ -95,4 +95,5 @@ variable "rest_distributor_base_url" {
 variable "bastion_addr" {
   description = "Host:port of the bastion server"
   type = string
+  default = ""
 }
