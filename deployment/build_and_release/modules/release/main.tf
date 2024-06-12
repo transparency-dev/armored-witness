@@ -67,21 +67,21 @@ resource "google_storage_bucket_iam_member" "firmware_object_reader" {
   count = var.bucket_count
 
   bucket = google_storage_bucket.firmware["${count.index}"].name
-  role    = "roles/storage.legacyObjectReader"
-  member  = "allUsers"
+  role   = "roles/storage.legacyObjectReader"
+  member = "allUsers"
 }
 resource "google_storage_bucket_iam_member" "firmware_bucket_reader" {
   count = var.bucket_count
 
   bucket = google_storage_bucket.firmware["${count.index}"].name
-  role    = "roles/storage.legacyBucketReader"
-  member  = "allUsers"
+  role   = "roles/storage.legacyBucketReader"
+  member = "allUsers"
 }
 resource "google_storage_bucket_iam_binding" "firmware_bucket_writer" {
   count = var.bucket_count
 
   bucket = google_storage_bucket.firmware["${count.index}"].name
-  role    = "roles/storage.legacyBucketWriter"
+  role   = "roles/storage.legacyBucketWriter"
   members = [
     google_service_account.builder.member
   ]
@@ -99,21 +99,21 @@ resource "google_storage_bucket_iam_member" "firmware_log_object_reader" {
   count = var.bucket_count
 
   bucket = google_storage_bucket.firmware_log["${count.index}"].name
-  role    = "roles/storage.legacyObjectReader"
-  member  = "allUsers"
+  role   = "roles/storage.legacyObjectReader"
+  member = "allUsers"
 }
 resource "google_storage_bucket_iam_member" "firmware_log_bucket_reader" {
   count = var.bucket_count
 
   bucket = google_storage_bucket.firmware_log["${count.index}"].name
-  role    = "roles/storage.legacyBucketReader"
-  member  = "allUsers"
+  role   = "roles/storage.legacyBucketReader"
+  member = "allUsers"
 }
 resource "google_storage_bucket_iam_binding" "firmware_log_bucket_writer" {
   count = var.bucket_count
 
   bucket = google_storage_bucket.firmware["${count.index}"].name
-  role    = "roles/storage.legacyBucketWriter"
+  role   = "roles/storage.legacyBucketWriter"
   members = [
     google_service_account.builder.member
   ]
@@ -234,17 +234,17 @@ resource "google_service_account" "builder" {
 }
 
 data "terraform_remote_state" "hab_pki" {
-  backend = "gcs"
+  backend   = "gcs"
   workspace = terraform.workspace
-  config  = {
+  config = {
     bucket = "${var.project_id}-bucket-tfstate-${var.env}"
     prefix = "${var.env}/terraform.tfstate"
   }
 }
 
 resource "google_cloudbuild_trigger" "applet_build" {
-  name = "applet-build-${var.env}"
-  location = "global"
+  name            = "applet-build-${var.env}"
+  location        = "global"
   service_account = google_service_account.builder.id
 
   github {
@@ -253,7 +253,7 @@ resource "google_cloudbuild_trigger" "applet_build" {
 
     push {
       branch = var.cloudbuild_trigger_branch != "" ? var.cloudbuild_trigger_branch : null
-      tag = var.cloudbuild_trigger_tag != "" ? var.cloudbuild_trigger_tag : null
+      tag    = var.cloudbuild_trigger_tag != "" ? var.cloudbuild_trigger_tag : null
     }
   }
 
@@ -271,15 +271,15 @@ resource "google_cloudbuild_trigger" "applet_build" {
       args = [
         "-c",
         var.cloudbuild_trigger_tag != "" ?
-          "echo $TAG_NAME > /workspace/git_tag && cat /workspace/git_tag" :
-          "date +'v0.3.%s-incompatible' > /workspace/git_tag && cat /workspace/git_tag"
+        "echo $TAG_NAME > /workspace/git_tag && cat /workspace/git_tag" :
+        "date +'v0.3.%s-incompatible' > /workspace/git_tag && cat /workspace/git_tag"
       ]
     }
     ### Build the Trusted Applet and upload it to GCS.
     # Build an image containing the Trusted OS artifacts with the Dockerfile.
     # This step needs to be a bash script in order to read the tag content from file.
     step {
-      name = "gcr.io/cloud-builders/docker"
+      name       = "gcr.io/cloud-builders/docker"
       entrypoint = "bash"
       args = [
         "-c",
@@ -317,19 +317,19 @@ resource "google_cloudbuild_trigger" "applet_build" {
     step {
       name = "gcr.io/cloud-builders/docker"
       args = [
-       "cp",
-       "builder_scratch:/build/bin",
-       "output",
+        "cp",
+        "builder_scratch:/build/bin",
+        "output",
       ]
     }
     # List the artifacts.
     step {
-      name = "bash"
+      name   = "bash"
       script = "ls output"
     }
     # Copy the artifacts from the Cloud Build VM to GCS.
     step {
-      name = "gcr.io/cloud-builders/gcloud"
+      name       = "gcr.io/cloud-builders/gcloud"
       entrypoint = "bash"
       args = [
         "-c",
@@ -344,7 +344,7 @@ resource "google_cloudbuild_trigger" "applet_build" {
     # This step needs to be a bash script in order to read the tag content
     # from file.
     step {
-      name = "golang"
+      name       = "golang"
       entrypoint = "bash"
       args = [
         "-c",
@@ -389,12 +389,12 @@ resource "google_cloudbuild_trigger" "applet_build" {
     }
     # Print the content of the signed manifest.
     step {
-      name = "bash"
+      name   = "bash"
       script = "cat output/trusted_applet_manifest"
     }
     # Verify build reproducibility before we log anything...
     step {
-      name = "golang"
+      name       = "golang"
       entrypoint = "bash"
       args = [
         "-c",
@@ -414,7 +414,7 @@ resource "google_cloudbuild_trigger" "applet_build" {
     # Use the SHA256 of the manifest as the name of the manifest. This allows
     # multiple triggers to run without colliding.
     step {
-      name = "gcr.io/cloud-builders/gcloud"
+      name       = "gcr.io/cloud-builders/gcloud"
       entrypoint = "bash"
       args = [
         "-c",
@@ -426,7 +426,7 @@ resource "google_cloudbuild_trigger" "applet_build" {
     }
     # Sequence log entry.
     step {
-      name = "gcr.io/cloud-builders/gcloud"
+      name       = "gcr.io/cloud-builders/gcloud"
       entrypoint = "bash"
       args = [
         "-c",
@@ -448,7 +448,7 @@ resource "google_cloudbuild_trigger" "applet_build" {
     }
     # Integrate log entry.
     step {
-      name = "gcr.io/cloud-builders/gcloud"
+      name       = "gcr.io/cloud-builders/gcloud"
       entrypoint = "bash"
       args = [
         "-c",
@@ -470,7 +470,7 @@ resource "google_cloudbuild_trigger" "applet_build" {
     # Clean up the file we added to the _ENTRIES_DIR bucket now that it's been
     # integrated to the log.
     step {
-      name = "gcr.io/cloud-builders/gcloud"
+      name       = "gcr.io/cloud-builders/gcloud"
       entrypoint = "bash"
       args = [
         "-c",
@@ -484,8 +484,8 @@ resource "google_cloudbuild_trigger" "applet_build" {
 }
 
 resource "google_cloudbuild_trigger" "os_build" {
-  name = "os-build-${var.env}"
-  location = "global"
+  name            = "os-build-${var.env}"
+  location        = "global"
   service_account = google_service_account.builder.id
 
   github {
@@ -494,7 +494,7 @@ resource "google_cloudbuild_trigger" "os_build" {
 
     push {
       branch = var.cloudbuild_trigger_branch != "" ? var.cloudbuild_trigger_branch : null
-      tag = var.cloudbuild_trigger_tag != "" ? var.cloudbuild_trigger_tag : null
+      tag    = var.cloudbuild_trigger_tag != "" ? var.cloudbuild_trigger_tag : null
     }
   }
 
@@ -512,15 +512,15 @@ resource "google_cloudbuild_trigger" "os_build" {
       args = [
         "-c",
         var.cloudbuild_trigger_tag != "" ?
-          "echo $TAG_NAME > /workspace/git_tag && cat /workspace/git_tag" :
-          "date +'v0.3.%s-incompatible' > /workspace/git_tag && cat /workspace/git_tag"
+        "echo $TAG_NAME > /workspace/git_tag && cat /workspace/git_tag" :
+        "date +'v0.3.%s-incompatible' > /workspace/git_tag && cat /workspace/git_tag"
       ]
     }
     ### Build the Trusted OS and upload it to GCS.
     # Build an image containing the Trusted OS artifacts with the Dockerfile.
     # This step needs to be a bash script in order to read the tag content from file.
     step {
-      name = "gcr.io/cloud-builders/docker"
+      name       = "gcr.io/cloud-builders/docker"
       entrypoint = "bash"
       args = [
         "-c",
@@ -555,19 +555,19 @@ resource "google_cloudbuild_trigger" "os_build" {
     step {
       name = "gcr.io/cloud-builders/docker"
       args = [
-       "cp",
-       "builder_scratch:/build/bin",
-       "output",
+        "cp",
+        "builder_scratch:/build/bin",
+        "output",
       ]
     }
     # List the artifacts.
     step {
-      name = "bash"
+      name   = "bash"
       script = "ls output"
     }
     # Copy the artifacts from the Cloud Build VM to GCS.
     step {
-      name = "gcr.io/cloud-builders/gcloud"
+      name       = "gcr.io/cloud-builders/gcloud"
       entrypoint = "bash"
       args = [
         "-c",
@@ -582,7 +582,7 @@ resource "google_cloudbuild_trigger" "os_build" {
     # This step needs to be a bash script in order to read the tag content
     # from file.
     step {
-      name = "golang"
+      name       = "golang"
       entrypoint = "bash"
       args = [
         "-c",
@@ -636,14 +636,14 @@ resource "google_cloudbuild_trigger" "os_build" {
         "--output_file=output/trusted_os_manifest_both",
       ]
     }
-     # Print the content of the signed manifest.
+    # Print the content of the signed manifest.
     step {
-      name = "bash"
+      name   = "bash"
       script = "cat output/trusted_os_manifest_both"
     }
     # Verify build reproducibility before we log anything...
     step {
-      name = "golang"
+      name       = "golang"
       entrypoint = "bash"
       args = [
         "-c",
@@ -663,7 +663,7 @@ resource "google_cloudbuild_trigger" "os_build" {
     # Use the SHA256 of the manifest as the name of the manifest. This allows
     # multiple triggers to run without colliding.
     step {
-      name = "gcr.io/cloud-builders/gcloud"
+      name       = "gcr.io/cloud-builders/gcloud"
       entrypoint = "bash"
       args = [
         "-c",
@@ -675,7 +675,7 @@ resource "google_cloudbuild_trigger" "os_build" {
     }
     # Sequence log entry.
     step {
-      name = "gcr.io/cloud-builders/gcloud"
+      name       = "gcr.io/cloud-builders/gcloud"
       entrypoint = "bash"
       args = [
         "-c",
@@ -697,7 +697,7 @@ resource "google_cloudbuild_trigger" "os_build" {
     }
     # Integrate log entry.
     step {
-      name = "gcr.io/cloud-builders/gcloud"
+      name       = "gcr.io/cloud-builders/gcloud"
       entrypoint = "bash"
       args = [
         "-c",
@@ -719,7 +719,7 @@ resource "google_cloudbuild_trigger" "os_build" {
     # Clean up the file we added to the _ENTRIES_DIR bucket now that it's been
     # integrated to the log.
     step {
-      name = "gcr.io/cloud-builders/gcloud"
+      name       = "gcr.io/cloud-builders/gcloud"
       entrypoint = "bash"
       args = [
         "-c",
@@ -733,8 +733,8 @@ resource "google_cloudbuild_trigger" "os_build" {
 }
 
 resource "google_cloudbuild_trigger" "build_recovery" {
-  name = "recovery-build-${var.env}"
-  location = "global"
+  name            = "recovery-build-${var.env}"
+  location        = "global"
   service_account = google_service_account.builder.id
 
   github {
@@ -743,7 +743,7 @@ resource "google_cloudbuild_trigger" "build_recovery" {
 
     push {
       branch = var.cloudbuild_trigger_branch != "" ? var.cloudbuild_trigger_branch : null
-      tag = var.cloudbuild_trigger_tag != "" ? var.cloudbuild_trigger_tag : null
+      tag    = var.cloudbuild_trigger_tag != "" ? var.cloudbuild_trigger_tag : null
     }
   }
 
@@ -761,14 +761,14 @@ resource "google_cloudbuild_trigger" "build_recovery" {
       args = [
         "-c",
         var.cloudbuild_trigger_tag != "" ?
-          "echo $TAG_NAME > /workspace/git_tag && cat /workspace/git_tag" :
-          "date +'v0.3.%s-incompatible' > /workspace/git_tag && cat /workspace/git_tag"
+        "echo $TAG_NAME > /workspace/git_tag && cat /workspace/git_tag" :
+        "date +'v0.3.%s-incompatible' > /workspace/git_tag && cat /workspace/git_tag"
       ]
     }
     ### Build the recovery binary and upload it to GCS.
     # Build an image containing the trusted applet artifacts with the Dockerfile.
     step {
-      name = "gcr.io/cloud-builders/docker"
+      name       = "gcr.io/cloud-builders/docker"
       entrypoint = "bash"
       args = [
         "-c",
@@ -795,19 +795,19 @@ resource "google_cloudbuild_trigger" "build_recovery" {
     step {
       name = "gcr.io/cloud-builders/docker"
       args = [
-       "cp",
-       "builder_scratch:/build/armory-ums",
-       "output",
+        "cp",
+        "builder_scratch:/build/armory-ums",
+        "output",
       ]
     }
     # List the artifacts.
     step {
-      name = "bash"
+      name   = "bash"
       script = "ls output"
     }
     # Copy the artifacts from the Cloud Build VM to GCS.
     step {
-      name = "gcr.io/cloud-builders/gcloud"
+      name       = "gcr.io/cloud-builders/gcloud"
       entrypoint = "bash"
       args = [
         "-c",
@@ -820,7 +820,7 @@ resource "google_cloudbuild_trigger" "build_recovery" {
     }
     # HAB: Create SRK table & hash
     step {
-      name = "golang"
+      name       = "golang"
       entrypoint = "bash"
       args = [
         "-c",
@@ -838,7 +838,7 @@ resource "google_cloudbuild_trigger" "build_recovery" {
     }
     # Assert SRK hash value
     step {
-      name = "golang"
+      name       = "golang"
       entrypoint = "bash"
       args = [
         "-c",
@@ -855,7 +855,7 @@ resource "google_cloudbuild_trigger" "build_recovery" {
       ]
     }
     step {
-      name = "golang"
+      name       = "golang"
       entrypoint = "bash"
       args = [
         "-c",
@@ -876,7 +876,7 @@ resource "google_cloudbuild_trigger" "build_recovery" {
     }
     # Copy the HAB signature into the CAS
     step {
-      name = "gcr.io/cloud-builders/gcloud"
+      name       = "gcr.io/cloud-builders/gcloud"
       entrypoint = "bash"
       args = [
         "-c",
@@ -891,7 +891,7 @@ resource "google_cloudbuild_trigger" "build_recovery" {
     # This step needs to be a bash script in order to read the tag content
     # from file.
     step {
-      name = "golang"
+      name       = "golang"
       entrypoint = "bash"
       args = [
         "-c",
@@ -924,14 +924,14 @@ resource "google_cloudbuild_trigger" "build_recovery" {
         "--output_file=output/recovery_manifest",
       ]
     }
-     # Print the content of the signed manifest.
+    # Print the content of the signed manifest.
     step {
-      name = "bash"
+      name   = "bash"
       script = "cat output/recovery_manifest"
     }
     # Verify build reproducibility before we log anything...
     step {
-      name = "golang"
+      name       = "golang"
       entrypoint = "bash"
       args = [
         "-c",
@@ -951,7 +951,7 @@ resource "google_cloudbuild_trigger" "build_recovery" {
     # Use the SHA256 of the manifest as the name of the manifest. This allows
     # multiple triggers to run without colliding.
     step {
-      name = "gcr.io/cloud-builders/gcloud"
+      name       = "gcr.io/cloud-builders/gcloud"
       entrypoint = "bash"
       args = [
         "-c",
@@ -963,7 +963,7 @@ resource "google_cloudbuild_trigger" "build_recovery" {
     }
     # Sequence log entry.
     step {
-      name = "gcr.io/cloud-builders/gcloud"
+      name       = "gcr.io/cloud-builders/gcloud"
       entrypoint = "bash"
       args = [
         "-c",
@@ -985,7 +985,7 @@ resource "google_cloudbuild_trigger" "build_recovery" {
     }
     # Integrate log entry.
     step {
-      name = "gcr.io/cloud-builders/gcloud"
+      name       = "gcr.io/cloud-builders/gcloud"
       entrypoint = "bash"
       args = [
         "-c",
@@ -1007,7 +1007,7 @@ resource "google_cloudbuild_trigger" "build_recovery" {
     # Clean up the file we added to the _ENTRIES_DIR bucket now that it's been
     # integrated to the log.
     step {
-      name = "gcr.io/cloud-builders/gcloud"
+      name       = "gcr.io/cloud-builders/gcloud"
       entrypoint = "bash"
       args = [
         "-c",
@@ -1021,8 +1021,8 @@ resource "google_cloudbuild_trigger" "build_recovery" {
 }
 
 resource "google_cloudbuild_trigger" "build_boot" {
-  name = "boot-build-${var.env}"
-  location = "global"
+  name            = "boot-build-${var.env}"
+  location        = "global"
   service_account = google_service_account.builder.id
 
   github {
@@ -1031,7 +1031,7 @@ resource "google_cloudbuild_trigger" "build_boot" {
 
     push {
       branch = var.cloudbuild_trigger_branch != "" ? var.cloudbuild_trigger_branch : null
-      tag = var.cloudbuild_trigger_tag != "" ? var.cloudbuild_trigger_tag : null
+      tag    = var.cloudbuild_trigger_tag != "" ? var.cloudbuild_trigger_tag : null
     }
   }
 
@@ -1049,14 +1049,14 @@ resource "google_cloudbuild_trigger" "build_boot" {
       args = [
         "-c",
         var.cloudbuild_trigger_tag != "" ?
-          "echo $TAG_NAME > /workspace/git_tag && cat /workspace/git_tag" :
-          "date +'v0.0.%s-incompatible' > /workspace/git_tag && cat /workspace/git_tag"
+        "echo $TAG_NAME > /workspace/git_tag && cat /workspace/git_tag" :
+        "date +'v0.0.%s-incompatible' > /workspace/git_tag && cat /workspace/git_tag"
       ]
     }
     ### Build the bootloader binary and upload it to GCS.
     # Use the dockerfile to build an image containing the bootloader artifact.
     step {
-      name = "gcr.io/cloud-builders/docker"
+      name       = "gcr.io/cloud-builders/docker"
       entrypoint = "bash"
       args = [
         "-c",
@@ -1089,19 +1089,19 @@ resource "google_cloudbuild_trigger" "build_boot" {
     step {
       name = "gcr.io/cloud-builders/docker"
       args = [
-       "cp",
-       "builder_scratch:/build",
-       "output",
+        "cp",
+        "builder_scratch:/build",
+        "output",
       ]
     }
     # List the artifacts.
     step {
-      name = "bash"
+      name   = "bash"
       script = "ls output"
     }
     # Copy the artifacts from the Cloud Build VM to GCS.
     step {
-      name = "gcr.io/cloud-builders/gcloud"
+      name       = "gcr.io/cloud-builders/gcloud"
       entrypoint = "bash"
       args = [
         "-c",
@@ -1114,7 +1114,7 @@ resource "google_cloudbuild_trigger" "build_boot" {
     }
     # HAB: Create SRK table & hash
     step {
-      name = "golang"
+      name       = "golang"
       entrypoint = "bash"
       args = [
         "-c",
@@ -1132,7 +1132,7 @@ resource "google_cloudbuild_trigger" "build_boot" {
     }
     # Assert SRK hash value
     step {
-      name = "golang"
+      name       = "golang"
       entrypoint = "bash"
       args = [
         "-c",
@@ -1149,7 +1149,7 @@ resource "google_cloudbuild_trigger" "build_boot" {
       ]
     }
     step {
-      name = "golang"
+      name       = "golang"
       entrypoint = "bash"
       args = [
         "-c",
@@ -1169,7 +1169,7 @@ resource "google_cloudbuild_trigger" "build_boot" {
     }
     # Copy the HAB signature into the CAS
     step {
-      name = "gcr.io/cloud-builders/gcloud"
+      name       = "gcr.io/cloud-builders/gcloud"
       entrypoint = "bash"
       args = [
         "-c",
@@ -1184,7 +1184,7 @@ resource "google_cloudbuild_trigger" "build_boot" {
     # This step needs to be a bash script in order to read the tag content
     # from file.
     step {
-      name = "golang"
+      name       = "golang"
       entrypoint = "bash"
       args = [
         "-c",
@@ -1223,14 +1223,14 @@ resource "google_cloudbuild_trigger" "build_boot" {
         "--output_file=output/boot_manifest",
       ]
     }
-     # Print the content of the signed manifest.
+    # Print the content of the signed manifest.
     step {
-      name = "bash"
+      name   = "bash"
       script = "cat output/boot_manifest"
     }
     # Verify build reproducibility before we log anything...
     step {
-      name = "golang"
+      name       = "golang"
       entrypoint = "bash"
       args = [
         "-c",
@@ -1250,7 +1250,7 @@ resource "google_cloudbuild_trigger" "build_boot" {
     # Use the SHA256 of the manifest as the name of the manifest. This allows
     # multiple triggers to run without colliding.
     step {
-      name = "gcr.io/cloud-builders/gcloud"
+      name       = "gcr.io/cloud-builders/gcloud"
       entrypoint = "bash"
       args = [
         "-c",
@@ -1262,7 +1262,7 @@ resource "google_cloudbuild_trigger" "build_boot" {
     }
     # Sequence log entry.
     step {
-      name = "gcr.io/cloud-builders/gcloud"
+      name       = "gcr.io/cloud-builders/gcloud"
       entrypoint = "bash"
       args = [
         "-c",
@@ -1284,7 +1284,7 @@ resource "google_cloudbuild_trigger" "build_boot" {
     }
     # Integrate log entry.
     step {
-      name = "gcr.io/cloud-builders/gcloud"
+      name       = "gcr.io/cloud-builders/gcloud"
       entrypoint = "bash"
       args = [
         "-c",
@@ -1306,7 +1306,7 @@ resource "google_cloudbuild_trigger" "build_boot" {
     # Clean up the file we added to the _ENTRIES_DIR bucket now that it's been
     # integrated to the log.
     step {
-      name = "gcr.io/cloud-builders/gcloud"
+      name       = "gcr.io/cloud-builders/gcloud"
       entrypoint = "bash"
       args = [
         "-c",

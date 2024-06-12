@@ -105,7 +105,7 @@ variable "os_public_key2" {
 
 variable "console" {
   description = "If set to `on`, then the bootloader firmware will emit debug logging"
-  type        =  string
+  type        = string
   default     = ""
 }
 
@@ -137,21 +137,21 @@ variable "srk_hash" {
 
 variable "firmware_base_url" {
   description = "Base URL used to construct the log and firmware bucket URLs"
-  type = string
+  type        = string
 }
 
 variable "rest_distributor_base_url" {
   description = "Base URL for the checkpoint distributor"
-  type = string
+  type        = string
 }
 
 variable "bastion_addr" {
   description = "Host:port of the bastion server"
-  type = string
-  default = ""
+  type        = string
+  default     = ""
 }
 
 variable "verify_template" {
   description = "Template to use for verify_build step"
-  type = string
+  type        = string
 }

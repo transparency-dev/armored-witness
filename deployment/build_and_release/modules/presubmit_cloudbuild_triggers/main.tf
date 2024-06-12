@@ -8,8 +8,8 @@ resource "google_service_account" "builder" {
 }
 
 resource "google_cloudbuild_trigger" "applet_build" {
-  name = "applet-build-${var.env}"
-  location = "global"
+  name            = "applet-build-${var.env}"
+  location        = "global"
   service_account = google_service_account.builder.id
 
   github {
@@ -28,7 +28,7 @@ resource "google_cloudbuild_trigger" "applet_build" {
     }
     ### Build the Trusted Applet.
     step {
-      name = "gcr.io/cloud-builders/docker"
+      name       = "gcr.io/cloud-builders/docker"
       entrypoint = "bash"
       args = [
         "-c",
@@ -56,8 +56,8 @@ resource "google_cloudbuild_trigger" "applet_build" {
 }
 
 resource "google_cloudbuild_trigger" "os_build" {
-  name = "os-build-${var.env}"
-  location = "global"
+  name            = "os-build-${var.env}"
+  location        = "global"
   service_account = google_service_account.builder.id
 
   github {
@@ -69,14 +69,14 @@ resource "google_cloudbuild_trigger" "os_build" {
       comment_control = "COMMENTS_ENABLED_FOR_EXTERNAL_CONTRIBUTORS_ONLY"
     }
   }
- 
+
   build {
     options {
       logging = "CLOUD_LOGGING_ONLY"
     }
     ### Build the Trusted OS.
     step {
-      name = "gcr.io/cloud-builders/docker"
+      name       = "gcr.io/cloud-builders/docker"
       entrypoint = "bash"
       args = [
         "-c",
@@ -101,8 +101,8 @@ resource "google_cloudbuild_trigger" "os_build" {
 }
 
 resource "google_cloudbuild_trigger" "boot_build" {
-  name = "boot-build-${var.env}"
-  location = "global"
+  name            = "boot-build-${var.env}"
+  location        = "global"
   service_account = google_service_account.builder.id
 
   github {
@@ -114,14 +114,14 @@ resource "google_cloudbuild_trigger" "boot_build" {
       comment_control = "COMMENTS_ENABLED_FOR_EXTERNAL_CONTRIBUTORS_ONLY"
     }
   }
- 
+
   build {
     options {
       logging = "CLOUD_LOGGING_ONLY"
     }
     ### Build the bootloader.
     step {
-      name = "gcr.io/cloud-builders/docker"
+      name       = "gcr.io/cloud-builders/docker"
       entrypoint = "bash"
       args = [
         "-c",
@@ -144,8 +144,8 @@ resource "google_cloudbuild_trigger" "boot_build" {
 }
 
 resource "google_cloudbuild_trigger" "recovery_build" {
-  name = "recovery-build-${var.env}"
-  location = "global"
+  name            = "recovery-build-${var.env}"
+  location        = "global"
   service_account = google_service_account.builder.id
 
   github {
@@ -157,14 +157,14 @@ resource "google_cloudbuild_trigger" "recovery_build" {
       comment_control = "COMMENTS_ENABLED_FOR_EXTERNAL_CONTRIBUTORS_ONLY"
     }
   }
- 
+
   build {
     options {
       logging = "CLOUD_LOGGING_ONLY"
     }
     ### Build the bootloader.
     step {
-      name = "gcr.io/cloud-builders/docker"
+      name       = "gcr.io/cloud-builders/docker"
       entrypoint = "bash"
       args = [
         "-c",
