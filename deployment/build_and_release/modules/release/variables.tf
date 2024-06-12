@@ -145,6 +145,11 @@ variable "rest_distributor_base_url" {
   type = string
 }
 
+variable "bastion_addr" {
+  description = "Host:port of the bastion server"
+  type = string
+}
+
 variable "verify_template" {
   description = "Template to use for verify_build step"
   type = string

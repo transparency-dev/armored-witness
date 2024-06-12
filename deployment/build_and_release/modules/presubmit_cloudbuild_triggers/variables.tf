@@ -91,3 +91,8 @@ variable "rest_distributor_base_url" {
   description = "Base URL for the checkpoint distributor"
   type = string
 }
+
+variable "bastion_addr" {
+  description = "Host:port of the bastion server"
+  type = string
+}

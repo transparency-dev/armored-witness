@@ -44,6 +44,7 @@ resource "google_cloudbuild_trigger" "applet_build" {
           --build-arg=OS_PUBLIC_KEY1=${var.os_public_key1} \
           --build-arg=OS_PUBLIC_KEY2=${var.os_public_key2} \
           --build-arg=REST_DISTRIBUTOR_BASE_URL=${var.rest_distributor_base_url}/${var.env} \
+          --build-arg=BASTION_ADDR=${var.bastion_addr} \
           --build-arg=BEE=${var.bee} \
           --build-arg=DEBUG=${var.debug} \
           -t builder-image \
