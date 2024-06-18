@@ -8,7 +8,7 @@ require (
 	github.com/flynn/hid v0.0.0-20190502022136-f1b9b6cc019a
 	github.com/flynn/u2f v0.0.0-20180613185708-15554eb68e5d
 	github.com/fsnotify/fsnotify v1.7.0
-	github.com/spf13/cobra v1.8.0
+	github.com/spf13/cobra v1.8.1
 	github.com/spf13/pflag v1.0.5
 	github.com/transparency-dev/armored-witness-boot v0.1.0
 	github.com/transparency-dev/armored-witness-common v0.0.0-20240313170947-0b19d0fb8b95
@@ -19,8 +19,8 @@ require (
 	github.com/usbarmory/armory-boot v0.0.0-20230922092524-e66d926bc36c
 	golang.org/x/exp v0.0.0-20230905200255-921286631fa9
 	golang.org/x/mod v0.18.0
-	google.golang.org/protobuf v1.34.1
-	k8s.io/klog/v2 v2.120.1
+	google.golang.org/protobuf v1.34.2
+	k8s.io/klog/v2 v2.130.0
 )
 
 require (
