@@ -94,7 +94,7 @@ func waitForBlockDevice(ctx context.Context, glob string, f func() error) (strin
 
 	// Set up the watcher to look for events in /dev only.
 	if err := watcher.Add(filepath.Dir(glob)); err != nil {
-		return "", fmt.Errorf("failed to add /dev to fs watcher: %v", err)
+		return "", fmt.Errorf("failed to add %s to fs watcher: %v", glob, err)
 	}
 
 	// Run the passed-in function
