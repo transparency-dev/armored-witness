@@ -29,6 +29,8 @@ inputs = merge(
     bee = "1"
     debug = "1"
 
+    bastion_addr = "bastion.glasklar.is:443"
+
     # HAB-related
     srk_hash = "77e021cc51b5547fb0c2192fb32710bfa89b4bbaa7dab5f97fc585f673b0b236"
 
