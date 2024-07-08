@@ -20,7 +20,7 @@ The body of this note is formed of 4 lines:
 
 1. A line with the text "ArmoredWitness ID attestation v1".
 2. The ASCII encoded HEX representation of the device serial number whose witness public key is below.
-3. The ASCII encoded decimal number 0.
+3. The ASCII encoded decimal number, with no leading zeroes, representing the number of times the witness has rolled its identity. Currently this is always "0".
 4. A note Verifier string representing the witness public key which will be used by this device.
 
 The note is signed by the _device_ key corresponding to the serial number on line 2.
@@ -32,7 +32,7 @@ The body of this note is formed of 4 lines:
 
 1. A line with the text "ArmoredWitness BastionID attestation v1".
 2. The ASCII encoded HEX representation of the device serial number whose bastion ID is below.
-3. The ASCII encoded decimal number 0.
+3. The ASCII encoded decimal, with no leading zeroes, representing the number of times the witness has rolled its bastion identity. Currently this is always "0".
 4. A 64 character ASCII HEX representation of the device's bastion ID.
 
 The note is signed by the _device_ key corresponding to the serial number on line 2.
