@@ -94,6 +94,11 @@ resource "google_storage_bucket" "firmware_log" {
   name                        = "armored-witness-firmware-log-${var.env}-${count.index}"
   storage_class               = "STANDARD"
   uniform_bucket_level_access = true
+
+  cors {
+    origin = ["*"]
+    method = ["GET"]
+  }
 }
 resource "google_storage_bucket_iam_member" "firmware_log_object_reader" {
   count = var.bucket_count
