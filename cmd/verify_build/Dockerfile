@@ -3,7 +3,7 @@
 # witness.
 # The default entrypoint runs a continuous monitor that attempts
 # to build all firmware artifacts committed to by a log.
-FROM golang:1.22-alpine AS builder
+FROM golang:1.23-alpine AS builder
 
 ARG GOFLAGS=""
 ENV GOFLAGS=$GOFLAGS
