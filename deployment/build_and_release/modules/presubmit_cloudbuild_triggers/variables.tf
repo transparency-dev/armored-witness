@@ -15,7 +15,13 @@ variable "origin_prefix" {
 
 variable "tamago_version" {
   type        = string
-  description = "TamaGo version to compile with"
+  description = "TamaGo version to compile armored-witness firmware with"
+}
+
+variable "recovery_tamago_version" {
+  type        = string
+  description = "TamaGo version to compile recovery image with"
+  default     = "1.22.6" # Pin to this by default since armory-ums is not yet compatible with 1.23.x
 }
 
 variable "armory_ums_version" {
@@ -97,3 +103,4 @@ variable "bastion_addr" {
   type        = string
   default     = ""
 }
+

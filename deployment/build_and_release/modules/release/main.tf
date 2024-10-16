@@ -779,7 +779,7 @@ resource "google_cloudbuild_trigger" "build_recovery" {
         "-c",
         <<-EOT
         docker build \
-          --build-arg=TAMAGO_VERSION=${var.tamago_version} \
+          --build-arg=TAMAGO_VERSION=${var.recovery_tamago_version} \
           --build-arg=ARMORY_UMS_VERSION=${var.armory_ums_version} \
           -t builder-image \
           recovery
