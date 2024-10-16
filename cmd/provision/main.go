@@ -404,7 +404,7 @@ func waitAndProvision(ctx context.Context, fw *firmwares) error {
 		if *fuse && !*runAnyway {
 			return fmt.Errorf("witness serial number %s has HAB fuse set!", s.Serial)
 		}
-		klog.Infof("⚠️ Witness serial number %s is already HAB fused", s.Serial)
+		klog.Infof("⚠️  Witness serial number %s is already HAB fused", s.Serial)
 	} else {
 		klog.Infof("✅ Witness serial number %s is not HAB fused", s.Serial)
 	}
@@ -415,14 +415,14 @@ func waitAndProvision(ctx context.Context, fw *firmwares) error {
 		if *fuse {
 			return e
 		}
-		klog.Warningf("⚠️ " + e.Error())
+		klog.Warningf("⚠️  %s", e.Error())
 	}
 	if srkEnv != *habTarget {
 		e := fmt.Errorf("witness OS reports SRK Hash (%s) for unexpected release environment %q - we're set to %q, not fusing.", s.SRKHash, srkEnv, *habTarget)
 		if *fuse {
 			return e
 		}
-		klog.Warningf("⚠️ " + e.Error())
+		klog.Warningf("⚠️  %s", e.Error())
 	}
 
 	if *fuse {
@@ -437,7 +437,7 @@ func waitAndProvision(ctx context.Context, fw *firmwares) error {
 			if !*runAnyway {
 				return err
 			}
-			klog.Warningf("⚠️ %s, continuing anyway", err.Error())
+			klog.Warningf("⚠️  %s, continuing anyway", err.Error())
 		}
 		klog.Info("✅ Fusing successful! 👌")
 		// Close dev as we'll need to re-open it below after the device has rebooted...
