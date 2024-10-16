@@ -61,6 +61,12 @@ variable "tamago_version" {
   description = "TamaGo version to compile with"
 }
 
+variable "recovery_tamago_version" {
+  type        = string
+  description = "TamaGo version to compile recovery image with"
+  default     = "1.22.6" # Pin to this by default since armory-ums is not yet compatible with 1.23.x
+}
+
 variable "armory_ums_version" {
   type        = string
   description = "Full git commit hash for the armory-ums repo to use when building the recovery image"
@@ -155,3 +161,4 @@ variable "verify_template" {
   description = "Template to use for verify_build step"
   type        = string
 }
+
