@@ -907,7 +907,7 @@ resource "google_cloudbuild_trigger" "build_recovery" {
           --git_commit_fingerprint=${var.armory_ums_version} \
           --firmware_file=output/armory-ums.imx \
           --firmware_type=RECOVERY \
-          --tamago_version=${var.tamago_version} \
+          --tamago_version=${var.recovery_tamago_version} \
           --hab_signature_file=output/armory-ums.csf \
           --hab_target=${var.env} \
           --raw \
