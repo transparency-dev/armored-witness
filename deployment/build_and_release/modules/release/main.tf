@@ -399,13 +399,13 @@ resource "google_cloudbuild_trigger" "applet_build" {
     }
     # Verify build reproducibility before we log anything...
     step {
-      name       = "golang"
+      name       = "gcr.io/cloud-builders/docker"
       entrypoint = "bash"
       args = [
         "-c",
         <<-EOT
         cat output/trusted_applet_manifest | \
-        go run github.com/transparency-dev/armored-witness/cmd/verify_build@main \
+        docker run -i --entrypoint "/bin/verifier" us-central1-docker.pkg.dev/armored-witness/docker-prod/verifybuild \
           single \
           --tamago_dir=/tmp/tamago \
           --v=2 \
@@ -648,18 +648,18 @@ resource "google_cloudbuild_trigger" "os_build" {
     }
     # Verify build reproducibility before we log anything...
     step {
-      name       = "golang"
+      name       = "gcr.io/cloud-builders/docker"
       entrypoint = "bash"
       args = [
         "-c",
         <<-EOT
         cat output/trusted_os_manifest_both | \
-        go run github.com/transparency-dev/armored-witness/cmd/verify_build@main \
+        docker run -i --entrypoint "/bin/verifier" us-central1-docker.pkg.dev/armored-witness/docker-prod/verifybuild \
           single \
           --tamago_dir=/tmp/tamago \
           --v=2 \
           --template=${var.verify_template}
-         EOT
+        EOT
       ]
     }
     ### Write the firmware release to the CI transparency log.
@@ -907,7 +907,7 @@ resource "google_cloudbuild_trigger" "build_recovery" {
           --git_commit_fingerprint=${var.armory_ums_version} \
           --firmware_file=output/armory-ums.imx \
           --firmware_type=RECOVERY \
-          --tamago_version=${var.tamago_version} \
+          --tamago_version=${var.recovery_tamago_version} \
           --hab_signature_file=output/armory-ums.csf \
           --hab_target=${var.env} \
           --raw \
@@ -936,13 +936,13 @@ resource "google_cloudbuild_trigger" "build_recovery" {
     }
     # Verify build reproducibility before we log anything...
     step {
-      name       = "golang"
+      name       = "gcr.io/cloud-builders/docker"
       entrypoint = "bash"
       args = [
         "-c",
         <<-EOT
         cat output/recovery_manifest | \
-        go run github.com/transparency-dev/armored-witness/cmd/verify_build@main \
+        docker run -i --entrypoint "/bin/verifier" us-central1-docker.pkg.dev/armored-witness/docker-prod/verifybuild \
           single \
           --tamago_dir=/tmp/tamago \
           --v=2 \
@@ -1235,13 +1235,13 @@ resource "google_cloudbuild_trigger" "build_boot" {
     }
     # Verify build reproducibility before we log anything...
     step {
-      name       = "golang"
+      name       = "gcr.io/cloud-builders/docker"
       entrypoint = "bash"
       args = [
         "-c",
         <<-EOT
         cat output/boot_manifest | \
-        go run github.com/transparency-dev/armored-witness/cmd/verify_build@main \
+        docker run -i --entrypoint "/bin/verifier" us-central1-docker.pkg.dev/armored-witness/docker-prod/verifybuild \
           single \
           --tamago_dir=/tmp/tamago \
           --v=2 \
