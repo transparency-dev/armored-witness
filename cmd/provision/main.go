@@ -34,6 +34,7 @@ import (
 
 	"github.com/transparency-dev/armored-witness-boot/config"
 	"github.com/transparency-dev/armored-witness-common/release/firmware"
+	"github.com/transparency-dev/armored-witness-common/release/firmware/ftlog"
 	"github.com/transparency-dev/armored-witness-common/release/firmware/update"
 	"github.com/transparency-dev/armored-witness/internal/device"
 	"github.com/transparency-dev/armored-witness/internal/fetcher"
@@ -105,6 +106,8 @@ var (
 	osVerifier1      = flag.String("os_verifier_1", "", "Verifier key 1 for the OS manifest.")
 	osVerifier2      = flag.String("os_verifier_2", "", "Verifier key 2 for the OS manifest.")
 	recoveryVerifier = flag.String("recovery_verifier", "", "Verifier key for the recovery manifest.")
+
+	osIndexOverride = flag.Int64("os_index", -1, "Override the OS to install by specifying the index into the log for its manifest.")
 
 	habTarget       = flag.String("hab_target", "", "Device type firmware must be targetting.")
 	blockDeviceGlob = flag.String("blockdevs", "/dev/disk/by-id/usb-F-Secure_USB_*0:0", "Glob for plausible block devices where the armored witness could appear.")
@@ -192,6 +195,13 @@ type firmwareJobs struct {
 	trustedApplet    flashJob
 }
 
+type bundleProvider interface {
+	GetOS(ctx context.Context) (firmware.Bundle, error)
+	GetApplet(ctx context.Context) (firmware.Bundle, error)
+	GetRecovery(ctx context.Context) (firmware.Bundle, error)
+	GetBoot(ctx context.Context) (firmware.Bundle, error)
+}
+
 func fetchLatestArtefacts(ctx context.Context) (*firmwares, error) {
 	logBaseURL, err := url.Parse(*firmwareLogURL)
 	if err != nil {
@@ -249,16 +259,19 @@ func fetchLatestArtefacts(ctx context.Context) (*firmwares, error) {
 		return nil, fmt.Errorf("Scan: %v", err)
 	}
 
-	latestOSVer, latestAppletVer, err := updateFetcher.GetLatestVersions(ctx)
+	fetchSession, err := updateFetcher.NewSession(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("GetLatestVersions: %v", err)
+		return nil, fmt.Errorf("NewSession: %v", err)
 	}
-
-	klog.Infof("Found latest versions: OS %v, Applet %v", latestOSVer, latestAppletVer)
+	bp := overridableBundleProvider{
+		delegate:     updateFetcher,
+		binFetcher:   binFetcher,
+		fetchSession: fetchSession,
+	}
 
 	firmwares := &firmwares{}
 
-	osFW, err := updateFetcher.GetOS(ctx)
+	osFW, err := bp.GetOS(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("GetOS: %v", err)
 	}
@@ -268,7 +281,7 @@ func fetchLatestArtefacts(ctx context.Context) (*firmwares, error) {
 		block:  osBlock,
 	}
 
-	appletFW, err := updateFetcher.GetApplet(ctx)
+	appletFW, err := bp.GetApplet(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("GetApplet: %v", err)
 	}
@@ -278,7 +291,7 @@ func fetchLatestArtefacts(ctx context.Context) (*firmwares, error) {
 		block:  appletBlock,
 	}
 
-	bootFW, err := updateFetcher.GetBoot(ctx)
+	bootFW, err := bp.GetBoot(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("GetBoot: %v", err)
 	}
@@ -289,7 +302,7 @@ func fetchLatestArtefacts(ctx context.Context) (*firmwares, error) {
 		configBlock: bootloaderConfigBlock,
 	}
 
-	recoveryFW, err := updateFetcher.GetRecovery(ctx)
+	recoveryFW, err := bp.GetRecovery(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("GetRecovery: %v", err)
 	}
@@ -630,4 +643,45 @@ func wipeAppletData(dev string) error {
 	}
 	klog.Info("   100%")
 	return nil
+}
+
+type overridableBundleProvider struct {
+	delegate bundleProvider
+
+	fetchSession update.FetchSession
+	binFetcher   update.BinaryFetcher
+}
+
+func (p *overridableBundleProvider) GetOS(ctx context.Context) (firmware.Bundle, error) {
+	if *osIndexOverride < 0 {
+		return p.delegate.GetOS(ctx)
+	}
+
+	i := uint64(*osIndexOverride)
+
+	bundle, release, err := p.fetchSession.Fetch(ctx, i)
+	if err != nil {
+		return firmware.Bundle{}, err
+	}
+	if release.Component != ftlog.ComponentOS {
+		return firmware.Bundle{}, fmt.Errorf("Overridden OS index %d is of type %s, not required type %s", i, release.Component, ftlog.ComponentOS)
+	}
+	bundle.Firmware, _, err = p.binFetcher(ctx, *release)
+	if err != nil {
+		return firmware.Bundle{}, fmt.Errorf("BinaryFetcher(): %v", err)
+	}
+
+	return *bundle, nil
+}
+
+func (p *overridableBundleProvider) GetApplet(ctx context.Context) (firmware.Bundle, error) {
+	return p.delegate.GetApplet(ctx)
+}
+
+func (p *overridableBundleProvider) GetRecovery(ctx context.Context) (firmware.Bundle, error) {
+	return p.delegate.GetRecovery(ctx)
+}
+
+func (p *overridableBundleProvider) GetBoot(ctx context.Context) (firmware.Bundle, error) {
+	return p.delegate.GetBoot(ctx)
 }
