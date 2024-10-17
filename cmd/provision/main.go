@@ -107,7 +107,8 @@ var (
 	osVerifier2      = flag.String("os_verifier_2", "", "Verifier key 2 for the OS manifest.")
 	recoveryVerifier = flag.String("recovery_verifier", "", "Verifier key for the recovery manifest.")
 
-	osIndexOverride = flag.Int64("os_index", -1, "Override the OS to install by specifying the index into the log for its manifest.")
+	osIndexOverride     = flag.Int64("os_index", -1, "Override the OS to install by specifying the index into the log for its manifest.")
+	appletIndexOverride = flag.Int64("applet_index", -1, "Override the Applet to install by specifying the index into the log for its manifest.")
 
 	habTarget       = flag.String("hab_target", "", "Device type firmware must be targetting.")
 	blockDeviceGlob = flag.String("blockdevs", "/dev/disk/by-id/usb-F-Secure_USB_*0:0", "Glob for plausible block devices where the armored witness could appear.")
@@ -675,7 +676,25 @@ func (p *overridableBundleProvider) GetOS(ctx context.Context) (firmware.Bundle,
 }
 
 func (p *overridableBundleProvider) GetApplet(ctx context.Context) (firmware.Bundle, error) {
-	return p.delegate.GetApplet(ctx)
+	if *appletIndexOverride < 0 {
+		return p.delegate.GetApplet(ctx)
+	}
+
+	i := uint64(*appletIndexOverride)
+
+	bundle, release, err := p.fetchSession.Fetch(ctx, i)
+	if err != nil {
+		return firmware.Bundle{}, err
+	}
+	if release.Component != ftlog.ComponentApplet {
+		return firmware.Bundle{}, fmt.Errorf("Overridden Applet index %d is of type %s, not required type %s", i, release.Component, ftlog.ComponentApplet)
+	}
+	bundle.Firmware, _, err = p.binFetcher(ctx, *release)
+	if err != nil {
+		return firmware.Bundle{}, fmt.Errorf("BinaryFetcher(): %v", err)
+	}
+
+	return *bundle, nil
 }
 
 func (p *overridableBundleProvider) GetRecovery(ctx context.Context) (firmware.Bundle, error) {
