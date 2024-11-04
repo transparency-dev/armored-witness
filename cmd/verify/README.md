@@ -73,9 +73,9 @@ I0311 18:44:50.422195  243805 main.go:96] Using template flag setting --firmware
 I0311 18:44:50.422205  243805 main.go:96] Using template flag setting --firmware_log_origin=transparency.dev/armored-witness/firmware_transparency/ci/2
 I0311 18:44:55.917161  243805 fetcher.go:88] Fetching RECOVERY bin from "8271e2a8ccefb6c4df48889fcbb35343511501e3bcd527317d9e63e2ac7349e3"
 I0311 18:44:56.047071  243805 main.go:218] Successfully fetched and verified recovery image
-I0311 18:44:56.047114  243805 main.go:219] ----------------------------------------------------------------------------------------------
-I0311 18:44:56.047124  243805 main.go:220] 🙏 Operator, please ensure boot switch is set to USB, and then connect device 🙏
-I0311 18:44:56.047132  243805 main.go:221] ----------------------------------------------------------------------------------------------
+I0311 18:44:56.047114  243805 main.go:219] -------------------------------------------------------------------------------------------------------------
+I0311 18:44:56.047124  243805 main.go:220] 🔷🔷🔷  🙏 Operator, please ensure boot switch is set to USB (towards RJ45 socket), and then connect device 🙏
+I0311 18:44:56.047132  243805 main.go:221] -------------------------------------------------------------------------------------------------------------
 I0311 18:44:56.047144  243805 main.go:224] Recovery firmware is 1924096 bytes + 16384 bytes HAB signature
 I0311 18:44:56.047168  243805 recovery.go:63] Waiting for device to be detected...
 I0311 18:45:16.109285  243805 sdp.go:85] found device 15a2:007d Freescale SemiConductor Inc  SE Blank 6UL
@@ -102,9 +102,9 @@ I0311 18:45:28.482947  243805 main.go:315]   ✅ TrustedOS: proof bundle checkpo
 I0311 18:45:28.505108  243805 main.go:292]   ✅ TrustedApplet: proof bundle is self-consistent
 I0311 18:45:28.505194  243805 main.go:315]   ✅ TrustedApplet: proof bundle checkpoint(@50) is consistent with current view of log(@50)
 I0311 18:45:28.505208  243805 main.go:126] ✅ Device verified OK!
-I0311 18:45:28.505212  243805 main.go:127] ----------------------------------------------------------------------------------------------
-I0311 18:45:28.505215  243805 main.go:128] 🙏 Operator, please ensure boot switch is set to MMC, and then reboot device 🙏
-I0311 18:45:28.505222  243805 main.go:129] ----------------------------------------------------------------------------------------------
+I0311 18:45:28.505212  243805 main.go:127] -------------------------------------------------------------------------------------------------------------
+I0311 18:45:28.505215  243805 main.go:128] 🔷🔷🔷  🙏 Operator, please ensure boot switch is set to MMC (away from RJ45 socket), and then reboot device 🙏
+I0311 18:45:28.505222  243805 main.go:129] -------------------------------------------------------------------------------------------------------------
 ```
 
 In the above run, we can see a successfully verified device which was provisioned onto the `ci` release train.
