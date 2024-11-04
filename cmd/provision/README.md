@@ -116,7 +116,7 @@ I1012 12:15:41.216803  292650 main.go:220] Loaded firmware artefacts.
 The tool will prompt you to ensure that a device is plugged in and has the boot switch set correctly:
 
 ```bash
-I1012 12:15:41.216806  292650 main.go:226] Operator, please ensure boot switch is set to USB, and then connect unprovisioned device 🙏
+I1012 12:15:41.216806  292650 main.go:226] Operator, please ensure boot switch is set to USB (towards RJ45 socket), and then connect unprovisioned device 🙏
 I1012 12:15:41.216809  292650 main.go:314] Waiting for device to be detected...
 ```
 
@@ -141,7 +141,7 @@ I1012 12:15:49.838553  292650 main.go:261]   Flashing in 4
 Once complete, it will ask you to flip the boot swith and reboot the device:
 
 ```bash
-I1012 12:18:10.816923  292650 main.go:278] Operator, please change boot switch to MMC, and then reboot device 🙏
+I1012 12:18:10.816923  292650 main.go:278] Operator, please change boot switch to MMC (away from RJ45 socket), and then reboot device 🙏
 I1012 12:18:10.816955  292650 main.go:279] Waiting for device to boot...
 I1012 12:18:10.816957  292650 main.go:337] Waiting for armored witness device to be detected...
 ```

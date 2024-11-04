@@ -349,7 +349,7 @@ func prepareFlashJobs(firmwares *firmwares) (*firmwareJobs, error) {
 
 // waitAndProvision waits for a fresh armored witness device to be detected, and then provisions it.
 func waitAndProvision(ctx context.Context, fw *firmwares) error {
-	klog.Infof(operPlease, "please ensure boot switch is set to USB, and then connect unprovisioned device")
+	klog.Infof(operPlease, "please ensure boot switch is set to USB (towards RJ45 socket), and then connect unprovisioned device")
 
 	recoveryHAB := append(fw.recovery.bundle.Firmware, fw.recovery.bundle.HABSignature...)
 	klog.Infof("Recovery firmware is %d bytes + %d bytes HAB signature", len(fw.recovery.bundle.Firmware), len(fw.recovery.bundle.HABSignature))
@@ -400,7 +400,7 @@ func waitAndProvision(ctx context.Context, fw *firmwares) error {
 		}
 	}
 
-	klog.Infof(operPlease, "please change boot switch to MMC, and then reboot device")
+	klog.Infof(operPlease, "please change boot switch to MMC (away from RJ45 socket), and then reboot device")
 	klog.Info("Waiting for device to boot...")
 
 	p, dev, err := waitForU2FDevice(ctx)
@@ -459,7 +459,7 @@ func waitAndProvision(ctx context.Context, fw *firmwares) error {
 
 		klog.Infof("%d remaining firmware(s) to install", len(flashStages[1]))
 
-		klog.Infof(operPlease, "please change boot switch to USB, and then reboot device")
+		klog.Infof(operPlease, "please change boot switch to USB (towards RJ45 socket), and then reboot device")
 		klog.Info("Waiting for device to boot...")
 		// The device will initially be in HID mode (showing as "RecoveryMode" in the output to lsusb).
 		// So we'll detect it as such:
@@ -476,7 +476,7 @@ func waitAndProvision(ctx context.Context, fw *firmwares) error {
 		}
 		klog.Info("✅ Flashed Applet image")
 
-		klog.Infof(operPlease, "please change boot switch to MMC, and then reboot device")
+		klog.Infof(operPlease, "please change boot switch to MMC (away from RJ45 socket), and then reboot device")
 		klog.Info("Waiting for device to boot...")
 		p, dev, err = waitForU2FDevice(ctx)
 		if err != nil {

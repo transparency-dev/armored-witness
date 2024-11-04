@@ -68,9 +68,9 @@ I0412 10:40:28.663963 2193170 main.go:98] Using template flag setting --os_verif
 I0412 10:40:28.663982 2193170 main.go:98] Using template flag setting --os_verifier_2=transparency.dev-aw-os2-prod+662add8c+AebLJIKJhx57T3mWmHKe0sasFnXmtIQNTGRaoj2PQLrY
 I0412 10:40:29.681000 2193170 fetcher.go:88] Fetching RECOVERY bin from "8271e2a8ccefb6c4df48889fcbb35343511501e3bcd527317d9e63e2ac7349e3"
 I0412 10:40:29.879505 2193170 main.go:217] Successfully fetched and verified recovery image
-I0412 10:40:29.879519 2193170 main.go:218] ----------------------------------------------------------------------------------------------
-I0412 10:40:29.879523 2193170 main.go:219] 🔷🔷🔷 🙋 OPERATOR: please ensure boot switch is set to USB, and then connect device 🙏
-I0412 10:40:29.879526 2193170 main.go:220] ----------------------------------------------------------------------------------------------
+I0412 10:40:29.879519 2193170 main.go:218] ------------------------------------------------------------------------------------------------------------
+I0412 10:40:29.879523 2193170 main.go:219] 🔷🔷🔷 🙋 OPERATOR: please ensure boot switch is set to USB (towards RJ45 socket), and then connect device 🙏
+I0412 10:40:29.879526 2193170 main.go:220] ------------------------------------------------------------------------------------------------------------
 I0412 10:40:29.879530 2193170 main.go:223] Recovery firmware is 1924096 bytes + 16384 bytes HAB signature
 I0412 10:40:29.879540 2193170 recovery.go:64] Waiting for device to be detected...
 I0412 10:46:13.033524 2193170 sdp.go:85] found device 15a2:007d Freescale SemiConductor Inc  SE Blank 6UL
@@ -97,9 +97,9 @@ I0412 10:46:21.715029 2193170 main.go:314]   ✅ TrustedOS: proof bundle checkpo
 I0412 10:46:21.735579 2193170 main.go:291]   ✅ TrustedApplet: proof bundle is self-consistent
 I0412 10:46:21.735666 2193170 main.go:314]   ✅ TrustedApplet: proof bundle checkpoint(@7) is consistent with current view of log(@7)
 I0412 10:46:21.735672 2193170 main.go:128] ✅ Device verified OK!
-I0412 10:46:21.735681 2193170 main.go:129] ----------------------------------------------------------------------------------------------
-I0412 10:46:21.735685 2193170 main.go:130] 🔷🔷🔷 🙋 OPERATOR: please ensure boot switch is set to MMC, and then reboot device 🙏
-I0412 10:46:21.735689 2193170 main.go:131] ---------------------------------------------------------------------------------------------- 
+I0412 10:46:21.735681 2193170 main.go:129] ------------------------------------------------------------------------------------------------------------
+I0412 10:46:21.735685 2193170 main.go:130] 🔷🔷🔷 🙋 OPERATOR: please ensure boot switch is set to MMC (away from RJ45 socket), and then reboot device 🙏
+I0412 10:46:21.735689 2193170 main.go:131] ------------------------------------------------------------------------------------------------------------
 ```
 
 The block of ✅ green ticks towards the end indicates that the firmware on the device was successfully verified.

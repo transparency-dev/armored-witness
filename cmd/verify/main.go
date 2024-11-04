@@ -126,9 +126,9 @@ func main() {
 		klog.Exitf("❌ Failed to verify device: %v", err)
 	}
 	klog.Info("✅ Device verified OK!")
-	klog.Info("----------------------------------------------------------------------------------------------")
-	klog.Infof(operPlease, "please ensure boot switch is set to MMC, and then reboot device")
-	klog.Info("----------------------------------------------------------------------------------------------")
+	klog.Info("------------------------------------------------------------------------------------------------------------")
+	klog.Infof(operPlease, "please ensure boot switch is set to MMC (away from RJ45 socket), and then reboot device")
+	klog.Info("------------------------------------------------------------------------------------------------------------")
 }
 
 // firmwares respresents the collection of firmware and related artefacts found
@@ -215,9 +215,9 @@ func (v *verifier) waitAndVerify(ctx context.Context) error {
 		klog.Exitf("Failed to fetch device recovery image: %v", err)
 	}
 	klog.Info("Successfully fetched and verified recovery image")
-	klog.Info("----------------------------------------------------------------------------------------------")
-	klog.Infof(operPlease, "please ensure boot switch is set to USB, and then connect device")
-	klog.Info("----------------------------------------------------------------------------------------------")
+	klog.Info("------------------------------------------------------------------------------------------------------------")
+	klog.Infof(operPlease, "please ensure boot switch is set to USB (towards RJ45 socket), and then connect device")
+	klog.Info("------------------------------------------------------------------------------------------------------------")
 
 	recoveryHAB := append(v.recovery.Firmware, v.recovery.HABSignature...)
 	klog.Infof("Recovery firmware is %d bytes + %d bytes HAB signature", len(v.recovery.Firmware), len(v.recovery.HABSignature))
