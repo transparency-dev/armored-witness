@@ -16,17 +16,17 @@ data "google_project" "project" {
 }
 
 data "terraform_remote_state" "ci_build_artefacts" {
-  backend = "gcs"
+  backend   = "gcs"
   workspace = terraform.workspace
-  config  = {
+  config = {
     bucket = "${var.project_name}-build-and-release-bucket-tfstate-ci"
     prefix = "ci/terraform.tfstate"
   }
 }
 data "terraform_remote_state" "prod_build_artefacts" {
-  backend = "gcs"
+  backend   = "gcs"
   workspace = terraform.workspace
-  config  = {
+  config = {
     bucket = "${var.project_name}-build-and-release-bucket-tfstate-prod"
     prefix = "prod/terraform.tfstate"
   }
@@ -112,6 +112,28 @@ module "lb-http" {
         enable = false
       }
     }
+    dev = {
+      description = "Distributor API backend (dev)"
+      protocol    = "HTTPS"
+      port_name   = "https"
+      port        = 443
+      groups = [
+        {
+          group = google_compute_global_network_endpoint_group.distributor_dev.id
+        }
+      ]
+
+      health_check = null
+
+      enable_cdn = false
+
+      iap_config = {
+        enable = false
+      }
+      log_config = {
+        enable = false
+      }
+    }
   }
 
   create_url_map = false
@@ -158,14 +180,14 @@ resource "google_compute_url_map" "default" {
       route_action {
         url_rewrite {
           path_prefix_rewrite = "/distributor/"
-          host_rewrite = var.distributor_prod_host
+          host_rewrite        = var.distributor_prod_host
         }
       }
       service = module.lb-http.backend_services["prod"].id
     }
     path_rule {
       paths = [
-	# match on /distributor/ to prevent /metrics being exposed publicly
+        # match on /distributor/ to prevent /metrics being exposed publicly
         "/ci/distributor/*"
       ]
       route_action {
@@ -175,6 +197,19 @@ resource "google_compute_url_map" "default" {
         }
       }
       service = module.lb-http.backend_services["ci"].id
+    }
+    path_rule {
+      paths = [
+        # match on /distributor/ to prevent /metrics being exposed publicly
+        "/dev/distributor/*"
+      ]
+      route_action {
+        url_rewrite {
+          path_prefix_rewrite = "/distributor/"
+          host_rewrite        = var.distributor_dev_host
+        }
+      }
+      service = module.lb-http.backend_services["dev"].id
     }
 
     #####
@@ -255,7 +290,7 @@ resource "google_compute_backend_bucket" "firmware_log_ci" {
 
   name        = "firmware-log-ci-backend-${each.key}"
   description = "Contains CI firmware transparency log ${each.key}"
-  bucket_name = "${each.value}"
+  bucket_name = each.value
   enable_cdn  = false
 }
 resource "google_compute_backend_bucket" "firmware_artefacts_ci" {
@@ -263,7 +298,7 @@ resource "google_compute_backend_bucket" "firmware_artefacts_ci" {
 
   name        = "firmware-artefacts-ci-backend-${each.key}"
   description = "Contains CI firmware artefacts for FT log ${each.key}"
-  bucket_name = "${each.value}"
+  bucket_name = each.value
   enable_cdn  = false
 }
 
@@ -273,7 +308,7 @@ resource "google_compute_backend_bucket" "firmware_log_prod" {
 
   name        = "firmware-log-prod-backend-${each.key}"
   description = "Contains prod firmware transparency log ${each.key}"
-  bucket_name = "${each.value}"
+  bucket_name = each.value
   enable_cdn  = false
 }
 resource "google_compute_backend_bucket" "firmware_artefacts_prod" {
@@ -281,7 +316,7 @@ resource "google_compute_backend_bucket" "firmware_artefacts_prod" {
 
   name        = "firmware-artefacts-prod-backend-${each.key}"
   description = "Contains prod firmware artefacts for FT log ${each.key}"
-  bucket_name = "${each.value}"
+  bucket_name = each.value
   enable_cdn  = false
 }
 
@@ -299,6 +334,13 @@ resource "google_compute_global_network_endpoint_group" "distributor_ci" {
   default_port          = var.distributor_ci_port
   network_endpoint_type = "INTERNET_FQDN_PORT"
 }
+resource "google_compute_global_network_endpoint_group" "distributor_dev" {
+  name                  = "distributor-dev"
+  project               = var.project_id
+  provider              = google-beta
+  default_port          = var.distributor_dev_port
+  network_endpoint_type = "INTERNET_FQDN_PORT"
+}
 
 resource "google_compute_global_network_endpoint" "distributor_prod" {
   global_network_endpoint_group = google_compute_global_network_endpoint_group.distributor_prod.name
@@ -309,6 +351,11 @@ resource "google_compute_global_network_endpoint" "distributor_ci" {
   global_network_endpoint_group = google_compute_global_network_endpoint_group.distributor_ci.name
   port                          = var.distributor_ci_port
   fqdn                          = var.distributor_ci_host
+}
+resource "google_compute_global_network_endpoint" "distributor_dev" {
+  global_network_endpoint_group = google_compute_global_network_endpoint_group.distributor_dev.name
+  port                          = var.distributor_dev_port
+  fqdn                          = var.distributor_dev_host
 }
 
 ## Terraform keys

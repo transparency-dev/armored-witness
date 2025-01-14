@@ -14,3 +14,6 @@ distributor_prod_port = 443
 
 distributor_ci_host = "distributor-service-ci-oxxl2d5jeq-uc.a.run.app"
 distributor_ci_port = 443
+
+distributor_dev_host = "distributor-service-dev-oxxl2d5jeq-uc.a.run.app"
+distributor_dev_port = 443
