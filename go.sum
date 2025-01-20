@@ -65,8 +65,8 @@ github.com/transparency-dev/armored-witness-boot v0.1.0 h1:OBlz71PCmPju9cDI1VEmy
 github.com/transparency-dev/armored-witness-boot v0.1.0/go.mod h1:XpiSLWNiDplWVYjtR1FY/wyFqiWK++5pLCiYe3PZZC8=
 github.com/transparency-dev/armored-witness-common v0.0.0-20241017132000-df37fdcb59d5 h1:ZexKrZ4gWZvdMrK6Wa2m6k/wB5ln0ROyUncawrdNpVA=
 github.com/transparency-dev/armored-witness-common v0.0.0-20241017132000-df37fdcb59d5/go.mod h1:S4eaGNe18UhrlFAbbdISM/FcN+/ZlOVHxKhmy/bCc+A=
-github.com/transparency-dev/armored-witness-os v0.3.0 h1:h3JM/w4EY7kyVhNHc/g0/B1uy1/hzbX8AQm9VJQ7FKY=
-github.com/transparency-dev/armored-witness-os v0.3.0/go.mod h1:1ThiAqCpGesnsGPo75B+pnc6tIqHMxYLmQgXMm1lI6g=
+github.com/transparency-dev/armored-witness-os v0.3.1 h1:dQmCmqEztHAqLD4znuNxxAllt52C5Ye4k6PATPptCb4=
+github.com/transparency-dev/armored-witness-os v0.3.1/go.mod h1:7LrFwn8LSaOJvgPZmY2djjIJNsKhnU7+aFl2yreMrh0=
 github.com/transparency-dev/formats v0.0.0-20230920083814-0f75b1d4e813 h1:PHklaeYyhPsbhWt+MnKpBvJrsJGkPEaU1JutMj4wNqM=
 github.com/transparency-dev/formats v0.0.0-20230920083814-0f75b1d4e813/go.mod h1:J2NdDb6IhKIvF6MwCvKikz9/QStRylEtS2mv+En+jBg=
 github.com/transparency-dev/merkle v0.0.2 h1:Q9nBoQcZcgPamMkGn7ghV8XiTZ/kRxn1yCG81+twTK4=
@@ -118,8 +118,8 @@ google.golang.org/genproto/googleapis/rpc v0.0.0-20241209162323-e6fa225c2576 h1:
 google.golang.org/genproto/googleapis/rpc v0.0.0-20241209162323-e6fa225c2576/go.mod h1:5uTbfoYQed2U9p3KIj2/Zzm02PYhndfdmML0qC3q3FU=
 google.golang.org/grpc v1.67.3 h1:OgPcDAFKHnH8X3O4WcO4XUc8GRDeKsKReqbQtiCj7N8=
 google.golang.org/grpc v1.67.3/go.mod h1:YGaHCc6Oap+FzBJTZLBzkGSYt/cvGPFTPxkn7QfSU8s=
-google.golang.org/protobuf v1.36.2 h1:R8FeyR1/eLmkutZOM5CWghmo5itiG9z0ktFlTVLuTmU=
-google.golang.org/protobuf v1.36.2/go.mod h1:9fA7Ob0pmnwhb644+1+CVWFRbNajQ6iRojtC/QF5bRE=
+google.golang.org/protobuf v1.36.3 h1:82DV7MYdb8anAVi3qge1wSnMDrnKK7ebr+I0hHRN1BU=
+google.golang.org/protobuf v1.36.3/go.mod h1:9fA7Ob0pmnwhb644+1+CVWFRbNajQ6iRojtC/QF5bRE=
 gopkg.in/check.v1 v0.0.0-20161208181325-20d25e280405/go.mod h1:Co6ibVJAznAaIkqp8huTwlJQCZ016jof/cbN4VW5Yz0=
 gopkg.in/yaml.v3 v3.0.0-20200313102051-9f266ea9e77c/go.mod h1:K4uyk7z7BCEPqu6E+C64Yfv1cQ7kz7rIZviUmN+EgEM=
 gopkg.in/yaml.v3 v3.0.1 h1:fxVm/GzAzEWqLHuvctI91KS9hhNmmWOoWu0XTYJS7CA=
