@@ -9,7 +9,7 @@ require (
 	github.com/flynn/u2f v0.0.0-20180613185708-15554eb68e5d
 	github.com/fsnotify/fsnotify v1.8.0
 	github.com/spf13/cobra v1.8.1
-	github.com/spf13/pflag v1.0.5
+	github.com/spf13/pflag v1.0.6
 	github.com/transparency-dev/armored-witness-boot v0.1.0
 	github.com/transparency-dev/armored-witness-common v0.0.0-20241017132000-df37fdcb59d5
 	github.com/transparency-dev/armored-witness-os v0.3.1
