@@ -20,6 +20,7 @@ import (
 	"path/filepath"
 
 	"golang.org/x/mod/sumdb/note"
+	"k8s.io/klog/v2"
 )
 
 func NewReleaseImplicitMetadata(logV, osV1, osV2, appV, bootV, recoveryV string) (*ReleaseImplicitMetadata, error) {
@@ -80,7 +81,9 @@ func NewReleaseImplicitMetadata(logV, osV1, osV2, appV, bootV, recoveryV string)
 			fmt.Sprintf("OS_PUBLIC_KEY2=%s", os2File),
 		},
 		Cleanup: func() {
-			os.RemoveAll(dir)
+			if err := os.RemoveAll(dir); err != nil {
+				klog.Errorf("RemoveAll: %v", err)
+			}
 		},
 	}, nil
 }

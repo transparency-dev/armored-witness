@@ -257,12 +257,12 @@ func fetchLatestArtefacts(ctx context.Context) (*firmwares, error) {
 	}
 
 	if err := updateFetcher.Scan(ctx); err != nil {
-		return nil, fmt.Errorf("Scan: %v", err)
+		return nil, fmt.Errorf("updateFetcher.Scan: %v", err)
 	}
 
 	fetchSession, err := updateFetcher.NewSession(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("NewSession: %v", err)
+		return nil, fmt.Errorf("updateFetcher.NewSession: %v", err)
 	}
 	bp := overridableBundleProvider{
 		delegate:     updateFetcher,
@@ -274,7 +274,7 @@ func fetchLatestArtefacts(ctx context.Context) (*firmwares, error) {
 
 	osFW, err := bp.GetOS(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("GetOS: %v", err)
+		return nil, fmt.Errorf("bp.GetOS: %v", err)
 	}
 	klog.Infof("Found OS bundle @ %d", osFW.Index)
 	firmwares.trustedOS = &fw{
@@ -284,7 +284,7 @@ func fetchLatestArtefacts(ctx context.Context) (*firmwares, error) {
 
 	appletFW, err := bp.GetApplet(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("GetApplet: %v", err)
+		return nil, fmt.Errorf("bp.GetApplet: %v", err)
 	}
 	klog.Infof("Found Applet bundle @ %d", appletFW.Index)
 	firmwares.trustedApplet = &fw{
@@ -294,7 +294,7 @@ func fetchLatestArtefacts(ctx context.Context) (*firmwares, error) {
 
 	bootFW, err := bp.GetBoot(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("GetBoot: %v", err)
+		return nil, fmt.Errorf("bp.GetBoot: %v", err)
 	}
 	klog.Infof("Found Bootloader bundle @ %d", bootFW.Index)
 	firmwares.bootloader = &fw{
@@ -305,7 +305,7 @@ func fetchLatestArtefacts(ctx context.Context) (*firmwares, error) {
 
 	recoveryFW, err := bp.GetRecovery(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("GetRecovery: %v", err)
+		return nil, fmt.Errorf("bp.GetRecovery: %v", err)
 	}
 	klog.Infof("Found Recovery bundle @ %d", recoveryFW.Index)
 	firmwares.recovery = &fw{
@@ -416,7 +416,7 @@ func waitAndProvision(ctx context.Context, fw *firmwares) error {
 	klog.Infof("✅ Witness serial number %s found", s.Serial)
 	if s.HAB {
 		if *fuse && !*runAnyway {
-			return fmt.Errorf("witness serial number %s has HAB fuse set!", s.Serial)
+			return fmt.Errorf("witness serial number %s has HAB fuse set", s.Serial)
 		}
 		klog.Infof("⚠️  Witness serial number %s is already HAB fused", s.Serial)
 	} else {
@@ -425,14 +425,14 @@ func waitAndProvision(ctx context.Context, fw *firmwares) error {
 
 	srkEnv, ok := expectedSRKHashes[s.SRKHash]
 	if !ok {
-		e := fmt.Errorf("witness OS reports UNKNOWN SRK Hash '%s', not fusing.", s.SRKHash)
+		e := fmt.Errorf("witness OS reports UNKNOWN SRK Hash '%s', not fusing", s.SRKHash)
 		if *fuse {
 			return e
 		}
 		klog.Warningf("⚠️  %s", e.Error())
 	}
 	if srkEnv != *habTarget {
-		e := fmt.Errorf("witness OS reports SRK Hash (%s) for unexpected release environment %q - we're set to %q, not fusing.", s.SRKHash, srkEnv, *habTarget)
+		e := fmt.Errorf("witness OS reports SRK Hash (%s) for unexpected release environment %q - we're set to %q, not fusing", s.SRKHash, srkEnv, *habTarget)
 		if *fuse {
 			return e
 		}
@@ -665,11 +665,11 @@ func (p *overridableBundleProvider) GetOS(ctx context.Context) (firmware.Bundle,
 		return firmware.Bundle{}, err
 	}
 	if release.Component != ftlog.ComponentOS {
-		return firmware.Bundle{}, fmt.Errorf("Overridden OS index %d is of type %s, not required type %s", i, release.Component, ftlog.ComponentOS)
+		return firmware.Bundle{}, fmt.Errorf("overridden OS index %d is of type %s, not required type %s", i, release.Component, ftlog.ComponentOS)
 	}
 	bundle.Firmware, _, err = p.binFetcher(ctx, *release)
 	if err != nil {
-		return firmware.Bundle{}, fmt.Errorf("BinaryFetcher(): %v", err)
+		return firmware.Bundle{}, fmt.Errorf("binFetcher(): %v", err)
 	}
 
 	return *bundle, nil
@@ -687,11 +687,11 @@ func (p *overridableBundleProvider) GetApplet(ctx context.Context) (firmware.Bun
 		return firmware.Bundle{}, err
 	}
 	if release.Component != ftlog.ComponentApplet {
-		return firmware.Bundle{}, fmt.Errorf("Overridden Applet index %d is of type %s, not required type %s", i, release.Component, ftlog.ComponentApplet)
+		return firmware.Bundle{}, fmt.Errorf("overridden Applet index %d is of type %s, not required type %s", i, release.Component, ftlog.ComponentApplet)
 	}
 	bundle.Firmware, _, err = p.binFetcher(ctx, *release)
 	if err != nil {
-		return firmware.Bundle{}, fmt.Errorf("BinaryFetcher(): %v", err)
+		return firmware.Bundle{}, fmt.Errorf("binFetcher(): %v", err)
 	}
 
 	return *bundle, nil
