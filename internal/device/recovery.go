@@ -138,7 +138,11 @@ func probeDevice(ctx context.Context, p string) error {
 			if err != nil {
 				return err
 			}
-			defer f.Close()
+			defer func() {
+				if err := f.Close(); err != nil {
+					klog.Errorf("Close: %v", err)
+				}
+			}()
 			b := make([]byte, 1024)
 			if _, err := f.Read(b); err != nil {
 				return err

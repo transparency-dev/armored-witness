@@ -30,6 +30,7 @@ import (
 	kms "cloud.google.com/go/kms/apiv1"
 	"cloud.google.com/go/kms/apiv1/kmspb"
 	"golang.org/x/mod/sumdb/note"
+	"k8s.io/klog/v2"
 )
 
 var (
@@ -58,21 +59,23 @@ func fromGCP(ctx context.Context, f string, n string) (string, error) {
 	}
 	go func() {
 		<-ctx.Done()
-		c.Close()
+		if err := c.Close(); err != nil {
+			klog.Errorf("Close(): %v", err)
+		}
 	}()
 
 	resp, err := c.GetPublicKey(ctx, &kmspb.GetPublicKeyRequest{Name: f})
 	if err != nil {
-		return "", fmt.Errorf("GetPublicKey: %v", err)
+		return "", fmt.Errorf("c.GetPublicKey: %v", err)
 	}
 	der, _ := pem.Decode([]byte(resp.GetPem()))
 	pk, err := x509.ParsePKIXPublicKey(der.Bytes)
 	if err != nil {
-		return "", fmt.Errorf("ParsePKIXPublicKey: %v", err)
+		return "", fmt.Errorf("x509.ParsePKIXPublicKey: %v", err)
 	}
 	edk, ok := pk.(ed25519.PublicKey)
 	if !ok {
-		return "", fmt.Errorf("Oh noes, got a %T but want an Ed25519 key", pk)
+		return "", fmt.Errorf("oh noes, got a %T but want an Ed25519 key", pk)
 	}
 
 	if strings.Contains(n, "%") {
@@ -88,10 +91,10 @@ func fromGCP(ctx context.Context, f string, n string) (string, error) {
 	}
 	vkey, err := note.NewEd25519VerifierKey(n, edk)
 	if err != nil {
-		return "", fmt.Errorf("NewEd25519VerifierKey: %s: %v", n, err)
+		return "", fmt.Errorf("note.NewEd25519VerifierKey: %s: %v", n, err)
 	}
 	if _, err := note.NewVerifier(vkey); err != nil {
-		return "", fmt.Errorf("NewVerifier: %v", err)
+		return "", fmt.Errorf("note.NewVerifier: %v", err)
 	}
 	return vkey, nil
 }

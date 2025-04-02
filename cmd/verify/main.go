@@ -178,16 +178,16 @@ func (v *verifier) fetchRecoveryFirmware(ctx context.Context) error {
 			HABTarget:        *habTarget,
 		})
 	if err != nil {
-		return fmt.Errorf("NewFetcher: %v", err)
+		return fmt.Errorf("update.NewFetcher: %v", err)
 	}
 
 	if err := updateFetcher.Scan(ctx); err != nil {
-		return fmt.Errorf("Scan: %v", err)
+		return fmt.Errorf("updateFetcher.Scan: %v", err)
 	}
 
 	r, err := updateFetcher.GetRecovery(ctx)
 	if err != nil {
-		return fmt.Errorf("GetRecovery: %v", err)
+		return fmt.Errorf("updateFetcher.GetRecovery: %v", err)
 	}
 
 	bv := firmware.BundleVerifier{

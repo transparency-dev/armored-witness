@@ -94,7 +94,7 @@ func (v *ReproducibleBuildVerifier) Verify(ctx context.Context, i uint64, manife
 			return false, fmt.Errorf("recovery sig verification failed: %v", err)
 		}
 	default:
-		return false, fmt.Errorf("Unsupported component: %q", release.Component)
+		return false, fmt.Errorf("unsupported component: %q", release.Component)
 	}
 
 	klog.V(1).Infof("Leaf index %d: verifying manifest: %s@%s (%s)", i, release.Component, release.Git.TagName, release.Git.CommitFingerprint)
@@ -118,7 +118,7 @@ func (v *ReproducibleBuildVerifier) verifyManifest(ctx context.Context, i uint64
 	case ftlog.ComponentRecovery:
 		cv = recoveryVerifier{}
 	default:
-		return false, fmt.Errorf("Unsupported component: %q", r.Component)
+		return false, fmt.Errorf("unsupported component: %q", r.Component)
 	}
 
 	// Download, install, and then set up tamago environment to match manifest
@@ -139,7 +139,9 @@ func (v *ReproducibleBuildVerifier) verifyManifest(ctx context.Context, i uint64
 	cleanup := v.cleanup
 	defer func() {
 		if cleanup {
-			os.RemoveAll(dir)
+			if err := os.RemoveAll(dir); err != nil {
+				klog.Errorf("RemoveAll: %v", err)
+			}
 		} else {
 			klog.Infof("🔎 Evidence of failed build: %s (%d: %s@%s)", dir, i, r.Component, r.Git.CommitFingerprint)
 		}

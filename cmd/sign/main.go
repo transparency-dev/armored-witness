@@ -29,6 +29,7 @@ import (
 	"os"
 
 	"github.com/transparency-dev/armored-witness/pkg/kmssigner"
+	"k8s.io/klog/v2"
 
 	kms "cloud.google.com/go/kms/apiv1"
 	"golang.org/x/exp/maps"
@@ -141,9 +142,9 @@ func main() {
 		"The file to write the note to.")
 
 	flag.Usage = func() {
-		fmt.Fprintf(flag.CommandLine.Output(), "Usage of %s:\n", os.Args[0])
-		fmt.Fprintf(flag.CommandLine.Output(), usageString+"\n\n")
-		fmt.Fprintf(flag.CommandLine.Output(), "Flags:\n")
+		_, _ = fmt.Fprintf(flag.CommandLine.Output(), "Usage of %s:\n", os.Args[0])
+		_, _ = fmt.Fprintf(flag.CommandLine.Output(), usageString+"\n\n")
+		_, _ = fmt.Fprintf(flag.CommandLine.Output(), "Flags:\n")
 		flag.PrintDefaults()
 	}
 
@@ -172,7 +173,11 @@ func main() {
 	if err != nil {
 		log.Fatalf("failed to create KeyManagementClient: %v", err)
 	}
-	defer kmClient.Close()
+	defer func() {
+		if err := kmClient.Close(); err != nil {
+			klog.Errorf("kmClient.Close: %v", err)
+		}
+	}()
 
 	verifier, err := note.NewVerifier(keyInfo.noteVerifier)
 	if err != nil {
