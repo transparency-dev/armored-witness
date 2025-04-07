@@ -24,8 +24,8 @@ github.com/flynn/hid v0.0.0-20190502022136-f1b9b6cc019a h1:fsyWnwbywFpHJS4T55vDW
 github.com/flynn/hid v0.0.0-20190502022136-f1b9b6cc019a/go.mod h1:Osz+xPHFsGWK9kZCEVcwXazcF/CHjscCVZosNFgwUIY=
 github.com/flynn/u2f v0.0.0-20180613185708-15554eb68e5d h1:2D6Rp/MRcrKnRFr7kfgBOJnJPFN0jPfc36ggct5MaK0=
 github.com/flynn/u2f v0.0.0-20180613185708-15554eb68e5d/go.mod h1:shcCQPgKtaJz4obqb6Si031WgtSrW+Tj+ZLq/mRNrM8=
-github.com/fsnotify/fsnotify v1.8.0 h1:dAwr6QBTBZIkG8roQaJjGof0pp0EeF+tNV7YBP3F/8M=
-github.com/fsnotify/fsnotify v1.8.0/go.mod h1:8jBTzvmWwFyi3Pb8djgCCO5IBqzKJ/Jwo8TRcHyHii0=
+github.com/fsnotify/fsnotify v1.9.0 h1:2Ml+OJNzbYCTzsxtv8vKSFD9PbJjmhYF14k/jKC7S9k=
+github.com/fsnotify/fsnotify v1.9.0/go.mod h1:8jBTzvmWwFyi3Pb8djgCCO5IBqzKJ/Jwo8TRcHyHii0=
 github.com/go-logr/logr v1.2.2/go.mod h1:jdQByPbusPIv2/zmleS9BjJVeZ6kBagPoEUsqbVz/1A=
 github.com/go-logr/logr v1.4.2 h1:6pFjapn8bFcIbiKo3XT4j/BhANplGihG6tvd+8rYgrY=
 github.com/go-logr/logr v1.4.2/go.mod h1:9T104GzyrTigFIr8wt5mBrctHMim0Nb2HLGrmQ40KvY=
@@ -65,8 +65,8 @@ github.com/transparency-dev/armored-witness-boot v0.1.0 h1:OBlz71PCmPju9cDI1VEmy
 github.com/transparency-dev/armored-witness-boot v0.1.0/go.mod h1:XpiSLWNiDplWVYjtR1FY/wyFqiWK++5pLCiYe3PZZC8=
 github.com/transparency-dev/armored-witness-common v0.0.0-20241017132000-df37fdcb59d5 h1:ZexKrZ4gWZvdMrK6Wa2m6k/wB5ln0ROyUncawrdNpVA=
 github.com/transparency-dev/armored-witness-common v0.0.0-20241017132000-df37fdcb59d5/go.mod h1:S4eaGNe18UhrlFAbbdISM/FcN+/ZlOVHxKhmy/bCc+A=
-github.com/transparency-dev/armored-witness-os v0.3.1 h1:dQmCmqEztHAqLD4znuNxxAllt52C5Ye4k6PATPptCb4=
-github.com/transparency-dev/armored-witness-os v0.3.1/go.mod h1:7LrFwn8LSaOJvgPZmY2djjIJNsKhnU7+aFl2yreMrh0=
+github.com/transparency-dev/armored-witness-os v0.4.0 h1:U89iZpYff9lfuU7tsd5NGVu7mdXte2LtSEMra19lL9c=
+github.com/transparency-dev/armored-witness-os v0.4.0/go.mod h1:SZKPj+XXuj+vWABiVFEFUqlxkKhhnqSAQiC0zUDyqiE=
 github.com/transparency-dev/formats v0.0.0-20230920083814-0f75b1d4e813 h1:PHklaeYyhPsbhWt+MnKpBvJrsJGkPEaU1JutMj4wNqM=
 github.com/transparency-dev/formats v0.0.0-20230920083814-0f75b1d4e813/go.mod h1:J2NdDb6IhKIvF6MwCvKikz9/QStRylEtS2mv+En+jBg=
 github.com/transparency-dev/merkle v0.0.2 h1:Q9nBoQcZcgPamMkGn7ghV8XiTZ/kRxn1yCG81+twTK4=
