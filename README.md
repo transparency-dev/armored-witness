@@ -81,9 +81,11 @@ The CI workflow triggers on every commit:
    - The log only contains the metadata, the actual firmware will be uploaded the the [CI FW CAS](https://api.transparency.dev/armored-witness-firmware/ci/artefacts/4/)
  1. Provisioned CI Armored Witness devices will automatically update themselves based on this log being updated
 
-The prod workflow builds on top of this.
-When a release is tagged in either the [OS](https://github.com/transparency-dev/armored-witness-os) or [Applet](https://github.com/transparency-dev/armored-witness-applet) repos, the corresponding build is promoted to the [Prod Log](https://api.transparency.dev/armored-witness-firmware/prod/log/1/) ([checkpoint](https://api.transparency.dev/armored-witness-firmware/prod/log/1/checkpoint)), with the firmware itself hosted in the [Prod FW CAS](https://api.transparency.dev/armored-witness-firmware/prod/artefacts/1/).
-Production devices will automatically update from the log.
+The prod workflow is separate, but very similar in approach:
+
+ 1. Builds are triggered when a new release tag is added to the repo, this causes a new OS and/or Applet firmware image to be built, but the build is configured to embed production public keys, log metadata, etc
+ 1. Metadata about prod builds are committed-to in the [Prod Log](https://api.transparency.dev/armored-witness-firmware/prod/log/1/) ([checkpoint](https://api.transparency.dev/armored-witness-firmware/prod/log/1/checkpoint)), with the firmware itself hosted in the [Prod FW CAS](https://api.transparency.dev/armored-witness-firmware/prod/artefacts/1/)
+ 1. Provisioned production Armored Witness devices automatically update themselves based on new entries appearing in the production FT log
 
 ### Transparency
 
