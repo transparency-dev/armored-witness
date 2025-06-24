@@ -74,7 +74,18 @@ Each of the four firmware components listed above are built and released by a st
 
 The [deployment/build_and_release](deployment/build_and_release) directory contains Terraform configs to define Cloud Build triggers which build and release the firmware and recovery image.
 
-TODO(jayhou): add public links.
+The CI workflow triggers on every commit:
+
+ 1. Every commit to `main` that changes the firmware will cause a new build of the OS and/or Applet firmware
+ 1. These builds are committed to in the [CI Log](https://api.transparency.dev/armored-witness-firmware/ci/log/4/) ([checkpoint](https://api.transparency.dev/armored-witness-firmware/ci/log/4/checkpoint))
+   - The log only contains the metadata, the actual firmware will be uploaded the the [CI FW CAS](https://api.transparency.dev/armored-witness-firmware/ci/artefacts/4/)
+ 1. Provisioned CI Armored Witness devices will automatically update themselves based on this log being updated
+
+The prod workflow is separate, but very similar in approach:
+
+ 1. Builds are triggered when a new release tag is added to the repo, this causes a new OS and/or Applet firmware image to be built, but the build is configured to embed production public keys, log metadata, etc.
+ 1. Metadata about prod builds are committed-to in the [Prod Log](https://api.transparency.dev/armored-witness-firmware/prod/log/1/) ([checkpoint](https://api.transparency.dev/armored-witness-firmware/prod/log/1/checkpoint)), with the firmware itself hosted in the [Prod FW CAS](https://api.transparency.dev/armored-witness-firmware/prod/artefacts/1/)
+ 1. Provisioned production Armored Witness devices automatically update themselves based on new entries appearing in the production FT log
 
 ### Transparency
 
