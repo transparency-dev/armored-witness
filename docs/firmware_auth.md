@@ -97,4 +97,4 @@ For more information about the transparency concepts mentioned above, please vis
 general information.
 
 If you have questions, or are interested in this topic come and say hello at
-<https://transparency-dev.slack.com/>.
+<https://transparency-dev.slack.com/> [[invite]](https://transparency.dev/slack/).
