@@ -19,7 +19,7 @@ inputs = merge(
     firmware_bucket_prefix = "armored-witness-firmware-ci"
     origin_prefix = "transparency.dev/armored-witness/firmware_transparency/ci"
 
-    tamago_version = "1.24.1"
+    tamago_version = "1.24.3"
     log_public_key = "transparency.dev-aw-ftlog-ci-4+30fe79e3+AUDoas+smwQDTlYbTzbEcAW+N6WyvB/4CysMWjpnRgat"
     applet_public_key = "transparency.dev-aw-applet-ci+3ff32e2c+AV1fgxtByjXuPjPfi0/7qTbEBlPGGCyxqr6ZlppoLOz3"
     os_public_key1 = "transparency.dev-aw-os1-ci+7a0eaef3+AcsqvmrcKIbs21H2Bm2fWb6oFWn/9MmLGNc6NLJty2eQ"
