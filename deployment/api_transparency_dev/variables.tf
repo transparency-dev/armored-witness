@@ -52,6 +52,14 @@ variable "distributor_dev_port" {
   description = "Port on distributor_host where distributor service API is served (dev)"
   type        = number
 }
+variable "witness_dev_host" {
+  type        = string
+  description = "Host name serving witness service API (dev)"
+}
+variable "witness_dev_port" {
+  description = "Port on distributor_host where witness service API is served (dev)"
+  type        = number
+}
 
 variable "lb_name" {
   type        = string
