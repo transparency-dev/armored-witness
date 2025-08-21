@@ -17,3 +17,6 @@ distributor_ci_port = 443
 
 distributor_dev_host = "distributor-service-dev-oxxl2d5jeq-uc.a.run.app"
 distributor_dev_port = 443
+
+witness_dev_host = "witness-service-dev-oxxl2d5jeq-uc.a.run.app"
+witness_dev_port = 443

@@ -68,7 +68,7 @@ module "lb-http" {
   enable_ipv6         = true
 
   backends = {
-    prod = {
+    distributor-prod = {
       description = "Distributor API backend (prod)"
       protocol    = "HTTPS"
       port_name   = "https"
@@ -90,7 +90,7 @@ module "lb-http" {
         enable = false
       }
     }
-    ci = {
+    distributor-ci = {
       description = "Distributor API backend (ci)"
       protocol    = "HTTPS"
       port_name   = "https"
@@ -112,7 +112,7 @@ module "lb-http" {
         enable = false
       }
     }
-    dev = {
+    distributor-dev = {
       description = "Distributor API backend (dev)"
       protocol    = "HTTPS"
       port_name   = "https"
@@ -134,14 +134,46 @@ module "lb-http" {
         enable = false
       }
     }
+
+    witness-dev = {
+      description = "Witness API backend (dev)"
+      protocol    = "HTTPS"
+      port_name   = "https"
+      port        = 443
+      groups = [
+        {
+          group = google_compute_global_network_endpoint_group.witness_dev.id
+        }
+      ]
+
+      health_check = null
+
+      enable_cdn = false
+
+      iap_config = {
+        enable = false
+      }
+      log_config = {
+        enable = false
+      }
+    }
   }
 
   create_url_map = false
   url_map        = google_compute_url_map.default.self_link
 }
 
+resource "random_id" "url_map" {
+  keepers = {
+    # Generate a new id each time the instance list changes
+    instances = base64encode(jsonencode(module.lb-http.backend_services))
+  }
+
+  byte_length = 4
+}
+
 resource "google_compute_url_map" "default" {
-  name = "api-transparency-dev-url-map"
+  name = "api-transparency-dev-url-map-${random_id.url_map.hex}"
 
   default_url_redirect {
     https_redirect = true
@@ -183,7 +215,7 @@ resource "google_compute_url_map" "default" {
           host_rewrite        = var.distributor_prod_host
         }
       }
-      service = module.lb-http.backend_services["prod"].id
+      service = module.lb-http.backend_services["distributor-prod"].id
     }
     path_rule {
       paths = [
@@ -196,7 +228,7 @@ resource "google_compute_url_map" "default" {
           host_rewrite        = var.distributor_ci_host
         }
       }
-      service = module.lb-http.backend_services["ci"].id
+      service = module.lb-http.backend_services["distributor-ci"].id
     }
     path_rule {
       paths = [
@@ -209,7 +241,23 @@ resource "google_compute_url_map" "default" {
           host_rewrite        = var.distributor_dev_host
         }
       }
-      service = module.lb-http.backend_services["dev"].id
+      service = module.lb-http.backend_services["distributor-dev"].id
+    }
+
+    #####
+    # Witness rules
+
+    path_rule {
+      paths = [
+        "/dev/witness/little-garden/add-checkpoint",
+      ]
+      route_action {
+        url_rewrite {
+          path_prefix_rewrite = "/add-checkpoint"
+          host_rewrite        = var.witness_dev_host
+        }
+      }
+      service = module.lb-http.backend_services["witness-dev"].id
     }
 
     #####
@@ -281,6 +329,10 @@ resource "google_compute_url_map" "default" {
       }
     }
   }
+
+  lifecycle {
+    create_before_destroy = true
+  }
 }
 
 ## Corresponding load balancer backend buckets.
@@ -341,6 +393,14 @@ resource "google_compute_global_network_endpoint_group" "distributor_dev" {
   default_port          = var.distributor_dev_port
   network_endpoint_type = "INTERNET_FQDN_PORT"
 }
+resource "google_compute_global_network_endpoint_group" "witness_dev" {
+  name                  = "witness-dev"
+  project               = var.project_id
+  provider              = google-beta
+  default_port          = var.witness_dev_port
+  network_endpoint_type = "INTERNET_FQDN_PORT"
+}
+
 
 resource "google_compute_global_network_endpoint" "distributor_prod" {
   global_network_endpoint_group = google_compute_global_network_endpoint_group.distributor_prod.name
@@ -356,6 +416,11 @@ resource "google_compute_global_network_endpoint" "distributor_dev" {
   global_network_endpoint_group = google_compute_global_network_endpoint_group.distributor_dev.name
   port                          = var.distributor_dev_port
   fqdn                          = var.distributor_dev_host
+}
+resource "google_compute_global_network_endpoint" "witness_dev" {
+  global_network_endpoint_group = google_compute_global_network_endpoint_group.witness_dev.name
+  port                          = var.witness_dev_port
+  fqdn                          = var.witness_dev_host
 }
 
 ## Terraform keys
