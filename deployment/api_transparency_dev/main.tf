@@ -140,8 +140,17 @@ module "lb-http" {
   url_map        = google_compute_url_map.default.self_link
 }
 
+resource "random_id" "url_map" {
+  keepers = {
+    # Generate a new id each time the instance list changes
+    instances = base64encode(jsonencode(module.lb-http.backend_services))
+  }
+
+  byte_length = 4
+}
+
 resource "google_compute_url_map" "default" {
-  name = "api-transparency-dev-url-map"
+  name = "api-transparency-dev-url-map-${random_id.url_map.hex}"
 
   default_url_redirect {
     https_redirect = true
@@ -280,6 +289,10 @@ resource "google_compute_url_map" "default" {
         service = google_compute_backend_bucket.firmware_artefacts_prod["${i.key}"].id
       }
     }
+  }
+
+  lifecycle {
+    create_before_destroy = true
   }
 }
 
