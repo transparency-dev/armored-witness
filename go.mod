@@ -1,6 +1,6 @@
 module github.com/transparency-dev/armored-witness
 
-go 1.24.3
+go 1.24.6
 
 require (
 	cloud.google.com/go/kms v1.22.0
