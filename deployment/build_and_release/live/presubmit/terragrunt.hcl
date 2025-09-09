@@ -13,7 +13,7 @@ inputs = merge(
     log_shard = 2
     origin_prefix = "transparency.dev/armored-witness/firmware_transparency/ci"
 
-    tamago_version = "1.24.6"
+    tamago_version = "1.25.0"
     log_public_key = "transparency.dev-aw-ftlog-ci-2+f77c6276+AZXqiaARpwF4MoNOxx46kuiIRjrML0PDTm+c7BLaAMt6"
     applet_public_key = "transparency.dev-aw-applet-ci+3ff32e2c+AV1fgxtByjXuPjPfi0/7qTbEBlPGGCyxqr6ZlppoLOz3"
     os_public_key1 = "transparency.dev-aw-os1-ci+7a0eaef3+AcsqvmrcKIbs21H2Bm2fWb6oFWn/9MmLGNc6NLJty2eQ"
