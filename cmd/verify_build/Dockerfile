@@ -3,7 +3,7 @@
 # witness.
 # The default entrypoint runs a continuous monitor that attempts
 # to build all firmware artifacts committed to by a log.
-FROM golang:1.24-alpine AS builder
+FROM golang:1.25-alpine AS builder
 
 ARG GOFLAGS=""
 ENV GOFLAGS=$GOFLAGS
@@ -26,7 +26,7 @@ RUN go build -o /build/bin/verifier ./cmd/verify_build
 #
 # Set up the final image
 #
-FROM ubuntu:22.04
+FROM ubuntu:24.04
 
 RUN apt-get update
 RUN apt-get -y install curl unzip wget xxd git
