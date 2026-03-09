@@ -20,7 +20,7 @@ require (
 	golang.org/x/exp v0.0.0-20240222234643-814bf88cf225
 	golang.org/x/mod v0.33.0
 	google.golang.org/protobuf v1.36.11
-	k8s.io/klog/v2 v2.130.1
+	k8s.io/klog/v2 v2.140.0
 )
 
 require (
