@@ -42,7 +42,7 @@ jobs:
         # Learn more about CodeQL language support at https://aka.ms/codeql-docs/language-support
 
     steps:
-    - uses: actions/setup-go@v6.4.0
+    - uses: actions/setup-go@v6.5.0
       with:
         go-version: ${{ matrix.go }}
 
