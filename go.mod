@@ -1,6 +1,6 @@
 module github.com/transparency-dev/armored-witness
 
-go 1.25.0
+go 1.26.0
 
 require (
 	cloud.google.com/go/kms v1.33.0
@@ -18,7 +18,7 @@ require (
 	github.com/transparency-dev/serverless-log v0.0.0-20231215122707-66f68a7705f5
 	github.com/usbarmory/armory-boot v0.0.0-20240924115649-09d0327c3c99
 	golang.org/x/exp v0.0.0-20240222234643-814bf88cf225
-	golang.org/x/mod v0.40.0
+	golang.org/x/mod v0.41.0
 	google.golang.org/protobuf v1.36.12
 	k8s.io/klog/v2 v2.140.0
 )
